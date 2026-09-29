@@ -1,1 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中華民國業餘無線電題庫入口</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.85);
+      --primary-cyan: #06b6d4;
+      --primary-blue: #3b82f6;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #1e293b 0%, var(--bg-color) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      text-align: center;
+    }
+
+    /* 頂部電台圖示與標題 */
+    .radio-icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      display: inline-block;
+      filter: drop-shadow(0 0 16px rgba(6, 182, 212, 0.5));
+    }
+
+    h1 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-sub);
+      font-size: 0.95rem;
+      margin-bottom: 36px;
+      letter-spacing: 0.5px;
+    }
+
+    /* 題庫入口按鈕卡片區 */
+    .links-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .link-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 22px 20px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      transition: all 0.25s ease;
+    }
+
+    .link-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(56, 189, 248, 0.4);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
+    }
+
+    .card-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .badge-2 {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+    }
+
+    .badge-3 {
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: #fff;
+    }
+
+    .card-text h2 {
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+      color: #f1f5f9;
+    }
+
+    .card-text p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    .arrow-icon {
+      font-size: 1.4rem;
+      color: var(--text-sub);
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .link-card:hover .arrow-icon {
+      transform: translateX(4px);
+      color: #38bdf8;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="radio-icon">📻</div>
+    <h1>中華民國業餘無線電題庫</h1>
+    <p class="subtitle">Amateur Radio Operator License Exam Prep</p>
+
+    <div class="links-grid">
+      <!-- 二等題庫入口 -->
+      <a href="./ham2/" class="link-card">
+        <div class="card-content">
+          <div class="badge badge-2">2</div>
+          <div class="card-text">
+            <h2>二等業餘無線電題庫</h2>
+            <p>包含法規、無線電工程、操作實務等進階練習</p>
+          </div>
+        </div>
+        <div class="arrow-icon">➔</div>
+      </a>
+
+      <!-- 三等題庫入口 -->
+      <a href="./ham3/" class="link-card">
+        <div class="card-content">
+          <div class="badge badge-3">3</div>
+          <div class="card-text">
+            <h2>三等業餘無線電題庫</h2>
+            <p>基礎無線電法規與基礎通訊常識練習</p>
+          </div>
+        </div>
+        <div class="arrow-icon">➔</div>
+      </a>
+    </div>
+
+    <footer>
+      73 & Good Luck | 業餘無線電學科測驗複習
+    </footer>
+  </div>
+
+</body>
+</html>
