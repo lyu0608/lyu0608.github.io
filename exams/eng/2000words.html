@@ -24,6 +24,13 @@
     }
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  .acct{margin-bottom:14px}
+  .auth{display:grid; gap:8px; margin-top:10px}
+  .amsg{font-size:13px; color:var(--muted); margin-top:8px}
+  .amsg:empty{display:none}
+  .amsg.bad{color:var(--bad)}
+  .muted{color:var(--muted)}
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
@@ -195,6 +202,28 @@
     </div>
   </header>
 
+  <section class="card acct" id="acct" hidden>
+    <div id="acctOut">
+      <div class="row" style="justify-content:space-between">
+        <span>登入後，手機和電腦的進度會自動同步</span>
+        <button class="btn" id="acctToggle">登入／註冊</button>
+      </div>
+      <form class="auth" id="authForm" hidden>
+        <input class="inp" id="aEmail" type="email" autocomplete="email" placeholder="Email" autocapitalize="off">
+        <input class="inp" id="aPass" type="password" autocomplete="current-password" placeholder="密碼（至少 6 碼）">
+        <div class="row">
+          <button class="btn primary" type="submit">登入</button>
+          <button class="btn" type="button" id="aSignup">註冊新帳號</button>
+        </div>
+      </form>
+    </div>
+    <div id="acctIn" class="row" style="justify-content:space-between" hidden>
+      <span>已登入 <b id="aWho"></b>・<span id="aSync" class="muted"></span></span>
+      <button class="btn" id="aLogout">登出</button>
+    </div>
+    <div class="amsg" id="aMsg"></div>
+  </section>
+
   <section class="card range">
     <div class="range-top"><span class="label">練習範圍</span><span id="rangeInfo"></span></div>
     <div class="letters" id="letters"></div>
@@ -284,10 +313,15 @@
     </div>
   </section>
 
-  <p class="foot">答錯會自動加入錯題本，之後答對會慢慢移除｜進度只存在這台裝置的瀏覽器</p>
+  <p class="foot">答錯會自動加入錯題本，之後答對會慢慢移除｜沒登入時，進度只存在這台裝置的瀏覽器</p>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ====== 雲端同步設定：貼上你的 Supabase 專案網址和金鑰（留空＝不使用雲端） ====== */
+const SUPABASE_URL = "";   // 例如 https://abcdxyz.supabase.co
+const SUPABASE_KEY = "";   // Publishable key（sb_publishable_ 開頭）或 anon public key
+
 /* ====== 單字資料：英文|詞性|中文（依 114 年版題庫表順序） ====== */
 const RAW = `a few|限|一些（用於可數）
 a little|限|一點（用於不可數）
@@ -2329,7 +2363,11 @@ let wrong = store.get("wb2000-wrong", {});   // { index: 錯誤次數 }
 let known = store.get("wb2000-known", {});   // { index: 1 }
 let range = store.get("wb2000-range", { from:1, to:TOTAL, onlyWrong:false, letter:"全部" });
 let tab   = store.get("wb2000-tab", "list");
-const saveAll = () => { store.set("wb2000-wrong", wrong); store.set("wb2000-known", known); store.set("wb2000-range", range); };
+let localUpdated = store.get("wb2000-updated", 0);
+const saveAll = (progressChanged = true) => {
+  store.set("wb2000-wrong", wrong); store.set("wb2000-known", known); store.set("wb2000-range", range);
+  if (progressChanged) { localUpdated = Date.now(); store.set("wb2000-updated", localUpdated); schedulePush(); }
+};
 
 function pool(){
   let a = WORDS.slice(range.from - 1, range.to);
@@ -2379,7 +2417,7 @@ $("rFrom").addEventListener("change", onRangeInput);
 $("rTo").addEventListener("change", onRangeInput);
 $("rWrong").addEventListener("change", () => { range.onlyWrong = $("rWrong").checked; rangeChanged(); });
 function rangeChanged(){
-  saveAll(); renderLetters(); updateStats();
+  saveAll(false); renderLetters(); updateStats();
   listLimit = 200; renderList(); fcBuild();
   if (!$("qPlay").hidden || !$("qEnd").hidden) showQuizSetup();
 }
@@ -2668,6 +2706,120 @@ document.addEventListener("keydown", e => {
     }
   }
 });
+
+/* ====== 雲端同步（Supabase） ====== */
+let sb = null, user = null, pushTimer = null;
+function setSync(t){ $("aSync").textContent = t; }
+function aMsg(t, bad){ const el = $("aMsg"); el.textContent = t || ""; el.className = "amsg" + (bad ? " bad" : ""); }
+function renderAcct(){
+  $("acct").hidden = !sb;
+  if (!sb) return;
+  $("acctOut").hidden = !!user;
+  $("acctIn").hidden = !user;
+  if (user) $("aWho").textContent = user.email;
+}
+function applyProgress(w, k){
+  wrong = w || {}; known = k || {};
+  store.set("wb2000-wrong", wrong); store.set("wb2000-known", known);
+  updateStats(); listLimit = 200; renderList(); fcBuild();
+  if (tab === "wrong") renderWrong();
+}
+function setLocalTime(t){ localUpdated = t; store.set("wb2000-updated", t); }
+
+async function pull(){
+  if (!sb || !user) return;
+  setSync("同步中…");
+  const { data, error } = await sb.from("progress").select("wrong,known,updated_at").eq("user_id", user.id).maybeSingle();
+  if (error) { setSync("同步失敗：" + error.message); return; }
+  const owner = store.get("wb2000-owner", null);
+  const otherUser = owner && owner !== user.id;
+
+  if (!data) {                             // 雲端還沒有資料 → 上傳本機進度
+    if (otherUser) applyProgress({}, {});
+    store.set("wb2000-owner", user.id);
+    if (!localUpdated) setLocalTime(Date.now());
+    return push();
+  }
+  const cloudTime = Date.parse(data.updated_at) || 0;
+  if (otherUser) {                         // 這台裝置上一次是別人 → 用雲端的
+    applyProgress(data.wrong, data.known); setLocalTime(cloudTime);
+  } else if (!owner) {                     // 第一次在這台裝置登入 → 本機和雲端合併
+    const w = { ...data.wrong }, k = { ...data.known };
+    for (const i in wrong) w[i] = Math.max(w[i] || 0, wrong[i]);
+    for (const i in known) k[i] = 1;
+    store.set("wb2000-owner", user.id);
+    applyProgress(w, k); saveAll(); return;
+  } else if (cloudTime > localUpdated) {   // 別台裝置比較新
+    applyProgress(data.wrong, data.known); setLocalTime(cloudTime);
+  } else if (localUpdated > cloudTime) {   // 這台比較新
+    return push();
+  }
+  store.set("wb2000-owner", user.id);
+  setSync("已同步");
+}
+async function push(){
+  if (!sb || !user) return;
+  clearTimeout(pushTimer); pushTimer = null;
+  setSync("同步中…");
+  const { error } = await sb.from("progress").upsert({
+    user_id: user.id, wrong, known, updated_at: new Date(localUpdated || Date.now()).toISOString()
+  });
+  if (error) setSync("同步失敗：" + error.message);
+  else { setSync("已同步"); store.set("wb2000-owner", user.id); }
+}
+function schedulePush(){
+  if (!sb || !user) return;
+  setSync("等待同步…");
+  clearTimeout(pushTimer); pushTimer = setTimeout(push, 1500);
+}
+
+if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sb.auth.onAuthStateChange((ev, session) => {
+    const was = user && user.id;
+    user = session ? session.user : null;
+    renderAcct();
+    if (user && user.id !== was) setTimeout(pull, 0);
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!user) return;
+    if (document.visibilityState === "visible") pull();
+    else if (pushTimer) push();
+  });
+}
+renderAcct();
+
+const credentials = () => ({ email: $("aEmail").value.trim(), password: $("aPass").value });
+$("acctToggle").onclick = () => {
+  $("authForm").hidden = !$("authForm").hidden;
+  if (!$("authForm").hidden) $("aEmail").focus();
+};
+$("authForm").onsubmit = async e => {
+  e.preventDefault();
+  const c = credentials();
+  if (!c.email || !c.password) return aMsg("請輸入 Email 和密碼", true);
+  aMsg("登入中…");
+  const { error } = await sb.auth.signInWithPassword(c);
+  if (error) aMsg(/Invalid login/i.test(error.message) ? "Email 或密碼錯誤"
+    : /not confirmed/i.test(error.message) ? "這個帳號還沒完成 Email 確認" : "登入失敗：" + error.message, true);
+  else { aMsg(""); $("aPass").value = ""; $("authForm").hidden = true; }
+};
+$("aSignup").onclick = async () => {
+  const c = credentials();
+  if (!c.email || c.password.length < 6) return aMsg("請輸入 Email 和至少 6 碼的密碼", true);
+  aMsg("註冊中…");
+  const { data, error } = await sb.auth.signUp({ ...c, options: { emailRedirectTo: location.origin + location.pathname } });
+  if (error) return aMsg(/already registered/i.test(error.message) ? "這個 Email 已經註冊過，請直接登入" : "註冊失敗：" + error.message, true);
+  if (!data.session) aMsg("註冊成功！請到信箱點確認連結，再回來登入。");
+  else { aMsg("註冊成功，已自動登入！"); $("aPass").value = ""; $("authForm").hidden = true; }
+};
+$("aLogout").onclick = async () => {
+  if (pushTimer) await push();
+  await sb.auth.signOut();
+  store.set("wb2000-owner", null); setLocalTime(0);
+  applyProgress({}, {});
+  aMsg("已登出。這台裝置上的進度已清除，雲端資料還在，下次登入會回來。");
+};
 
 /* ====== 啟動 ====== */
 $("stTotal").textContent = TOTAL;
