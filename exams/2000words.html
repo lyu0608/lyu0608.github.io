@@ -1,0 +1,2680 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+<title>國中單字王 2000 練習</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231f2937'/><text x='16' y='22' font-size='14' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>ABC</text></svg>">
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --hover:#f1f3f5; --accent:#1f2937;
+    --ok:#16a34a; --okbg:#ecfdf3; --bad:#dc2626; --badbg:#fef2f2; --warn:#d97706;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 1px 8px rgba(0,0,0,.04);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#111316; --card:#1a1d21; --text:#e5e7eb; --muted:#9ca3af;
+      --line:#2a2e34; --hover:#23272c; --accent:#e5e7eb;
+      --ok:#4ade80; --okbg:#13251a; --bad:#f87171; --badbg:#2a1616; --warn:#fbbf24;
+      --shadow:none; color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    font-size:15px; line-height:1.5;
+  }
+  button{font:inherit; color:inherit}
+  .wrap{max-width:900px; margin:0 auto; padding:36px 20px 64px}
+  .back{display:inline-block; color:var(--muted); text-decoration:none; font-size:14px; margin-bottom:14px}
+  .back:hover{color:var(--text)}
+  header{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:18px}
+  h1{font-size:26px; margin:0}
+  .sub{color:var(--muted); margin:2px 0 0; font-size:14px}
+  .stats{display:flex; gap:8px}
+  .stats div{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 12px; text-align:center; min-width:72px}
+  .stats b{display:block; font-size:18px; font-variant-numeric:tabular-nums}
+  .stats span{font-size:12px; color:var(--muted)}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; box-shadow:var(--shadow)}
+  .range{margin-bottom:14px}
+  .range-top{display:flex; justify-content:space-between; gap:8px; font-size:14px; margin-bottom:10px}
+  .label{font-weight:600}
+  #rangeInfo{color:var(--muted)}
+  .letters{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px}
+  .letters button{
+    min-width:32px; height:32px; padding:0 8px; border-radius:8px; border:1px solid var(--line);
+    background:var(--bg); cursor:pointer; font-size:13px; font-weight:600;
+  }
+  .letters button:hover{background:var(--hover)}
+  .letters button.on{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .range-row{display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; font-size:14px}
+  .range-row input[type=number]{width:84px; padding:7px 8px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); font:inherit}
+  .chk{display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none}
+  .chk input{width:16px; height:16px; accent-color:var(--accent); margin:0}
+
+  .tabs{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:10; background:var(--bg);
+    display:flex; gap:4px; padding:8px 0; margin-bottom:10px;
+  }
+  .tabs button{
+    flex:1; border:1px solid var(--line); background:var(--card); border-radius:10px;
+    padding:10px 6px; cursor:pointer; font-size:15px; color:var(--muted);
+  }
+  .tabs button.on{background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600}
+  .tabs .cnt{font-size:12px; opacity:.8}
+
+  .btn{border:1px solid var(--line); background:var(--card); border-radius:10px; padding:9px 16px; cursor:pointer; font-size:14px}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .btn.primary:hover{opacity:.9}
+  .btn.ok{border-color:var(--ok); color:var(--ok)}
+  .btn.bad{border-color:var(--bad); color:var(--bad)}
+  .btn:disabled{opacity:.4; cursor:default}
+  .row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .empty{color:var(--muted); text-align:center; padding:28px 0}
+  select,.inp{padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); font:inherit; font-size:16px}
+  .inp{width:100%; outline:none}
+  .inp:focus,select:focus{border-color:var(--muted)}
+
+  .say{border:0; background:none; cursor:pointer; padding:4px; border-radius:6px; color:var(--muted); display:inline-grid; place-items:center; flex:none}
+  .say:hover{background:var(--hover); color:var(--text)}
+  .say svg{width:18px; height:18px}
+
+  /* 單字表 */
+  .list-top{display:flex; gap:8px; align-items:center; margin-bottom:8px}
+  .list-top .inp{flex:1}
+  #listInfo{font-size:13px; color:var(--muted); white-space:nowrap}
+  .words{list-style:none; margin:0; padding:0; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+  .words li{display:grid; grid-template-columns:44px 28px minmax(0,1.2fr) 72px minmax(0,1.5fr) 32px; align-items:center; gap:6px; padding:7px 10px; border-top:1px solid var(--line)}
+  .words li:first-child{border-top:0}
+  .words .no{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .words .w{font-weight:600; overflow-wrap:anywhere}
+  .words .pos{font-size:12px; color:var(--muted)}
+  .words .m{overflow-wrap:anywhere}
+  .star{border:0; background:none; cursor:pointer; font-size:18px; color:var(--line); padding:2px; border-radius:6px}
+  .star.on{color:var(--warn)}
+  .more{text-align:center; padding:12px}
+
+  /* 字卡 */
+  .opts{display:flex; flex-wrap:wrap; gap:8px 16px; font-size:14px; margin-bottom:10px}
+  .fc{
+    min-height:240px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    text-align:center; cursor:pointer; user-select:none; position:relative; padding:28px 16px;
+  }
+  .big{font-size:38px; font-weight:700; line-height:1.2; overflow-wrap:anywhere}
+  .big.zh{font-size:30px; font-weight:600}
+  .fc .pos{color:var(--muted); font-size:14px}
+  .fc hr{width:60%; border:0; border-top:1px dashed var(--line); margin:10px 0}
+  .tap{color:var(--muted); font-size:13px; margin-top:10px}
+  .badges{position:absolute; top:10px; right:10px; display:flex; gap:4px}
+  .badge{font-size:11px; padding:2px 8px; border-radius:99px; border:1px solid}
+  .badge.ok{color:var(--ok)} .badge.bad{color:var(--bad)}
+  .fc-no{position:absolute; top:10px; left:12px; font-size:12px; color:var(--muted)}
+  .fc-ctrl{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-top:10px}
+  .fc-ctrl .btn{padding:12px 6px}
+  .fc-nav{display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:14px; color:var(--muted)}
+  .kbd-hint{font-size:12px; color:var(--muted); text-align:center; margin-top:10px}
+
+  /* 測驗 */
+  .setup{display:grid; gap:12px}
+  .setup label{display:grid; gap:4px; font-size:14px}
+  .q-top{display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:6px}
+  .q-bar{height:6px; background:var(--hover); border-radius:99px; overflow:hidden; margin-bottom:14px}
+  .q-bar i{display:block; height:100%; background:var(--accent); transition:width .3s}
+  .prompt{text-align:center; padding:16px 0 18px}
+  .prompt .pos{color:var(--muted); font-size:14px; margin-top:4px}
+  .hint{font-family:ui-monospace,Consolas,monospace; letter-spacing:.15em; color:var(--muted); margin-top:8px; font-size:18px}
+  .listen-btn{width:88px; height:88px; border-radius:50%; border:1px solid var(--line); background:var(--bg); cursor:pointer; display:inline-grid; place-items:center}
+  .listen-btn svg{width:40px; height:40px}
+  .choices{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .choice{border:1px solid var(--line); background:var(--bg); border-radius:12px; padding:14px 10px; cursor:pointer; text-align:left; font-size:16px; display:flex; gap:8px; align-items:flex-start}
+  .choice:hover{background:var(--hover)}
+  .choice .k{font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:0 5px; margin-top:2px; flex:none}
+  .choice.right{border-color:var(--ok); background:var(--okbg)}
+  .choice.wrongc{border-color:var(--bad); background:var(--badbg)}
+  .spell{display:flex; gap:8px}
+  .spell .inp{flex:1; font-size:18px}
+  .inp.right{border-color:var(--ok); background:var(--okbg)}
+  .inp.wrongc{border-color:var(--bad); background:var(--badbg)}
+  .fb{margin-top:12px; padding:10px 12px; border-radius:10px; font-size:15px}
+  .fb:empty{display:none}
+  .fb.ok{background:var(--okbg); color:var(--ok)}
+  .fb.bad{background:var(--badbg); color:var(--text)}
+  .fb.bad b{color:var(--bad)}
+  .q-foot{display:flex; justify-content:space-between; gap:8px; margin-top:12px}
+  .score{font-size:48px; font-weight:700; text-align:center; line-height:1.1}
+  .score-sub{text-align:center; color:var(--muted); margin-bottom:14px}
+  .mini{list-style:none; margin:10px 0 0; padding:0}
+  .mini li{display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--line); flex-wrap:wrap}
+  .mini .w{font-weight:600}
+  .mini .pos{font-size:12px; color:var(--muted)}
+  .mini .given{font-size:13px; color:var(--bad); text-decoration:line-through}
+  .mini .cnt{margin-left:auto; font-size:12px; color:var(--muted)}
+  .x{border:0; background:none; cursor:pointer; color:var(--muted); font-size:18px; padding:2px 8px; border-radius:6px}
+  .x:hover{background:var(--hover); color:var(--bad)}
+  .foot{color:var(--muted); font-size:12px; text-align:center; margin-top:28px}
+
+  @media (max-width:600px){
+    .wrap{padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+    h1{font-size:22px}
+    .stats{width:100%} .stats div{flex:1}
+    .letters{flex-wrap:nowrap; overflow-x:auto; margin:0 -16px 10px; padding:0 16px 4px; scrollbar-width:none}
+    .letters button{flex:none; height:36px; min-width:36px}
+    .range-row input[type=number]{font-size:16px; width:76px}
+    .tabs{margin:0 -16px 10px; padding:8px 16px}
+    .tabs button{font-size:14px; padding:10px 2px}
+    .words li{grid-template-columns:28px minmax(0,1fr) 32px; grid-template-areas:"say w star" "say m star"; row-gap:0; padding:9px 10px}
+    .words .no,.words .pos{display:none}
+    .words .say{grid-area:say} .words .w{grid-area:w} .words .m{grid-area:m; font-size:14px; color:var(--muted)} .words .star{grid-area:star}
+    .big{font-size:32px} .big.zh{font-size:26px}
+    .fc{min-height:220px}
+    .choices{grid-template-columns:1fr}
+    .choice{padding:13px 12px}
+    .kbd-hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← 回到常用網頁</a>
+  <header>
+    <div>
+      <h1>國中單字王 2000</h1>
+      <p class="sub">114 年版題庫・共 2000 字・點喇叭圖示聽發音</p>
+    </div>
+    <div class="stats">
+      <div><b id="stTotal">2000</b><span>總字數</span></div>
+      <div><b id="stKnown">0</b><span>已熟悉</span></div>
+      <div><b id="stWrong">0</b><span>錯題</span></div>
+    </div>
+  </header>
+
+  <section class="card range">
+    <div class="range-top"><span class="label">練習範圍</span><span id="rangeInfo"></span></div>
+    <div class="letters" id="letters"></div>
+    <div class="range-row">
+      <label>從 <input type="number" id="rFrom" min="1" max="2000" inputmode="numeric"></label>
+      <label>到 <input type="number" id="rTo" min="1" max="2000" inputmode="numeric"></label>
+      <label class="chk"><input type="checkbox" id="rWrong"> 只練錯題</label>
+    </div>
+  </section>
+
+  <nav class="tabs" id="tabs">
+    <button data-t="list">單字表</button>
+    <button data-t="cards">字卡</button>
+    <button data-t="quiz">測驗</button>
+    <button data-t="wrong">錯題本 <span class="cnt" id="tabWrong"></span></button>
+  </nav>
+
+  <!-- 單字表 -->
+  <section id="t-list" hidden>
+    <div class="list-top">
+      <input class="inp" id="search" type="search" placeholder="搜尋英文或中文（搜尋全部 2000 字）" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      <span id="listInfo"></span>
+    </div>
+    <ul class="words" id="wordList"></ul>
+    <div class="more" id="moreWrap" hidden><button class="btn" id="moreBtn">顯示更多</button></div>
+  </section>
+
+  <!-- 字卡 -->
+  <section id="t-cards" hidden>
+    <div class="opts">
+      <label class="chk"><input type="checkbox" id="fcShuffle"> 隨機順序</label>
+      <label class="chk"><input type="checkbox" id="fcZh"> 先看中文</label>
+      <label class="chk"><input type="checkbox" id="fcAuto" checked> 自動發音</label>
+    </div>
+    <div class="card fc" id="fcCard"></div>
+    <div class="fc-ctrl">
+      <button class="btn" id="fcPrev">← 上一張</button>
+      <button class="btn bad" id="fcDont">不熟</button>
+      <button class="btn ok" id="fcKnow">會了</button>
+      <button class="btn" id="fcNext">下一張 →</button>
+    </div>
+    <div class="fc-nav">
+      <button class="say" id="fcSay" aria-label="發音"></button>
+      <span id="fcCount"></span>
+      <button class="btn" id="fcRestart">重新開始</button>
+    </div>
+    <p class="kbd-hint">鍵盤：空白鍵翻面・← → 切換・↑ 會了・↓ 不熟</p>
+  </section>
+
+  <!-- 測驗 -->
+  <section id="t-quiz" hidden>
+    <div class="card setup" id="qSetup">
+      <label>題型
+        <select id="qType">
+          <option value="en2zh">看英文，選中文</option>
+          <option value="zh2en">看中文，選英文</option>
+          <option value="spell">看中文，拼英文</option>
+          <option value="listen">聽發音，拼英文</option>
+        </select>
+      </label>
+      <label>題數
+        <select id="qNum">
+          <option value="10">10 題</option>
+          <option value="20" selected>20 題</option>
+          <option value="50">50 題</option>
+          <option value="9999">範圍內全部</option>
+        </select>
+      </label>
+      <div class="row"><button class="btn primary" id="qStart">開始測驗</button><span id="qSetupMsg" class="sub"></span></div>
+    </div>
+    <div class="card" id="qPlay" hidden></div>
+    <div class="card" id="qEnd" hidden></div>
+  </section>
+
+  <!-- 錯題本 -->
+  <section id="t-wrong" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <span class="label" id="wrongTitle">錯題本</span>
+        <div class="row">
+          <button class="btn" id="wCards">用字卡複習</button>
+          <button class="btn primary" id="wQuiz">測驗錯題</button>
+        </div>
+      </div>
+      <ul class="mini" id="wrongList"></ul>
+      <div class="row" style="justify-content:center; margin-top:14px"><button class="btn" id="wClear">清空錯題本</button></div>
+    </div>
+  </section>
+
+  <p class="foot">答錯會自動加入錯題本，之後答對會慢慢移除｜進度只存在這台裝置的瀏覽器</p>
+</div>
+
+<script>
+/* ====== 單字資料：英文|詞性|中文（依 114 年版題庫表順序） ====== */
+const RAW = `a few|限|一些（用於可數）
+a little|限|一點（用於不可數）
+a lot|副|很多
+able|形|能夠的
+about|介|關於；大約
+above|介|在…上面
+abroad|副|在國外
+absent|形|缺席的
+accept|動|接受
+accident|名|事故
+across|介|橫越
+act|動|表演；行動
+action|名|行動
+active|形|活躍的
+activity|名|活動
+actor|名|男演員
+actress|名|女演員
+actually|副|實際上
+add|動|增加
+admire|動|欽佩
+adult|名|成年人
+advertisement|名|廣告
+advice|名|建議
+advise|動|建議
+affect|動|影響
+afraid|形|害怕的
+after|介|在…之後
+afternoon|名|下午
+again|副|再次
+against|介|反對；靠著
+age|名|年齡；時代
+ago|副|以前
+agree|動|同意
+ahead|副|在前面
+aim|名|目標
+air|名|空氣
+air conditioner|名|空調
+airlines|名|航空公司
+airplane|名|飛機
+airport|名|機場
+alarm|名|鬧鐘；警報
+alarm clock|名|鬧鐘
+album|名|相冊；專輯
+alike|形|相似的
+alive|形|活著的
+all|代|全部；所有
+allow|動|允許
+almost|副|幾乎
+along|介|沿著
+aloud|副|大聲地
+already|副|已經
+always|副|總是
+ambulance|名|救護車
+American|名|美國人
+among|介|在…之中（三者以上）
+amount|名|數量
+ancient|形|古代的
+and|連|和；並且
+angel|名|天使
+anger|名|憤怒
+angle|名|角度
+angry|形|生氣的
+animal|名|動物
+ankle|名|腳踝
+another|代|另一個
+answer|動|回答
+ant|名|螞蟻
+any|限|任何
+any|代|任何
+anyone|代|任何人
+anything|代|任何事
+anywhere|副|任何地方
+apartment|名|公寓
+apologize|動|道歉
+appear|動|出現
+apple|名|蘋果
+appreciate|動|欣賞；感謝
+April|名|四月
+area|名|區域
+argue|動|爭論
+arm|名|手臂
+armchair|名|扶手椅
+army|名|軍隊
+arrange|動|安排
+arrive|動|到達
+art|名|藝術
+artist|名|藝術家
+Asian|名|亞洲人
+ask|動|詢問
+asleep|形|睡著的
+assistant|名|助理
+assume|動|假設
+at|介|在（地點、時間點）
+attack|動|攻擊
+attention|名|注意力
+August|名|八月
+aunt|名|阿姨
+autumn|名|秋天
+available|形|可用的；有空的
+avoid|動|避免
+away|副|離開
+baby|名|嬰兒
+baby sitter|名|保母
+back|名|背部
+back|形|後面的
+backpack|名|背包
+backward|副|向後
+bad|形|壞的
+badminton|名|羽毛球
+bake|動|烘烤
+bakery|名|麵包店
+balcony|名|陽台
+ball|名|球
+balloon|名|氣球
+banana|名|香蕉
+band|名|樂團
+band|名|樂隊；帶子
+bank|名|銀行
+bank|名|河岸
+barbecue|動|烤肉
+barber|名|理髮師
+bark|動|吠叫
+base|名|基礎；基地
+baseball|名|棒球
+basement|名|地下室
+basic|形|基本的
+basket|名|籃子
+basketball|名|籃球
+bat|名|蝙蝠
+bath|名|浴缸
+bathe|動|洗澡
+bathroom|名|浴室
+beach|名|海灘
+beach|名|海灘
+bean|名|豆子
+bear|名|熊
+beard|名|鬍鬚
+beat|動|打擊
+beautiful|形|美麗的
+beauty|名|美麗
+because|連|因為
+become|動|變成
+bed|名|床
+bedroom|名|臥室
+bee|名|蜜蜂
+beef|名|牛肉
+beer|名|啤酒
+before|介|在…之前
+begin|動|開始
+beginner|名|初學者
+beginning|名|開始
+behave|動|守規矩
+behind|介|在…後面
+believe|動|相信
+bell|名|鈴鐺
+belong|動|屬於
+below|介|在…下面
+belt|名|皮帶
+bench|名|長凳
+beside|介|在…旁邊
+besides|副|此外；而且
+between|介|在…之間（兩者）
+beyond|介|超越；在…另一邊
+bicycle|名|腳踏車
+big|形|大的
+bill|名|帳單；紙鈔
+biology|名|生物
+bird|名|鳥
+birthday|名|生日
+bite|動|咬
+bitter|形|苦的
+black|名|黑色
+blackboard|名|黑板
+blame|動|責備
+blank|名|空白
+blanket|名|毯子
+bless|動|祝福
+blind|形|失明的
+block|名|街區
+blood|名|血液
+blouse|名|女裝上衣
+blow|動|吹
+blow|動|吹
+blue|名|藍色
+board|名|板子
+boat|名|船
+body|名|身體
+boil|動|煮沸
+bomb|名|炸彈
+bone|名|骨頭
+book|名|書本
+bookcase|名|書櫃
+bookstore|名|書店
+boring|形|令人無聊的
+borrow|動|借入
+boss|名|老闆
+both|限|兩者都
+both|代|兩者
+bother|動|打擾
+bottle|名|瓶
+bottom|名|底部
+bow|動|鞠躬
+bowl|名|碗
+bowling|名|保齡球
+box|名|盒子
+boy|名|男孩
+branch|名|樹枝；分支
+brave|形|勇敢的
+bread|名|麵包
+break|動|打破
+breakfast|名|早餐
+brick|名|磚塊
+bridge|名|橋樑
+bright|形|明亮的；聰明的
+bring|動|帶來
+broad|形|寬廣的
+broadcast|動|廣播
+brother|名|兄弟
+brown|名|棕色
+brunch|名|早午餐
+brush|動|刷
+bucket|名|水桶
+buffet|名|自助餐
+bug|名|小蟲
+build|動|建造
+building|名|建築物
+bun|名|小圓麵包
+bundle|名|捆；束
+burn|動|燒焦
+burst|動|爆發
+bus|名|公車
+bus stop|名|公車站
+business|名|商業；生意
+businessman|名|商人
+busy|形|忙碌的
+but|連|但是
+butter|名|奶油
+butterfly|名|蝴蝶
+button|名|鈕扣
+buy|動|購買
+by|介|藉由；在…旁邊
+cabbage|名|高麗菜
+cable|名|電纜
+cafeteria|名|自助餐廳
+cage|名|籠子
+cake|名|蛋糕
+calendar|名|日曆
+call|動|打電話；呼叫
+calm|動|使冷靜
+camera|名|相機
+camp|動|露營
+campus|名|校園
+can|名|罐頭
+cancel|動|取消
+cancer|名|癌症
+candle|名|蠟燭
+candy|名|糖果
+cap|名|棒球帽
+captain|名|隊長；船長
+car|名|汽車
+card|名|卡片
+care|動|關心
+careful|形|小心的
+careless|形|粗心的
+carpet|名|地毯
+carrot|名|胡蘿蔔
+carry|動|攜帶
+cartoon|名|卡通
+case|名|案例；箱子
+cash|名|現金
+castle|名|城堡
+cat|名|貓
+catch|動|抓住
+cause|名|原因
+ceiling|名|天花板
+celebrate|動|慶祝
+cellphone|名|手機
+cent|名|分（貨幣單位）
+center|名|中心
+centimeter|名|公分
+century|名|世紀
+cereal|名|穀物麥片
+certain|形|確定的
+chair|名|椅子
+chalk|名|粉筆
+chance|名|機會
+change|名|零錢
+channel|名|頻道；海峽
+character|名|角色；性格
+charge|動|收費
+chart|名|圖表
+chase|動|追逐
+cheap|形|便宜的
+cheat|動|欺騙
+check|動|檢查
+check|動|檢查
+cheer|名|歡呼
+cheerleader|名|啦啦隊
+cheese|名|起司
+chemistry|名|化學
+chess|名|西洋棋
+chicken|名|雞肉
+chicken|名|雞
+child|名|小孩
+childhood|名|童年
+childish|形|幼稚的
+childlike|形|孩子般的
+chin|名|下巴
+Chinese|名|中文
+Chinese New Year|名|春節
+chocolate|名|巧克力
+choice|名|選擇
+choose|動|選擇
+chopsticks|名|筷子
+Christmas|名|聖誕節
+chubby|形|圓胖的
+church|名|教堂
+circle|名|圓形
+city|名|城市
+clap|動|拍手
+class leader|名|班長
+classical|形|古典的
+classmate|名|同學
+classroom|名|教室
+clean|動|清潔
+clear|形|晴朗的
+clerk|名|店員；職員
+climate|名|氣候
+climb|動|攀爬
+clock|名|時鐘
+close|動|關閉
+closet|名|衣櫥
+clothes|名|衣服（總稱）
+cloud|名|雲
+cloudy|形|多雲的
+club|名|俱樂部
+coach|名|教練
+coast|名|海岸
+coat|名|外套
+cockroach|名|蟑螂
+coffee|名|咖啡
+coin|名|硬幣
+cola|名|可樂
+cold|名|感冒
+cold|形|寒冷的
+collect|動|收集
+color|名|顏色
+colorful|形|多彩的
+comb|名|梳子
+come|動|來
+comfortable|形|舒服的
+comic|名|漫畫
+command|名|命令
+comment|動|評論
+common|形|普通的；常見的
+company|名|公司
+compare|動|比較
+complain|動|抱怨
+complete|動|完成
+complete|形|完整的
+computer|名|電腦
+computer game|名|電腦遊戲
+concern|動|關心；涉及
+confident|形|有自信的
+confuse|動|混淆
+congratulation|名|祝賀
+consider|動|考慮
+considerate|形|體貼的
+contact lens|名|隱形眼鏡
+continue|動|繼續
+contract|名|合約
+control|動|控制
+convenience store|名|便利商店
+convenient|形|方便的
+conversation|名|對話
+cook|動|烹調
+cook|名|廚師
+cookie|名|餅乾
+cool|形|酷的
+cool|形|涼爽的
+copy|動|複製
+corn|名|玉米
+corner|名|角落
+correct|動|改正
+correct|形|正確的
+cost|動|花費
+cotton|名|棉
+couch|名|長沙發
+cough|名|咳嗽
+count|動|數數
+country|名|國家；鄉下
+couple|名|情侶；夫妻
+courage|名|勇氣
+course|名|課程
+court|名|法庭；球場
+cousin|名|堂(表)兄弟姊妹
+cover|動|覆蓋
+cow|名|牛
+crab|名|螃蟹
+crayon|名|蠟筆
+crazy|形|瘋狂的
+cream|名|鮮奶油
+create|動|創造
+credit card|名|信用卡
+crime|名|犯罪
+cross|動|穿越
+crowd|名|人群
+crowded|形|擁擠的
+cruel|形|殘忍的
+cry|動|哭
+culture|名|文化
+culture center|名|文化中心
+cup|名|杯子
+cup|名|杯
+cure|動|治癒
+curious|形|好奇的
+current|形|當前的
+curtain|名|窗簾
+curve|名|曲線
+custom|名|習俗
+customer|名|顧客
+cut|動|切割
+cute|形|可愛的
+daily|形|每日的
+damage|名|損害
+dance|動|跳舞
+danger|名|危險
+dangerous|形|危險的
+dark|形|黑暗的
+date|動|約會
+daughter|名|女兒
+dawn|名|黎明
+dead|形|死的
+deaf|形|失聰的
+deal|動|處理
+dear|形|親愛的；昂貴的
+death|名|死亡
+debate|名|辯論
+December|名|十二月
+decide|動|決定
+decision|名|決定
+decorate|動|裝飾
+decrease|動|減少
+deep|形|深的
+deer|名|鹿
+define|動|定義
+degree|名|度數
+delicious|形|美味的
+deliver|動|遞送
+dentist|名|牙醫
+department|名|部門；系
+department store|名|百貨公司
+depend|動|依賴
+describe|動|描述
+desert|名|沙漠
+design|動|設計
+desire|名|慾望
+desk|名|書桌
+dessert|名|甜點
+detect|動|偵測
+develop|動|發展
+dial|動|撥號
+diamond|名|鑽石
+diary|名|日記
+dictionary|名|字典
+die|動|死亡
+diet|名|飲食；節食
+difference|名|差異
+different|形|不同的
+difficult|形|困難的
+difficulty|名|困難
+dig|動|挖掘
+diligent|形|勤奮的
+dining room|名|餐廳
+dinner|名|晚餐
+dinosaur|名|恐龍
+diplomat|名|外交官
+direct|動|指導
+direction|名|方向
+dirty|形|骯髒的
+disappear|動|消失
+discover|動|發現
+discuss|動|討論
+discussion|名|討論
+dish|名|盤子
+dishonest|形|不誠實的
+distance|名|距離
+distant|形|遙遠的
+divide|動|分割
+dizzy|形|頭暈的
+doctor|名|醫生
+dodge ball|名|躲避球
+dog|名|狗
+doll|名|洋娃娃
+dollar|名|元（貨幣單位）
+dolphin|名|海豚
+donkey|名|驢
+door|名|門
+dot|名|點
+double|形|雙倍的
+Double Tenth Day|名|雙十節
+doubt|動|懷疑
+doughnut|名|甜甜圈
+down|介|沿…而下
+download|動|下載
+downstairs|名|樓下
+downtown|名|市中心
+dozen|名|一打（十二個）
+dragon|名|龍
+Dragon-boat Festival|名|端午節
+drama|名|戲劇
+draw|動|畫畫
+draw|動|畫畫
+drawer|名|抽屜
+dream|名|夢想
+dress|名|連身裙
+dresser|名|梳妝台
+drink|動|喝
+drive|動|開車
+driver|名|司機
+drop|動|掉落
+drugstore|名|藥局
+drum|名|鼓
+dry|形|乾燥的
+dryer|名|烘乾機
+duck|名|鴨
+dumb|形|啞的
+dumpling|名|餃子
+during|介|在…期間
+duty|名|責任
+each|代|每個
+eagle|名|老鷹
+ear|名|耳朵
+early|形|早的
+earn|動|賺取
+earrings|名|耳環
+earth|名|地球
+earthquake|名|地震
+ease|動|緩和
+east|形|東方的
+Easter|名|復活節
+easy|形|容易的
+eat|動|吃
+edge|名|邊緣
+education|名|教育
+effort|名|努力
+egg|名|蛋
+eight|名|八
+eighteen|名|十八
+eighty|名|八十
+either|副連|也（用於否定句）
+elder|名|長輩
+elect|動|選舉
+electric|形|電的
+elementary school|名|小學
+elephant|名|大象
+eleven|名|十一
+e-mail|名|電子郵件
+embarrass|動|使尷尬
+emotion|名|情緒
+emphasize|動|強調
+employ|動|雇用
+end|動|結束
+enemy|名|敵人
+energetic|形|精力充沛的
+energy|名|能量
+engine|名|引擎
+engineer|名|工程師
+English|名|英文
+enjoy|動|享受
+enough|形|足夠的
+enter|動|進入
+entrance|名|入口
+envelope|名|信封
+environment|名|環境
+envy|動|嫉妒
+equal|形|平等的
+eraser|名|橡皮擦
+error|名|錯誤
+especially|副|尤其
+eve|名|前夕
+even|副|甚至
+evening|名|傍晚
+event|名|事件
+ever|副|曾經
+everyone|代|每個人
+everything|代|每件事
+everywhere|副|到處
+evil|形|邪惡的
+exam|名|考試
+example|名|例子
+excellent|形|優秀的
+except|介|除了…之外
+excite|動|使興奮
+excited|形|感到興奮的
+exciting|形|令人興奮的
+excuse|名|藉口
+exercise|動|運動
+exercise|名|練習
+exist|動|存在
+exit|名|出口
+expect|動|預期
+expensive|形|昂貴的
+experience|名|經驗
+explain|動|解釋
+explain|動|解釋
+express|動|表達
+extra|形|額外的
+eye|名|眼睛
+face|名|臉
+fact|名|事實
+factory|名|工廠
+fair|形|公平的
+fall|動|掉落
+family|名|家庭
+famous|形|著名的
+fan|名|粉絲；愛好者
+fan|名|電風扇
+fantastic|形|極好的
+far|形|遠的
+farm|名|農場
+farmer|名|農夫
+fashionable|形|時尚的
+fast|形|快的
+fast food|名|速食
+fast food restaurant|名|速食餐廳
+fat|形|胖的
+father|名|父親
+Father's Day|名|父親節
+faucet|名|水龍頭
+fault|名|過錯
+favorite|形|最喜愛的
+fear|名|恐懼
+February|名|二月
+fee|名|費用
+feed|動|餵食
+feel|動|感覺
+feeling|名|感覺
+fence|名|柵欄
+festival|名|節慶
+fever|名|發燒
+few|限|很少（用於可數）
+fifteen|名|十五
+fifty|名|五十
+fight|動|打架
+file|名|檔案
+fill|動|填滿
+film|名|電影
+final|形|最終的
+finally|副|最後
+find|動|找到
+finger|名|手指
+finish|動|完成
+fire|名|火
+fire station|名|消防局
+first|名|第一
+fish|名|魚
+fish|動|釣魚
+fish|名|魚
+fisherman|名|漁夫
+fit|動|適合
+five|名|五
+fix|動|修理
+flag|名|旗幟
+flashlight|名|手電筒
+flat tire|名|爆胎
+flight|名|飛行；航班
+floor|名|地板；樓層
+flour|名|麵粉
+flower|名|花
+flower shop|名|花店
+flu|名|流行性感冒
+flute|名|長笛
+fly|動|飛行
+focus|動|聚焦
+fog|名|霧
+foggy|形|有霧的
+follow|動|跟隨
+food|名|食物
+fool|名|傻瓜
+foolish|形|愚蠢的
+foot|名|腳
+foot|名|英尺
+football|名|美式足球
+for|介|為了；給；因為
+foreign|形|外國的
+foreigner|名|外國人
+forest|名|森林
+forget|動|忘記
+forgive|動|原諒
+fork|名|叉子
+form|動|形成
+formal|形|正式的
+former|形|前任的；以前的
+forty|名|四十
+forward|副|向前
+four|名|四
+fourteen|名|十四
+fox|名|狐狸
+frank|形|坦率的
+free|形|免費的；自由的
+freedom|名|自由
+freezer|名|冷凍庫
+freezing|形|極冷的
+fresh|形|新鮮的
+Friday|名|星期五
+friend|名|朋友
+friendly|形|友善的
+friendship|名|友誼
+fries|名|薯條
+frighten|動|使害怕
+frisbee|名|飛盤
+frog|名|青蛙
+from|介|從…；來自…
+front|形|前面的
+fruit|名|水果
+fry|動|油炸
+full|形|飽的
+fun|名|樂趣
+funny|形|有趣的
+furniture|名|家具
+future|名|未來
+game|名|遊戲
+garage|名|車庫
+garbage|名|垃圾
+garden|名|花園
+gas|名|瓦斯；汽油
+gate|名|大門
+gather|動|聚集
+generous|形|慷慨的
+genius|名|天才
+gentle|形|溫和的
+gentleman|名|紳士
+geography|名|地理
+gesture|名|手勢
+get|動|得到
+ghost|名|鬼魂
+giant|名|巨人
+gift|名|禮物
+girl|名|女孩
+give|動|給予
+glad|形|高興的
+glass|名|玻璃杯
+glass|名|玻璃杯
+glasses|名|眼鏡
+glove|名|手套
+glue|名|膠水
+go|動|去
+goal|名|目標
+goat|名|山羊
+gold|名|黃金
+golf|名|高爾夫球
+goose|名|鵝
+government|名|政府
+grade|名|年級；成績
+gram|名|公克
+granddaughter|名|孫女
+grandfather|名|祖父
+grandmother|名|祖母
+grandson|名|孫子
+grape|名|葡萄
+grass|名|草
+gray|名|灰色
+greedy|形|貪心的
+green|名|綠色
+greet|動|問候
+ground|名|地面
+group|名|群組
+grow|動|成長；生長
+grow|動|成長
+guard|名|警衛
+guava|名|番石榴
+guess|動|猜測
+guest|名|客人
+guide|名|導遊
+guide|動|引導
+guitar|名|吉他
+gun|名|槍
+gym|名|體育館
+habit|名|習慣
+hair|名|頭髮
+hair dresser|名|髮型師
+haircut|名|理髮
+half|名|一半
+hall|名|走廊；大廳
+Halloween|名|萬聖節
+ham|名|火腿
+hamburger|名|漢堡
+hammer|名|鐵鎚
+hand|名|手
+handkerchief|名|手帕
+handle|動|處理
+handsome|形|英俊的
+hang|動|懸掛
+hanger|名|衣架
+happen|動|發生
+happy|形|快樂的
+hard|形|硬的；困難的
+hardly|副|幾乎不
+hard-working|形|努力工作的
+hate|動|討厭
+he|代|他
+head|名|頭
+headache|名|頭痛
+health|名|健康
+healthy|形|健康的
+hear|動|聽見
+heart|名|心臟
+heat|名|熱
+heater|名|暖氣
+heavy|形|重的
+height|名|高度
+helicopter|名|直升機
+help|動|幫助
+helpful|形|有幫助的
+hen|名|母雞
+her|所|她的
+her|代|她
+hero|名|英雄
+hers|代|她的
+herself|代|她自己
+hide|動|隱藏
+high|形|高的
+highway|名|高速公路
+hike|動|健行／遠足
+hill|名|山丘
+him|代|他
+himself|代|他自己
+hip|名|臀部
+hippo|名|河馬
+hire|動|雇用
+his|所|他的
+his|代|他的
+history|名|歷史
+hit|動|擊打
+hobby|名|嗜好
+hold|動|握住
+hole|名|破洞
+holiday|名|假日
+home|名|家
+homesick|形|想家的
+homework|名|家庭作業
+honest|形|誠實的
+honesty|名|誠實
+honey|名|蜂蜜；親愛的
+hop|動|單腳跳
+hope|動|希望
+horrible|形|可怕的
+horse|名|馬
+hospital|名|醫院
+host|名|主人
+hot|形|辣的；熱的
+hot|形|炎熱的
+hot dog|名|熱狗
+hotel|名|飯店
+hour|名|小時
+house|名|房子
+housewife|名|家庭主婦
+housework|名|家事
+how|疑|如何
+however|副|然而
+hug|動|擁抱
+human|名|人類
+humble|形|謙虛的
+humid|形|潮濕的
+humor|名|幽默
+humorous|形|幽默的
+hundred|名|百
+hunger|名|飢餓
+hungry|形|餓的
+hunt|動|狩獵
+hunter|名|獵人
+hurry|動|匆忙
+hurt|動|傷害
+husband|名|丈夫
+I|代|我
+ice|名|冰
+ice cream|名|冰淇淋
+idea|名|主意
+if|連|如果
+ignore|動|忽略
+imagine|動|想像
+impolite|形|不禮貌的
+importance|名|重要性
+important|形|重要的
+impossible|形|不可能的
+improve|動|改善
+in|介|在…裡面（較大範圍）
+in back of|介|在…後面
+in front of|介|在…前面
+inch|名|英吋
+include|動|包含
+income|名|收入
+increase|動|增加
+independent|形|獨立的
+influence|名|影響
+information|名|資訊
+ink|名|墨水
+insect|名|昆蟲
+inside|介|在…裡面
+insist|動|堅持
+inspire|動|激勵
+instant|形|立即的
+instant noodle|名|泡麵
+instrument|名|樂器
+intelligent|形|有智慧的
+interest|名|興趣
+interested|形|感興趣的
+interesting|形|有趣的
+international|形|國際的
+Internet|名|網際網路
+interrupt|動|打斷
+interview|名|面試；訪談
+into|介|進入
+introduce|動|介紹
+invent|動|發明
+invitation|名|邀請
+invite|動|邀請
+iron|動|熨燙
+island|名|島嶼
+it|代|它
+item|名|項目
+its|所|它的
+its|所|它的
+itself|代|它自己
+jacket|名|夾克
+jam|名|果醬
+January|名|一月
+Japanese|名|日本人
+jealous|形|嫉妒的
+jeans|名|牛仔褲
+jeep|名|吉普車
+jog|動|慢跑
+join|動|加入
+joke|名|笑話
+journalist|名|記者
+joy|名|歡樂
+judge|名|法官
+judge|動|判斷
+juice|名|果汁
+July|名|七月
+jump|動|跳躍
+June|名|六月
+junior high school|名|初中
+kangaroo|名|袋鼠
+keep|動|保持
+ketchup|名|番茄醬
+key|名|鑰匙
+kick|動|踢
+kid|名|小孩
+kill|動|殺死
+kilogram|名|公斤
+kilometer|名|公里
+kind|形|仁慈的；親切的
+kind|名|種類
+kindergarten|名|幼兒園
+king|名|國王
+kingdom|名|王國
+kiss|動|親吻
+kitchen|名|廚房
+kitten|名|小貓
+knee|名|膝蓋
+knife|名|刀子
+knock|動|敲
+know|動|知道
+knowledge|名|知識
+koala|名|無尾熊
+Korean|名|韓國人
+lack|名|缺乏
+lady|名|女士
+lake|名|湖泊
+lamb|名|小羊
+lamp|名|燈
+land|動|降落
+language|名|語言
+lantern|名|燈籠
+Lantern Festival|名|元宵節
+large|形|大的
+last|形|最後的
+last|形|上一個的；最後的
+late|形|晚的
+later|副|稍後
+latest|形|最新的
+laugh|動|大笑
+law|名|法律
+lawyer|名|律師
+lay|動|放置（產卵）
+lazy|形|懶惰的
+lead|動|領導
+leader|名|領袖
+leaf|名|葉子
+learn|動|學習
+least|副|最少
+leave|動|離開
+left|形|左邊的
+leg|名|腿
+lemon|名|檸檬
+lend|動|借出
+less|限|更少（用於不可數）
+lesson|名|課
+let|動|讓
+letter|名|信件；字母
+lettuce|名|生菜
+level|名|水平
+library|名|圖書館
+lick|動|舔
+lid|名|蓋子
+lie|動|說謊；躺
+life|名|生命
+lift|動|舉起
+light|名|燈；光
+light|形|輕的
+lightning|名|閃電
+like|介|像…
+like|動|喜歡
+limit|動|限制
+line|名|線
+link|名|連結
+lion|名|獅子
+lip|名|嘴唇
+liquid|名|液體
+list|動|列出
+list|動|列出
+listen|動|聆聽
+listen|動|聆聽
+liter|名|公升
+little|限|很少（用於不可數）
+little|形|小的
+live|動|居住；生活
+living room|名|客廳
+loaf|名|條（麵包）
+local|形|當地的
+lock|動|鎖上
+locker|名|鎖櫃
+lonely|形|孤獨的
+long|形|長的
+look|動|看
+lose|動|輸掉；失去
+loser|名|輸家
+loud|形|大聲的
+love|動|愛
+lovely|形|可愛的
+low|形|低的
+lucky|形|幸運的
+lunch|名|午餐
+machine|名|機器
+mad|形|瘋狂的
+magazine|名|雜誌
+magic|形|魔法的
+magician|名|魔術師
+mail|名|郵件
+mailman|名|郵差
+major|形|主要的
+make|動|製作
+mall|名|購物中心
+man|名|男人
+manager|名|經理
+mango|名|芒果
+manner|名|禮貌；方式
+many|代|許多（可數）
+map|名|地圖
+March|名|三月
+mark|動|批改
+marker|名|麥克筆
+market|名|市場
+married|形|已婚的
+marry|動|結婚
+marvelous|形|不可思議的；極好的
+mask|名|口罩；面具
+mass|名|團；大量
+master|名|主人；大師
+mat|名|地墊
+match|動|匹配
+math|名|數學
+matter|名|事情
+maximum|形|最大的
+May|名|五月
+me|代|我
+meal|名|一餐
+mean|動|意思是
+measure|動|測量
+meat|名|肉
+mechanic|名|技工
+medicine|名|藥物；醫學
+medium|形|中等的
+meet|動|遇見
+meeting|名|會議
+member|名|成員
+memory|名|記憶；回憶
+memory|名|記憶
+men's room|名|男廁
+menu|名|菜單
+message|名|訊息
+metal|名|金屬
+meter|名|公尺
+method|名|方法
+metro|名|地鐵
+middle|形|中間的
+midnight|名|午夜
+mile|名|英里
+milk|名|牛奶
+milk shake|名|奶昔
+million|名|百萬
+mind|名|心智
+mind|動|介意
+mine|代|我的
+minor|形|次要的；較小的
+minus|名|負號
+minute|名|分鐘
+mirror|名|鏡子
+miss|動|想念；未擊中
+mistake|名|錯誤
+mix|動|混合
+model|名|模特兒
+modern|形|現代的
+moment|名|片刻
+Monday|名|星期一
+money|名|錢
+monkey|名|猴子
+monster|名|怪物
+month|名|月
+moon|名|月亮
+moon cake|名|月餅
+Moon Festival|名|中秋節
+mop|動|用拖把拖地
+morning|名|早晨
+mosquito|名|蚊子
+mother|名|母親
+Mother's Day|名|母親節
+motion|名|動作
+motorcycle|名|摩托車
+mountain|名|山
+mouse|名|老鼠
+mouth|名|嘴巴
+move|動|移動
+movement|名|運動
+movie|名|電影
+movie theater|名|電影院
+mud|名|泥巴
+museum|名|博物館
+MRT|名|捷運
+music|名|音樂
+musician|名|音樂家
+most|代|大部分
+my|所|我的
+myself|代|我自己
+nail|名|指甲
+napkin|名|餐巾
+narrow|形|窄的
+national|形|國家的
+natural|形|自然的
+nature|名|大自然
+naughty|形|頑皮的
+near|介|靠近
+necessary|形|必要的
+neck|名|脖子
+necklace|名|項鍊
+need|動|需要
+needle|名|針
+negative|形|負面的
+neighbor|名|鄰居
+nephew|名|侄子；外甥
+nervous|形|緊張的
+nest|名|鳥巢
+net|名|網
+never|副|從不
+New Year's Day|名|元旦
+New Year's Eve|名|除夕
+news|名|新聞
+newspaper|名|報紙
+next|形|下一個的
+next to|介|緊鄰；在…旁邊
+nice-looking|形|好看的
+niece|名|姪女；外甥女
+night|名|夜晚
+nine|名|九
+nineteen|名|十九
+ninety|名|九十
+nobody|代|沒有人
+nod|動|點頭
+noise|名|噪音
+noisy|形|吵鬧的
+noodle|名|麵條
+noon|名|中午
+nor|連|也不
+north|形|北方的
+nose|名|鼻子
+note|名|筆記；音符
+notebook|名|筆記本
+nothing|代|沒有東西
+notice|動|注意到
+notice|動|注意到
+novel|名|小說
+November|名|十一月
+now|副|現在
+number|名|數字；數量
+nurse|名|護士
+nut|名|堅果
+o'clock|副|…點鐘
+obey|動|服從
+ocean|名|海洋
+October|名|十月
+of|介|…的；關於
+off|介|離開；從…下來
+offer|動|提供
+office|名|辦公室
+often|副|經常
+oil|名|油
+old|形|年老的
+omit|動|省略
+on|介|在…上面（接觸）
+once|副|曾經；一次
+one|名|一
+onion|名|洋蔥
+open|動|打開
+operation|名|操作；手術
+opinion|名|意見
+or|連|或者
+orange|名|柳橙
+orange|名|橙色
+order|動|點餐
+order|名|命令；訂單
+ordinary|形|普通的
+our|所|我們的
+our|所|我們的
+ours|代|我們的
+ourselves|代|我們自己
+out of|介|從…裡面出來
+outside|介|在…外面
+oven|名|烤箱
+over|介|在…正上方；越過
+overpass|名|天橋；陸橋
+overseas|形|海外的
+over-weight|形|過重的
+own|動|擁有
+ox|名|公牛
+pack|名|包
+pack|動|打包
+package|名|包裹
+page|名|頁
+pain|名|疼痛
+painful|形|疼痛的
+paint|動|繪畫
+painter|名|畫家
+pair|名|一雙；一對
+pajamas|名|睡衣
+pale|形|蒼白的
+pan|名|平底鍋
+panda|名|熊貓
+pants|名|褲子
+papaya|名|木瓜
+paper|名|紙
+parent|名|父母
+park|名|公園
+park|動|停車
+parking lot|名|停車場
+parrot|名|鸚鵡
+part|名|部分
+partner|名|夥伴；伴侶
+party|名|派對；政黨
+pass|動|通過
+passenger|名|乘客
+past|介|過（用於時間）
+paste|動|貼上
+path|名|小徑
+patient|形|有耐心的
+pattern|名|模式
+pause|動|暫停
+pay|動|支付
+peace|名|和平
+peaceful|形|和平的
+peach|名|桃子
+pear|名|梨子
+pen|名|筆
+pencil|名|鉛筆
+pencil box|名|鉛筆盒
+people|名|人們
+pepper|名|胡椒
+perfect|形|完美的
+period|名|時期
+person|名|人
+personal|形|個人的
+pet|名|寵物
+photo|名|照片
+physics|名|物理
+piano|名|鋼琴
+pick|動|撿起；選擇
+picnic|名|野餐
+picture|名|圖片
+pie|名|派
+piece|名|片；塊；件
+pig|名|豬
+pigeon|名|鴿子
+pile|名|堆
+pillow|名|枕頭
+pin|名|大頭針
+pineapple|名|鳳梨
+pink|名|粉色
+pipe|名|管子
+pizza|名|披薩
+place|名|地方
+plain|名|平原
+plan|動|計劃
+planet|名|行星
+plant|動|種植
+plate|名|平盤
+platform|名|月台
+player|名|玩家；球員
+playground|名|操場；遊樂場
+plus|名|加號
+pocket|名|口袋
+poem|名|詩
+point|名|點；尖端
+poison|名|毒藥
+police officer|名|警察
+police station|名|警察局
+polite|形|有禮貌的
+pollute|動|污染
+pollution|名|污染
+pond|名|池塘
+pool|名|游泳池
+pool|名|水池
+poor|形|貧窮的；可憐的
+pop music|名|流行音樂
+popcorn|名|爆米花
+popular|形|受歡迎的
+population|名|人口
+pork|名|豬肉
+position|名|位置
+positive|形|正面的；陽性的
+possible|形|可能的
+post office|名|郵局
+postcard|名|明信片
+potato|名|馬鈴薯
+pound|名|磅
+powder|名|粉末
+power|名|力量；電力
+practice|動|練習
+praise|動|讚美
+pray|動|祈禱
+precious|形|珍貴的
+prepare|動|準備
+prepare|動|準備
+present|名|禮物
+present|形|現在的；出席的
+president|名|總統
+pressure|名|壓力
+price|名|價格
+priest|名|神父
+prince|名|王子
+princess|名|公主
+principal|名|校長
+principle|名|原則
+print|動|列印
+printer|名|印表機
+private|形|私人的
+prize|名|獎品
+problem|名|問題
+produce|動|生產
+production|名|生產
+program|名|節目；程式
+progress|名|進步
+project|名|專案
+promise|動|承諾
+pronounce|動|發音
+protect|動|保護
+proud|形|驕傲的
+provide|動|提供
+public|形|公眾的；公共的
+pull|動|拉
+pumpkin|名|南瓜
+punish|動|懲罰
+puppy|名|小狗
+purple|名|紫色
+purpose|名|目的
+purse|名|錢包（女用）
+push|動|推
+put|動|放
+puzzle|名|拼圖；謎題
+quarter|名|一刻鐘；四分之一
+queen|名|女王
+question|名|問題
+quiet|形|安靜的
+quit|動|退出
+quiz|名|小考
+rabbit|名|兔子
+race|名|賽跑；競賽
+radio|名|收音機
+railroad|名|鐵路
+railway|名|鐵道
+rain|動|下雨
+rainbow|名|彩虹
+raincoat|名|雨衣
+rainy|形|下雨的
+raise|動|提高；撫養
+rare|形|稀有的
+rat|名|大鼠
+reach|動|到達
+read|動|閱讀
+ready|形|準備好的
+real|形|真實的
+realize|動|意識到
+really|副|真地
+reason|名|理由
+receive|動|接收
+record|名|紀錄
+recover|動|恢復；痊癒
+rectangle|名|長方形
+recycle|動|回收
+red|名|紅色
+refrigerator|名|冰箱
+refuse|動|拒絕
+regret|動|後悔
+regular|形|規律的；定期的
+reject|動|拒絕
+relative|名|親戚
+remember|動|記得
+remind|動|提醒
+rent|動|租用
+repair|動|修復
+repeat|動|重複
+report|名|報告
+reporter|名|記者
+respect|動|尊重
+responsible|形|負責的
+rest|動|休息
+restaurant|名|餐廳
+restroom|名|洗手間
+result|名|結果
+return|動|歸還
+review|動|複習
+revise|動|修改
+rice|名|米飯
+rich|形|有錢的
+ride|動|騎乘；搭乘
+right|形|右邊的
+right|形|正確的；右邊的
+ring|名|戒指
+rise|動|上升
+river|名|河流
+rob|動|搶劫
+robot|名|機器人
+rock|名|岩石
+role|名|角色
+roll|動|滾動
+roller blade|動|溜直排輪
+roller skate|動|溜輪鞋
+roof|名|屋頂
+room|名|房間
+root|名|根
+rope|名|繩子
+rose|名|玫瑰
+round|形|圓形的
+row|名|排；行
+rub|動|摩擦
+rude|形|粗魯的
+ruin|動|毀滅
+rule|名|規則
+ruler|名|尺
+run|動|跑步
+run|動|跑
+sad|形|難過的
+safe|形|安全的
+safety|名|安全
+sail|動|航行
+sail|動|航行
+sailor|名|水手
+salad|名|沙拉
+sale|名|拍賣；銷售
+salesman|名|銷售員
+salt|名|鹽
+same|形|相同的
+sample|名|樣品
+sand|名|沙子
+sandwich|名|三明治
+satisfy|動|滿足
+Saturday|名|星期六
+save|動|拯救；儲存
+say|動|說
+scared|形|害怕的
+scared|形|害怕的
+scarf|名|圍巾
+scene|名|場景
+scenery|名|風景
+school|名|學校
+science|名|科學
+scientist|名|科學家
+scooter|名|速克達；小摩托車
+score|名|分數
+screen|名|螢幕
+sea|名|海
+seafood|名|海鮮
+search|動|搜尋
+season|名|季節
+seat|名|座位
+second|名|第二
+second|名|秒
+secondary|形|次要的
+secret|名|秘密
+secretary|名|秘書
+section|名|部分
+see|動|看見
+seed|名|種子
+seem|動|似乎
+seesaw|名|翹翹板
+seldom|副|很少
+select|動|選擇
+selfish|形|自私的
+sell|動|賣
+semester|名|學期
+send|動|傳送
+senior high school|名|高中
+sense|名|感覺；理智
+sentence|名|句子
+September|名|九月
+serious|形|嚴肅的；嚴重的
+servant|名|僕人
+serve|動|服務
+service|名|服務
+set|名|一套
+seven|名|七
+seventeen|名|十七
+seventy|名|七十
+several|限|幾個
+shake|動|搖動
+shape|名|形狀
+share|動|分享
+shark|名|鯊魚
+sharp|形|鋒利的；尖銳的
+she|代|她
+sheep|名|綿羊
+sheet|名|床單
+sheet|名|一張（紙）
+shelf|名|架子
+shine|動|照耀
+ship|名|船（大船）
+shirt|名|襯衫
+shoes|名|鞋子
+shoot|動|射擊
+shop|名|商店
+shopkeeper|名|店主
+shore|名|岸
+short|形|矮的
+short|形|短的；矮的
+shorts|名|短褲
+shoulder|名|肩膀
+shout|動|喊叫
+show|動|展示
+shower|名|陣雨
+shrimp|名|蝦
+shrimp|名|蝦
+shut|動|關閉
+shy|形|害羞的
+sick|形|生病的
+side|名|邊；側
+sidewalk|名|人行道
+sight|名|景象
+sign|動|簽名
+silence|名|寂靜
+silent|形|沉默的
+silly|形|傻的
+silver|名|銀
+similar|形|相似的
+since|介|自從…
+since|連|自從；既然
+sincere|形|真誠的
+sing|動|唱歌
+singer|名|歌手
+single|形|單一的；單身的
+sink|名|水槽
+sister|名|姊妹
+six|名|六
+sixteen|名|十六
+sixty|名|六十
+size|名|尺寸
+skate|動|溜冰
+ski|動|滑雪
+skill|名|技能
+skillful|形|熟練的
+skin|名|皮膚
+skinny|形|極瘦的
+skirt|名|裙子
+sky|名|天空
+sleep|動|睡覺
+sleepy|形|想睡的
+slender|形|苗條的
+slice|動|切片
+slide|名|溜滑梯
+slim|形|纖細的
+slippers|名|拖鞋
+slow|形|慢的
+small|形|小的
+smart|形|聰明的
+smell|動|聞
+smile|名|微笑
+smoke|動|抽煙
+snack|名|點心
+snail|名|蝸牛
+snake|名|蛇
+sneakers|名|運動鞋
+sneaky|形|鬼鬼祟祟的
+snow|名|雪
+snowy|形|下雪的
+so|副|如此；這麼
+soap|名|肥皂
+soccer|名|足球
+social|形|社會的；社交的
+social science|名|社會科學
+society|名|社會
+socks|名|襪子
+soda|名|汽水
+sofa|名|沙發
+soft drink|名|軟性飲料
+softball|名|壘球
+soldier|名|士兵
+solve|動|解決
+some|代|一些
+someone|代|某人
+something|代|某事
+sometimes|副|有時候
+somewhere|副|某個地方
+son|名|兒子
+song|名|歌曲
+soon|副|很快；不久
+sore throat|名|喉嚨痛
+sorry|形|抱歉的；難過的
+soul|名|靈魂
+sound|動|聽起來
+soup|名|湯
+sour|形|酸的
+south|形|南方的
+soy sauce|名|醬油
+space|名|空間
+spaghetti|名|義大利麵
+speak|動|說話
+speaker|名|喇叭
+special|形|特別的
+speech|名|演講
+speed|名|速度
+spell|動|拼寫
+spend|動|花費
+spider|名|蜘蛛
+spirit|名|精神
+spoon|名|湯匙
+sports|名|運動
+spot|名|污點
+spread|動|塗抹
+spring|名|春天
+spring|名|泉水
+square|名|正方形
+stairs|名|樓梯
+stamp|名|郵票
+stand|動|站立
+star|名|星星
+start|動|開始
+state|名|狀態；州
+station|名|車站
+stationery store|名|文具店
+stay|動|停留
+steak|名|牛排
+steal|動|偷竊
+steam|名|蒸汽
+step|名|步驟；腳步
+still|副|仍然
+stingy|形|小氣的
+stomach|名|胃
+stomachache|名|胃痛
+stone|名|石頭
+stop|動|停止
+stopwatch|名|碼表
+store|名|商店
+storm|名|暴風雨
+stormy|形|暴風雨的
+story|名|故事
+story|名|故事
+stove|名|爐子
+straight|形|直的
+strange|形|奇怪的
+stranger|名|陌生人
+straw|名|吸管
+strawberry|名|草莓
+stream|名|溪流
+street|名|街道
+strike|動|打擊；罷工
+string|名|細繩
+strong|形|強壯的
+student|名|學生
+study|動|研讀
+stupid|形|笨的
+style|名|風格
+subject|名|主題；科目
+subway|名|地鐵
+succeed|動|成功
+success|名|成功
+successful|形|成功的
+sudden|形|突然的
+sugar|名|糖
+suggest|動|建議
+suit|名|西裝
+summer|名|夏天
+sun|名|太陽
+Sunday|名|星期日
+sunny|形|陽光充足的
+super|形|超級的
+supermarket|名|超市
+supper|名|消夜
+support|動|支持
+surf|動|衝浪
+surprise|動|使驚訝
+surprised|形|感到驚訝的
+survive|動|生存
+swallow|動|吞嚥
+swan|名|天鵝
+sweater|名|毛衣
+sweep|動|清掃
+sweet|形|甜的
+swim|動|游泳
+swimsuit|名|泳衣
+swing|名|鞦韆；搖擺
+symbol|名|符號
+system|名|系統
+table|名|桌子
+table tennis|名|桌球
+tail|名|尾巴
+Taiwanese|名|台灣人
+take|動|拿；帶
+talent|名|天賦
+talk|動|談話
+talkative|形|健談的
+tall|形|高的
+tangerine|名|橘子
+tank|名|坦克車
+taste|動|嘗起來
+taxi|名|計程車
+tea|名|茶
+teach|動|教學
+teacher|名|老師
+Teacher's Day|名|教師節
+team|名|隊伍
+teapot|名|茶壺
+tear|名|眼淚
+teenager|名|青少年
+telephone|名|電話
+television|名|電視
+tell|動|告訴
+temperature|名|溫度
+temple|名|寺廟
+ten|名|十
+tennis|名|網球
+tent|名|帳篷
+term|名|學期
+terrible|形|糟糕的；可怕的
+terrific|形|極好的
+test|名|測驗
+textbook|名|教科書
+than|介|比…
+than|連|比
+thank|動|感謝
+Thanksgiving|名|感恩節
+that|限|那個（遠指單數）
+theater|名|劇院
+their|所|他們的
+their|所|他們的；它們的
+theirs|代|他們的；它們的
+them|代|他們；它們
+themselves|代|他們自己；它們自己
+then|副|然後
+therefore|副|因此
+these|限|這些（近指複數）
+they|代|他們；它們
+thick|形|厚的
+thief|名|小偷
+thin|形|瘦的
+thing|名|東西
+think|動|思考
+third|名|第三
+thirsty|形|渴的
+thirteen|名|十三
+thirty|名|三十
+this|限|這個（近指單數）
+those|限|那些（遠指複數）
+though|連|雖然
+thought|名|想法
+thousand|名|千
+three|名|三
+throat|名|喉嚨
+through|介|穿過；透過
+throw|動|丟擲
+thumb|名|拇指
+thunder|名|雷聲
+Thursday|名|星期四
+ticket|名|票
+tidy|形|整潔的
+tie|名|領帶
+tiger|名|老虎
+time|名|時間
+tiny|形|微小的
+tip|名|小費；提示
+tired|形|疲倦的
+title|名|標題
+to|介|到…；向…
+toast|名|吐司
+today|名|今天
+toe|名|腳趾
+tofu|名|豆腐
+together|副|一起
+toilet|名|馬桶
+tomato|名|番茄
+tomorrow|名|明天
+tongue|名|舌頭
+tonight|名|今晚
+tool|名|工具
+tooth|名|牙齒
+toothache|名|牙痛
+toothbrush|名|牙刷
+top|形|頂部的
+topic|名|話題
+total|名|總數
+touch|動|觸摸
+toward|介|朝向…
+towel|名|毛巾
+tower|名|塔
+town|名|城鎮
+toy|名|玩具
+trade|名|貿易
+tradition|名|傳統
+traditional|形|傳統的
+traffic|名|交通
+train|名|火車
+train station|名|火車站
+trash|名|垃圾
+trash can|名|垃圾桶
+travel|動|旅行
+treasure|名|寶藏
+treat|名|款待
+treat|動|對待
+tree|名|樹
+triangle|名|三角形
+trick|名|詭計
+trip|名|旅行
+trouble|名|麻煩
+truck|名|卡車
+trumpet|名|小喇叭
+trust|動|信任
+truth|名|真相
+try|動|嘗試
+T-shirt|名|T 恤
+tub|名|浴缸
+tube|名|管子
+Tuesday|名|星期二
+tunnel|名|隧道
+turkey|名|火雞
+turn|動|轉彎
+turtle|名|烏龜
+twelve|名|十二
+twenty|名|二十
+twice|副|兩次
+two|名|二
+type|動|打字
+typhoon|名|颱風
+ugly|形|醜陋的
+umbrella|名|雨傘
+umbrella|名|雨傘
+uncle|名|叔叔；舅舅
+under|介|在…下面
+underline|動|畫底線
+underpass|名|地下道
+understand|動|理解
+underwear|名|內衣
+under-weight|形|體重不足的
+unhappy|形|不快樂的
+uniform|名|制服
+unique|形|獨特的
+universe|名|宇宙
+university|名|大學
+until|介|直到…
+up|介|沿…而上
+upload|動|上傳
+upstairs|名|樓上
+us|代|我們
+use|動|使用
+useful|形|有用的
+usually|副|通常
+vacation|名|假期
+Valentine's Day|名|情人節
+valley|名|山谷
+valuable|形|有價值的
+value|名|價值
+vegetable|名|蔬菜
+vendor|名|小販
+very|副|非常
+vest|名|背心
+victory|名|勝利
+video|名|影片；錄影機
+village|名|村莊
+vinegar|名|醋
+violin|名|小提琴
+visit|動|拜訪
+visitor|名|訪客
+vocabulary|名|字彙
+voice|名|聲音
+volleyball|名|排球
+vote|動|投票
+waist|名|腰部
+wait|動|等待
+waiter|名|服務生（男性）
+waitress|名|服務生（女性）
+wake|動|醒來
+walk|動|走路
+wall|名|牆
+wallet|名|皮夾（男用）
+want|動|想要
+war|名|戰爭
+warm|形|溫暖的
+wash|動|清洗
+waste|動|浪費
+watch|名|手錶
+watch|動|觀看
+water|名|水
+waterfalls|名|瀑布
+watermelon|名|西瓜
+wave|動|揮手
+way|名|方式；道路
+we|代|我們
+weak|形|虛弱的
+wear|動|穿著
+weather|名|天氣
+wedding|名|婚禮
+Wednesday|名|星期三
+week|名|星期；週
+week|名|星期；週
+weekday|名|平日（週一至週五）
+weekend|名|週末
+weekend|名|週末
+weight|名|重量
+welcome|動|歡迎
+well|形|身體健康的
+west|形|西方的
+wet|形|潮濕的
+whale|名|鯨魚
+what|疑|什麼
+wheel|名|輪子
+when|疑|何時
+where|疑|在哪裡
+whether|連|是否
+which|疑|哪一個
+while|連|當…時；然而
+white|名|白色
+who|疑|誰
+whose|疑|誰的
+why|疑|為什麼
+wide|形|寬的
+wife|名|妻子
+wild|形|野生的；狂野的
+win|動|贏得
+wind|名|風
+window|名|窗戶
+windy|形|多風的
+wing|名|翅膀
+winner|名|贏家
+winter|名|冬天
+wise|形|有智慧的
+wish|動|希望
+with|介|和…一起；用…
+without|介|沒有…
+wok|名|炒鍋
+wolf|名|狼
+woman|名|女人
+women's room|名|女廁
+wonderful|形|美妙的
+wood|名|木材
+woods|名|樹林
+word|名|字詞
+workbook|名|練習本
+worm|名|蠕蟲
+worry|動|擔心
+wound|名|創傷；傷口
+wrist|名|手腕
+write|動|書寫
+writer|名|作家
+wrong|形|錯誤的
+yard|名|院子
+yard|名|碼
+year|名|年
+yell|動|大叫
+yellow|名|黃色
+yesterday|名|昨天
+yet|副|尚未；但是
+you|代|你；你們
+young|形|年輕的
+your|所|你的；你們的
+your|所|你的；你們的
+yours|代|你的；你們的
+yourself|代|你自己
+yourselves|代|你們自己
+youth|名|青年
+yummy|形|好吃的
+zebra|名|斑馬
+zero|名|零
+zoo|名|動物園`;
+
+const POS = { 名:"名詞", 動:"動詞", 形:"形容詞", 副:"副詞", 介:"介系詞", 連:"連接詞", 代:"代名詞", 限:"限定詞", 所:"所有格", 疑:"疑問詞", 副連:"副詞/連接詞" };
+const WORDS = RAW.trim().split("\n").map((l, i) => {
+  const [w, p, m] = l.split("|");
+  return { i, n: i + 1, w: w.trim(), p: POS[p] || p, m: (m || "").trim() };
+});
+const TOTAL = WORDS.length;
+
+/* ====== 工具 ====== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+const SPEAKER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+/* ====== 發音 ====== */
+let voice = null;
+const canSpeak = "speechSynthesis" in window;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  voice = vs.find(v => /en[-_]US/i.test(v.lang) && /Google|Samantha|Microsoft|Aria|Jenny/i.test(v.name))
+       || vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+}
+if (canSpeak) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text){
+  if (!canSpeak) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/\(.*?\)/g, "").replace(/’/g, "'"));
+  u.lang = "en-US"; if (voice) u.voice = voice; u.rate = 0.9;
+  speechSynthesis.speak(u);
+}
+
+/* ====== 狀態 ====== */
+let wrong = store.get("wb2000-wrong", {});   // { index: 錯誤次數 }
+let known = store.get("wb2000-known", {});   // { index: 1 }
+let range = store.get("wb2000-range", { from:1, to:TOTAL, onlyWrong:false, letter:"全部" });
+let tab   = store.get("wb2000-tab", "list");
+const saveAll = () => { store.set("wb2000-wrong", wrong); store.set("wb2000-known", known); store.set("wb2000-range", range); };
+
+function pool(){
+  let a = WORDS.slice(range.from - 1, range.to);
+  if (range.onlyWrong) a = a.filter(x => wrong[x.i]);
+  return a;
+}
+function markWrong(x){ wrong[x.i] = (wrong[x.i] || 0) + 1; delete known[x.i]; saveAll(); updateStats(); }
+function markRight(x){
+  if (wrong[x.i]) { wrong[x.i]--; if (wrong[x.i] <= 0) delete wrong[x.i]; }
+  saveAll(); updateStats();
+}
+function updateStats(){
+  const w = Object.keys(wrong).length;
+  $("stKnown").textContent = Object.keys(known).length;
+  $("stWrong").textContent = w;
+  $("tabWrong").textContent = w ? `(${w})` : "";
+  const p = pool().length;
+  $("rangeInfo").textContent = `第 ${range.from}–${range.to} 字${range.onlyWrong ? "・只看錯題" : ""}・共 ${p} 字`;
+}
+
+/* ====== 範圍 ====== */
+const LETTERS = {};
+WORDS.forEach(x => {
+  const L = x.w[0].toUpperCase();
+  if (!LETTERS[L]) LETTERS[L] = { from: x.n, to: x.n };
+  LETTERS[L].to = x.n;
+});
+function renderLetters(){
+  const keys = ["全部", ...Object.keys(LETTERS)];
+  $("letters").innerHTML = keys.map(k => `<button data-l="${k}" class="${range.letter === k ? "on" : ""}">${k}</button>`).join("");
+  $("rFrom").value = range.from; $("rTo").value = range.to; $("rWrong").checked = range.onlyWrong;
+}
+$("letters").addEventListener("click", e => {
+  const k = e.target.dataset.l; if (!k) return;
+  const r = k === "全部" ? { from:1, to:TOTAL } : LETTERS[k];
+  range.from = r.from; range.to = r.to; range.letter = k;
+  rangeChanged();
+});
+function onRangeInput(){
+  let f = parseInt($("rFrom").value) || 1, t = parseInt($("rTo").value) || TOTAL;
+  f = Math.max(1, Math.min(TOTAL, f)); t = Math.max(1, Math.min(TOTAL, t));
+  if (f > t) [f, t] = [t, f];
+  range.from = f; range.to = t; range.letter = (f === 1 && t === TOTAL) ? "全部" : "";
+  rangeChanged();
+}
+$("rFrom").addEventListener("change", onRangeInput);
+$("rTo").addEventListener("change", onRangeInput);
+$("rWrong").addEventListener("change", () => { range.onlyWrong = $("rWrong").checked; rangeChanged(); });
+function rangeChanged(){
+  saveAll(); renderLetters(); updateStats();
+  listLimit = 200; renderList(); fcBuild();
+  if (!$("qPlay").hidden || !$("qEnd").hidden) showQuizSetup();
+}
+
+/* ====== 分頁 ====== */
+function setTab(t){
+  tab = t; store.set("wb2000-tab", t);
+  ["list","cards","quiz","wrong"].forEach(k => $("t-" + k).hidden = k !== t);
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.t === t));
+  if (t === "wrong") renderWrong();
+  if (t === "cards") fcRender(true);
+}
+$("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.t); });
+
+/* ====== 單字表 ====== */
+let listLimit = 200;
+function renderList(){
+  const q = $("search").value.trim().toLowerCase();
+  const a = q ? WORDS.filter(x => x.w.toLowerCase().includes(q) || x.m.includes(q)) : pool();
+  $("listInfo").textContent = q ? `找到 ${a.length} 筆` : `${a.length} 字`;
+  const shown = a.slice(0, listLimit);
+  $("wordList").innerHTML = shown.map(x => `
+    <li>
+      <span class="no">${x.n}</span>
+      <button class="say" data-say="${x.i}" aria-label="發音">${SPEAKER}</button>
+      <span class="w">${esc(x.w)}</span>
+      <span class="pos">${x.p}</span>
+      <span class="m">${esc(x.m)}</span>
+      <button class="star ${wrong[x.i] ? "on" : ""}" data-star="${x.i}" title="加入／移出錯題本" aria-label="錯題本">★</button>
+    </li>`).join("") || `<li class="empty" style="display:block">沒有符合的單字</li>`;
+  $("moreWrap").hidden = a.length <= listLimit;
+}
+$("search").addEventListener("input", () => { listLimit = 200; renderList(); });
+$("moreBtn").onclick = () => { listLimit += 300; renderList(); };
+$("wordList").addEventListener("click", e => {
+  const s = e.target.closest("[data-say]"), st = e.target.closest("[data-star]");
+  if (s) speak(WORDS[+s.dataset.say].w);
+  if (st) {
+    const x = WORDS[+st.dataset.star];
+    if (wrong[x.i]) delete wrong[x.i]; else wrong[x.i] = 1;
+    saveAll(); updateStats(); st.classList.toggle("on", !!wrong[x.i]);
+  }
+});
+
+/* ====== 字卡 ====== */
+let fc = { deck:[], pos:0, flipped:false };
+$("fcShuffle").checked = store.get("wb2000-fcShuffle", false);
+$("fcZh").checked = store.get("wb2000-fcZh", false);
+$("fcAuto").checked = store.get("wb2000-fcAuto", true);
+$("fcSay").innerHTML = SPEAKER;
+function fcBuild(){
+  const d = pool().slice();
+  if ($("fcShuffle").checked) shuffle(d);
+  fc = { deck:d, pos:0, flipped:false };
+  if (tab === "cards") fcRender(true);
+}
+function fcRender(sayIt){
+  const d = fc.deck;
+  if (!d.length) {
+    $("fcCard").innerHTML = `<p class="empty">${range.onlyWrong ? "錯題本是空的，或範圍內沒有錯題" : "範圍內沒有單字"}</p>`;
+    $("fcCount").textContent = "0 / 0"; return;
+  }
+  const x = d[fc.pos], zh = $("fcZh").checked;
+  const en = `<div class="big">${esc(x.w)}</div>`, cn = `<div class="big zh">${esc(x.m)}</div>`;
+  $("fcCard").innerHTML = `
+    <span class="fc-no">#${x.n}</span>
+    <span class="badges">${known[x.i] ? '<span class="badge ok">已熟悉</span>' : ""}${wrong[x.i] ? '<span class="badge bad">錯題</span>' : ""}</span>
+    ${zh ? cn : en}
+    <div class="pos">${x.p}</div>
+    ${fc.flipped ? `<hr>${zh ? en : cn}` : `<div class="tap">點卡片看答案</div>`}`;
+  $("fcCount").textContent = `${fc.pos + 1} / ${d.length}`;
+  $("fcPrev").disabled = fc.pos === 0;
+  if (sayIt && $("fcAuto").checked && (!zh || fc.flipped)) speak(x.w);
+}
+function fcGo(step){
+  if (!fc.deck.length) return;
+  const n = fc.pos + step;
+  if (n < 0) return;
+  if (n >= fc.deck.length) {
+    $("fcCard").innerHTML = `<div class="big zh">這一輪完成了！</div><div class="tap">按「重新開始」再來一次，或到測驗試試看</div>`;
+    fc.pos = fc.deck.length - 1; fc.done = true; return;
+  }
+  fc.pos = n; fc.flipped = false; fc.done = false; fcRender(true);
+}
+function fcFlip(){ if (!fc.deck.length || fc.done) return; fc.flipped = !fc.flipped; fcRender(fc.flipped && $("fcZh").checked); }
+$("fcCard").onclick = fcFlip;
+$("fcPrev").onclick = () => fcGo(-1);
+$("fcNext").onclick = () => fcGo(1);
+$("fcKnow").onclick = () => { const x = fc.deck[fc.pos]; if (!x || fc.done) return; known[x.i] = 1; markRight(x); fcGo(1); };
+$("fcDont").onclick = () => { const x = fc.deck[fc.pos]; if (!x || fc.done) return; markWrong(x); fcGo(1); };
+$("fcSay").onclick = () => { const x = fc.deck[fc.pos]; if (x) speak(x.w); };
+$("fcRestart").onclick = fcBuild;
+$("fcShuffle").onchange = () => { store.set("wb2000-fcShuffle", $("fcShuffle").checked); fcBuild(); };
+$("fcZh").onchange = () => { store.set("wb2000-fcZh", $("fcZh").checked); fc.flipped = false; fcRender(false); };
+$("fcAuto").onchange = () => store.set("wb2000-fcAuto", $("fcAuto").checked);
+
+/* ====== 測驗 ====== */
+let qz = null;
+$("qType").value = store.get("wb2000-qType", "en2zh");
+$("qNum").value = store.get("wb2000-qNum", "20");
+$("qType").onchange = () => store.set("wb2000-qType", $("qType").value);
+$("qNum").onchange = () => store.set("wb2000-qNum", $("qNum").value);
+
+function showQuizSetup(){ $("qSetup").hidden = false; $("qPlay").hidden = true; $("qEnd").hidden = true; qz = null; }
+function qzStart(){
+  const p = pool();
+  if (!p.length) { $("qSetupMsg").textContent = range.onlyWrong ? "範圍內沒有錯題" : "範圍內沒有單字"; return; }
+  $("qSetupMsg").textContent = "";
+  const n = Math.min(+$("qNum").value, p.length);
+  qz = { type: $("qType").value, items: shuffle(p.slice()).slice(0, n), k: 0, score: 0, misses: [], answered: false };
+  $("qSetup").hidden = true; $("qEnd").hidden = true; $("qPlay").hidden = false;
+  qzRender();
+}
+function distractors(x, field){
+  const seen = new Set([x[field].toLowerCase()]);
+  const same = shuffle(WORDS.filter(y => y.p === x.p));
+  const all = shuffle(WORDS.slice());
+  const out = [];
+  for (const y of [...same, ...all]) {
+    const v = y[field].toLowerCase();
+    if (seen.has(v)) continue;
+    if (field === "m" && (y.m.includes(x.m) || x.m.includes(y.m))) continue;
+    seen.add(v); out.push(y);
+    if (out.length === 3) break;
+  }
+  return out;
+}
+function hintOf(w){ return w.split("").map((c, i) => i === 0 ? c : (/[a-z]/i.test(c) ? "_" : c)).join(" "); }
+
+function qzRender(){
+  const x = qz.items[qz.k], t = qz.type, N = qz.items.length;
+  qz.answered = false;
+  let prompt = "", body = "";
+  if (t === "en2zh") {
+    prompt = `<div class="big">${esc(x.w)}</div><div class="pos">${x.p} <button class="say" data-qsay aria-label="發音">${SPEAKER}</button></div>`;
+  } else if (t === "zh2en" || t === "spell") {
+    prompt = `<div class="big zh">${esc(x.m)}</div><div class="pos">${x.p}</div>` + (t === "spell" ? `<div class="hint">${esc(hintOf(x.w))}</div>` : "");
+  } else {
+    prompt = `<button class="listen-btn" data-qsay aria-label="再聽一次">${SPEAKER}</button><div class="pos">${x.p}・點喇叭再聽一次</div><div class="hint">${esc(hintOf(x.w))}</div>`;
+  }
+  if (t === "en2zh" || t === "zh2en") {
+    const field = t === "en2zh" ? "m" : "w";
+    const opts = shuffle([x, ...distractors(x, field)]);
+    qz.opts = opts;
+    body = `<div class="choices">${opts.map((o, i) => `<button class="choice" data-c="${i}"><span class="k">${i + 1}</span><span>${esc(o[field])}</span></button>`).join("")}</div>`;
+  } else {
+    body = `<form class="spell" id="spellForm"><input class="inp" id="spellIn" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder="輸入英文"><button class="btn primary">送出</button></form>`;
+  }
+  $("qPlay").innerHTML = `
+    <div class="q-top"><span>第 ${qz.k + 1} / ${N} 題</span><span>答對 ${qz.score}</span></div>
+    <div class="q-bar"><i style="width:${qz.k / N * 100}%"></i></div>
+    <div class="prompt">${prompt}</div>
+    ${body}
+    <div class="fb" id="fb"></div>
+    <div class="q-foot">
+      <button class="btn" id="qQuit">結束測驗</button>
+      <div class="row">
+        ${t === "spell" || t === "listen" ? '<button class="btn" id="qSkip">不會</button>' : ""}
+        <button class="btn primary" id="qNext" hidden>下一題 →</button>
+      </div>
+    </div>`;
+  if (t === "en2zh" || t === "listen") speak(x.w);
+  const inp = $("spellIn");
+  if (inp) {
+    if (matchMedia("(hover:hover)").matches || qz.k > 0) inp.focus();
+    $("spellForm").onsubmit = e => {
+      e.preventDefault();
+      if (qz.answered) return qzNext();
+      const v = inp.value.trim(); if (!v) return;
+      qzAnswer(sameWord(v, x.w), v);
+    };
+  }
+}
+const norm = s => s.toLowerCase().replace(/[’‘`]/g, "'").replace(/\(.*?\)/g, "").replace(/[\s\-]+/g, "").trim();
+const sameWord = (a, b) => norm(a) === norm(b);
+
+function qzAnswer(ok, given){
+  if (qz.answered) return;
+  qz.answered = true;
+  const x = qz.items[qz.k];
+  if (ok) { qz.score++; markRight(x); } else { markWrong(x); qz.misses.push({ x, given }); }
+  // 標示選項
+  document.querySelectorAll(".choice").forEach((b, i) => {
+    b.disabled = true;
+    if (qz.opts[i] === x) b.classList.add("right");
+    else if (given === i) b.classList.add("wrongc");
+  });
+  const inp = $("spellIn");
+  if (inp) { inp.classList.add(ok ? "right" : "wrongc"); inp.readOnly = true; }
+  const fb = $("fb");
+  fb.className = "fb " + (ok ? "ok" : "bad");
+  fb.innerHTML = ok ? `答對了！ ${esc(x.w)}・${esc(x.m)}` : `正確答案：<b>${esc(x.w)}</b>　${x.p}　${esc(x.m)}`;
+  if ($("qSkip")) $("qSkip").hidden = true;
+  $("qNext").hidden = false;
+  if (qz.type !== "en2zh") speak(x.w);
+  if (ok) qz.timer = setTimeout(qzNext, 1100);
+  else $("qNext").focus();
+}
+function qzNext(){
+  clearTimeout(qz.timer);
+  if (!qz.answered) return;
+  qz.k++;
+  if (qz.k >= qz.items.length) return qzEnd();
+  qzRender();
+}
+function qzEnd(){
+  const N = qz.items.length, pct = Math.round(qz.score / N * 100);
+  $("qPlay").hidden = true; $("qEnd").hidden = false;
+  $("qEnd").innerHTML = `
+    <div class="score">${qz.score} / ${N}</div>
+    <div class="score-sub">正確率 ${pct}%${pct === 100 ? "・全對，太厲害了！" : pct >= 80 ? "・很不錯！" : "・錯的字已加入錯題本"}</div>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="qAgain">再測一次</button>
+      ${qz.misses.length ? '<button class="btn" id="qRetry">只練這次錯的</button>' : ""}
+      <button class="btn" id="qBack">變更設定</button>
+    </div>
+    ${qz.misses.length ? `<ul class="mini">${qz.misses.map(({ x, given }) => `
+      <li><button class="say" data-say="${x.i}" aria-label="發音">${SPEAKER}</button>
+      <span class="w">${esc(x.w)}</span><span class="pos">${x.p}</span><span>${esc(x.m)}</span>
+      ${typeof given === "string" ? `<span class="given">${esc(given)}</span>` : ""}</li>`).join("")}</ul>` : ""}`;
+}
+$("qStart").onclick = qzStart;
+$("t-quiz").addEventListener("click", e => {
+  const c = e.target.closest(".choice");
+  if (c && qz && !qz.answered) { const i = +c.dataset.c; qzAnswer(qz.opts[i] === qz.items[qz.k], i); return; }
+  if (e.target.closest("[data-qsay]") && qz) { speak(qz.items[qz.k].w); return; }
+  const s = e.target.closest("[data-say]"); if (s) { speak(WORDS[+s.dataset.say].w); return; }
+  const id = e.target.id;
+  if (id === "qNext") qzNext();
+  if (id === "qSkip") qzAnswer(false, "（不會）");
+  if (id === "qQuit") { if (qz && qz.k > 0) qzEnd(); else showQuizSetup(); }
+  if (id === "qAgain") qzStart();
+  if (id === "qBack") showQuizSetup();
+  if (id === "qRetry") {
+    const items = shuffle(qz.misses.map(m => m.x));
+    qz = { type: qz.type, items, k: 0, score: 0, misses: [], answered: false };
+    $("qEnd").hidden = true; $("qPlay").hidden = false; qzRender();
+  }
+});
+
+/* ====== 錯題本 ====== */
+function renderWrong(){
+  const list = Object.keys(wrong).map(Number).sort((a, b) => wrong[b] - wrong[a] || a - b).map(i => WORDS[i]).filter(Boolean);
+  $("wrongTitle").textContent = `錯題本（${list.length} 字）`;
+  $("wCards").disabled = $("wQuiz").disabled = $("wClear").disabled = !list.length;
+  $("wrongList").innerHTML = list.length ? list.map(x => `
+    <li><button class="say" data-say="${x.i}" aria-label="發音">${SPEAKER}</button>
+    <span class="w">${esc(x.w)}</span><span class="pos">${x.p}</span><span>${esc(x.m)}</span>
+    <span class="cnt">錯 ${wrong[x.i]} 次</span>
+    <button class="x" data-del="${x.i}" title="移出錯題本" aria-label="移除">×</button></li>`).join("")
+    : `<li class="empty" style="display:block; border:0">目前沒有錯題。答錯的字會自動出現在這裡。</li>`;
+}
+$("wrongList").addEventListener("click", e => {
+  const s = e.target.closest("[data-say]"), d = e.target.closest("[data-del]");
+  if (s) speak(WORDS[+s.dataset.say].w);
+  if (d) { delete wrong[+d.dataset.del]; saveAll(); updateStats(); renderWrong(); }
+});
+function useWrong(){ range = { from:1, to:TOTAL, onlyWrong:true, letter:"全部" }; rangeChanged(); }
+$("wCards").onclick = () => { useWrong(); setTab("cards"); };
+$("wQuiz").onclick = () => { useWrong(); setTab("quiz"); showQuizSetup(); qzStart(); };
+let clearArmed = false;
+$("wClear").onclick = e => {
+  if (!clearArmed) {
+    clearArmed = true; e.target.textContent = "再按一次確定清空";
+    setTimeout(() => { clearArmed = false; e.target.textContent = "清空錯題本"; }, 3000); return;
+  }
+  wrong = {}; saveAll(); updateStats(); renderWrong(); rangeChanged();
+  clearArmed = false; e.target.textContent = "清空錯題本";
+};
+
+/* ====== 鍵盤快捷鍵（電腦） ====== */
+document.addEventListener("keydown", e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  if (tab === "cards" && !typing) {
+    if (e.key === " ") { e.preventDefault(); fcFlip(); }
+    else if (e.key === "ArrowRight") fcGo(1);
+    else if (e.key === "ArrowLeft") fcGo(-1);
+    else if (e.key === "ArrowUp") { e.preventDefault(); $("fcKnow").click(); }
+    else if (e.key === "ArrowDown") { e.preventDefault(); $("fcDont").click(); }
+  }
+  if (tab === "quiz" && qz && !$("qPlay").hidden) {
+    if (!qz.answered && !typing && /^[1-4]$/.test(e.key) && qz.opts && (qz.type === "en2zh" || qz.type === "zh2en")) {
+      const i = +e.key - 1; if (qz.opts[i]) qzAnswer(qz.opts[i] === qz.items[qz.k], i);
+    } else if (qz.answered && e.key === "Enter" && document.activeElement.id !== "spellIn") {
+      e.preventDefault(); qzNext();
+    }
+  }
+});
+
+/* ====== 啟動 ====== */
+$("stTotal").textContent = TOTAL;
+$("rFrom").max = $("rTo").max = TOTAL;
+if (range.to > TOTAL) range.to = TOTAL;
+renderLetters(); updateStats(); renderList(); fcBuild(); setTab(tab);
+if (!canSpeak) document.querySelector(".sub").textContent = "114 年版題庫・共 2000 字（此瀏覽器不支援發音）";
+</script>
+</body>
+</html>
