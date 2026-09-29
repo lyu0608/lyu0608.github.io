@@ -6,6 +6,12 @@
 <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
 <title>國中單字王 2000 練習</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="單字王">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231f2937'/><text x='16' y='22' font-size='14' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>ABC</text></svg>">
 <style>
   :root{
@@ -25,8 +31,8 @@
   }
   *{box-sizing:border-box}
   [hidden]{display:none!important}
-  .acct{margin-bottom:14px}
-  .auth{display:grid; gap:8px; margin-top:10px}
+  .acct,.install{margin-bottom:14px}
+  .install{font-size:14px}  .auth{display:grid; gap:8px; margin-top:10px}
   .amsg{font-size:13px; color:var(--muted); margin-top:8px}
   .amsg:empty{display:none}
   .amsg.bad{color:var(--bad)}
@@ -202,6 +208,16 @@
     </div>
   </header>
 
+  <section class="card install" id="installCard" hidden>
+    <div class="row" style="justify-content:space-between">
+      <span id="installText">把單字王安裝成 App，從主畫面一點就開，沒網路也能練習</span>
+      <div class="row">
+        <button class="btn primary" id="installBtn" hidden>安裝 App</button>
+        <button class="x" id="installClose" aria-label="關閉">×</button>
+      </div>
+    </div>
+  </section>
+
   <section class="card acct" id="acct" hidden>
     <div id="acctOut">
       <div class="row" style="justify-content:space-between">
@@ -319,8 +335,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ====== 雲端同步設定：貼上你的 Supabase 專案網址和金鑰（留空＝不使用雲端） ====== */
-const SUPABASE_URL = "https://tjttgtvgfdaivpvbbgyz.supabase.co";   // 例如 https://abcdxyz.supabase.co
-const SUPABASE_KEY = "sb_publishable_jl7hjkYCjposoVJK0lLt_w_huXPOqH0";   // Publishable key（sb_publishable_ 開頭）或 anon public key
+const SUPABASE_URL = "";   // 例如 https://abcdxyz.supabase.co
+const SUPABASE_KEY = "";   // Publishable key（sb_publishable_ 開頭）或 anon public key
 
 /* ====== 單字資料：英文|詞性|中文（依 114 年版題庫表順序） ====== */
 const RAW = `a few|限|一些（用於可數）
@@ -2781,6 +2797,7 @@ if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
     renderAcct();
     if (user && user.id !== was) setTimeout(pull, 0);
   });
+  addEventListener("online", () => { if (user) pull(); });   // 網路恢復時補同步
   document.addEventListener("visibilitychange", () => {
     if (!user) return;
     if (document.visibilityState === "visible") pull();
@@ -2820,6 +2837,32 @@ $("aLogout").onclick = async () => {
   applyProgress({}, {});
   aMsg("已登出。這台裝置上的進度已清除，雲端資料還在，下次登入會回來。");
 };
+
+/* ====== App（PWA）：離線快取與安裝 ====== */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let installEvt = null;
+function showInstall(text){
+  if (isStandalone || store.get("wb2000-installClosed", false)) return;
+  if (text) $("installText").textContent = text;
+  $("installCard").hidden = false;
+}
+addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); installEvt = e;
+  $("installBtn").hidden = false; showInstall();
+});
+$("installBtn").onclick = async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  await installEvt.userChoice;
+  installEvt = null; $("installCard").hidden = true;
+};
+addEventListener("appinstalled", () => { $("installCard").hidden = true; });
+$("installClose").onclick = () => { $("installCard").hidden = true; store.set("wb2000-installClosed", true); };
+if (isIOS && !isStandalone) showInstall("iPhone／iPad：用 Safari 開啟，點下方「分享」→「加入主畫面」，就能像 App 一樣使用");
 
 /* ====== 啟動 ====== */
 $("stTotal").textContent = TOTAL;
