@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111316" media="(prefers-color-scheme: dark)">
+<title>國英 2000 單專區</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231f2937'/><text x='16' y='22' font-size='16' font-family='Arial' font-weight='700' fill='white' text-anchor='middle'>Aa</text></svg>">
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --hover:#f1f3f5; --accent:#1f2937; --ok:#16a34a; --okbg:#f0fdf4; --mark:#fef3c7;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 1px 8px rgba(0,0,0,.04);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#111316; --card:#1a1d21; --text:#e5e7eb; --muted:#9ca3af;
+      --line:#2a2e34; --hover:#23272c; --accent:#e5e7eb; --ok:#4ade80; --okbg:#14241a; --mark:#3a3218;
+      --shadow:none; color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    font-size:15px; line-height:1.5;
+  }
+  a{color:inherit}
+  .wrap{max-width:960px; margin:0 auto; padding:40px 20px 64px}
+  .back{display:inline-block; color:var(--muted); text-decoration:none; font-size:14px; margin-bottom:16px}
+  .back:hover{color:var(--text)}
+  h1{font-size:26px; margin:0 0 4px}
+  .sub{color:var(--muted); margin:0 0 20px; font-size:14px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow)}
+  .summary{display:flex; flex-wrap:wrap; gap:16px 24px; align-items:center; margin-bottom:16px}
+  .prog{flex:1 1 240px}
+  .prog-top{display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px}
+  .prog-top b{font-variant-numeric:tabular-nums}
+  .bar{height:8px; background:var(--hover); border-radius:99px; overflow:hidden}
+  .bar i{display:block; height:100%; width:0; background:var(--ok); border-radius:99px; transition:width .3s}
+  .btn{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:8px; padding:8px 14px; font:inherit; font-size:14px; cursor:pointer; text-decoration:none; display:inline-block}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .btn.primary:hover{opacity:.9}
+
+  .tools{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px}
+  .tools a{font-size:13px}
+
+  .bar-controls{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    background:var(--bg); padding:10px 0; margin-bottom:8px;
+  }
+  .bar-controls input{
+    flex:1 1 220px; min-width:0; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+    background:var(--card); color:var(--text); font:inherit; font-size:16px; outline:none;
+  }
+  .bar-controls input:focus{border-color:var(--muted)}
+  .seg{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card)}
+  .seg button{border:0; background:none; color:var(--muted); font:inherit; font-size:14px; padding:9px 12px; cursor:pointer}
+  .seg button.on{background:var(--accent); color:var(--bg)}
+  .find-msg{width:100%; font-size:13px; color:var(--muted); min-height:0}
+  .find-msg:empty{display:none}
+
+  .letters{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:16px}
+  .letters a{
+    width:30px; height:30px; display:grid; place-items:center; border-radius:8px;
+    background:var(--card); border:1px solid var(--line); text-decoration:none; font-size:13px; font-weight:600;
+  }
+  .letters a:hover{background:var(--hover)}
+
+  .list{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr)); gap:12px}
+  .g{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow); scroll-margin-top:80px}
+  .g.done{background:var(--okbg); border-color:color-mix(in srgb,var(--ok) 35%,var(--line))}
+  .g.hit{outline:2px solid #f59e0b; background:var(--mark)}
+  .g-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:2px}
+  .g-no{font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.04em}
+  .g-num{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .g-title{font-weight:600; font-size:16px; margin-bottom:10px}
+  .g-title .done-tag{color:var(--ok); font-size:13px; margin-left:6px}
+  .acts{display:grid; grid-template-columns:repeat(3,1fr); gap:6px}
+  .act{display:flex; flex-direction:column; align-items:stretch; border:1px solid var(--line); border-radius:8px; overflow:hidden}
+  .act a{text-decoration:none; text-align:center; padding:7px 4px; font-size:13px}
+  .act a:hover{background:var(--hover)}
+  .act label{display:flex; align-items:center; justify-content:center; gap:4px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); padding:4px; cursor:pointer; user-select:none}
+  .act input{margin:0; accent-color:var(--ok); width:14px; height:14px}
+  .act.checked{border-color:color-mix(in srgb,var(--ok) 50%,var(--line))}
+  .act.checked label{color:var(--ok)}
+
+  .empty{color:var(--muted); text-align:center; padding:32px 0}
+  .foot{color:var(--muted); font-size:12px; text-align:center; margin-top:32px}
+  .reset-row{text-align:center; margin-top:12px}
+  .reset-row button{background:none; border:0; color:var(--muted); font:inherit; font-size:12px; text-decoration:underline; cursor:pointer}
+
+  @media (max-width:600px){
+    .wrap{padding:calc(20px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+    h1{font-size:22px}
+    .summary .btn{flex:1 1 100%; text-align:center; padding:11px}
+    .bar-controls{margin:0 -16px 8px; padding:8px 16px}
+    .seg{flex:1 1 100%}
+    .seg button{flex:1; padding:10px}
+    .letters{flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; margin:0 -16px 12px; padding-inline:16px; scrollbar-width:none}
+    .letters a{flex:none; width:34px; height:34px}
+    .act a{padding:10px 4px; font-size:14px}
+    .act label{padding:7px 4px; font-size:12px}
+    .act input{width:16px; height:16px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← 回到常用網頁</a>
+  <h1>國英 2000 單專區</h1>
+  <p class="sub">均一教育平台・大叔英文 鄭博仁老師授權影片｜共 101 組、2027 個單字，依字母順序排列</p>
+
+  <div class="card summary">
+    <div class="prog">
+      <div class="prog-top"><span>學習進度</span><b id="progText">0 / 101 組</b></div>
+      <div class="bar"><i id="progBar"></i></div>
+    </div>
+    <button class="btn primary" id="continueBtn">繼續學習</button>
+  </div>
+
+  <div class="tools">
+    <a class="btn" target="_blank" rel="noopener" href="https://www.junyiacademy.org/topics/eng-junior-2000vocab">均一課程首頁</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTsll_hoHWtlvETdnn3yge190TdCs97DPqOA9kCfMVxtoVftu3ZiZY1kWm_kfJZ2_U3igvvN2UQG0Mq/pub?gid=495199671&single=true&output=pdf">講義 PDF</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://www.junyiacademy.org/event/vocabnote/?label=junior2000">單字筆記</a>
+    <a class="btn" target="_blank" rel="noopener" href="https://www.junyiacademy.org/event/vocabprint/?label=junior2000">單字列印</a>
+  </div>
+
+  <div class="bar-controls">
+    <input id="find" type="search" enterkeyhint="search" placeholder="輸入單字，找出在哪一組（例如 happy）" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="seg" id="filter">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="todo">未完成</button>
+      <button data-f="done">已完成</button>
+    </div>
+    <div class="find-msg" id="findMsg"></div>
+  </div>
+
+  <nav class="letters" id="letters"></nav>
+
+  <section class="list" id="list"></section>
+
+  <p class="foot">勾選進度只存在這台裝置的瀏覽器｜登入均一可同步官方學習紀錄</p>
+  <div class="reset-row"><button id="resetBtn">清除所有進度</button></div>
+</div>
+
+<script>
+/* 每組：起始單字-結束單字|YouTube 影片 ID（第 n 組 = 陣列第 n 個） */
+const RAW = `able - advertisement|oIPvNOExWJk
+advice - algebra|qm-Qsc7eKmM
+alike - ankle|oareUM0Dcwk
+another - around|q_ajNi-KMPQ
+arrange - baby|Fuc48ES05Qs
+babysitter - basement|w4FITxSk0JQ
+basic - beef|12cGWsLAc-k
+beer - biology|X4RpOA3JqSU
+bird - bone|WcmLe_TauOY
+book - brave|aOm0yq0pPSQ
+bread - building|bhiKCir4eNM
+bun - cake|EB4YYPyhFOI
+calendar - carrot|6Rw5IPlQnXU
+carry - certain|ysmJ0uLlNCw
+chair - chicken|kFhyReSbYB8
+chief - class|ic4cQO1HusA
+classic - cockroach|fW1FHREH35A
+coffee - complete|IGan6wZVPhM
+computer - cook|q_uLfjXpyFM
+cookie - cow|WGdgc3GYQUc
+cowboy - curtain|9EVQ5GiOlMc
+curve - death|UbUdzEHaSj4
+debate - desk|uNguvXrd9Ro
+dessert - direct|AVsdgz6Qh5c
+direction - dollar|RKX7oM9BNRM
+dolphin - dream|m_DDtkFVesw
+dress - earring|x5EtQ0ZwZJg
+earth - electric|Nx4GEaxS3Rg
+elephant - entrance|ZQoVlx_l_Ew
+envelope - excellent|tr_CmQqW_AA
+except - fail|SfPaDZXZUeU
+fair - February|kg6cDh-hnSQ
+fee - finish|1pgtTDouZUc
+fire - fog|yS8EwWnm-UQ
+foggy - forward(s)|hj902ZruTMM
+four - funny|A4e2dsXEe9g
+furniture - ghost|PqG21Ge2zok
+giant - government|vwFCqJOTcfs
+grade - guest|J-2Pm35apew
+guide - happen|LMf6yBNhrUs
+happy - hen|HWOwAonDueI
+here - honesty|OPJ7f2boz4A
+honey - humid|1BxofjSC-HM
+humor - impossible|6RWwzC3sBtg
+improve - interest|6PlIsXDqovQ
+interested - jealousy|aoh7aUcpGdc
+jeans - keyboard|xLOF_iC2glM
+kick - lab|vtHQfBKRH_U
+lack - leader|Vwp2cnULk-Y
+leaf - life|RM1U8GYkcCY
+lift - local|TK6QsAMRQBU
+lock - magic|ALMANGYwp0U
+magician - marry|hTRkxADuU8c
+marvelous - mechanic|8_dJY-4suxI
+media - mind|qqh2J3F_jio
+mine - more|Z7Cj9fKGedg
+morning - music|_SYgwtMYeEQ
+musician - neighbor|7TES1eA8-zY
+neither - none|acOQjGG-U1M
+noodle - ocean|H0xrAEYEyos
+October - or|zc1nvub2Umc
+orange - paint|rBm2ScgImC8
+painter - passenger|pIiiLqzutxE
+passport - performance|3MG2E48dTeg
+perhaps - pin|v8zTZDJzxOs
+pineapple - poem|rOhLnOKm99c
+point - possible|9TVwcAip1Go
+post - pride|UKwUMpqaA9c
+priest - pronounce|QQxzcqDLkH4
+protect - quarter|kAC6v-sqEAg
+queen - reach|V3ThItNej_k
+read - relation|gK9a34IhrPo
+relative - review|yQRb_G7nKdk
+revise - round|cq7Z0U_Jwmg
+row - sample|S4TM4bXCh9w
+sand - seafood|9z9aIV1nNDY
+search - sense|0aTfoEBNamA
+sentence - sheet|GSjmmagjO7E
+shelf - shut|YBTrHJtS6RA
+shy - sink|jPGCLPXEi-M
+sir - slim|dB3iI2F2dtQ
+slippers - sock|7K8xvBJF5Xc
+soda - sour|o_jdtbN80qU
+source - stage|Vf-HJrXDHL8
+stair - store|gdruEDli85A
+storm - subway|AXLbIjry4m8
+succeed - surf|p4emGHf7uRw
+surface - talent|7J_K6DU4oPU
+talk - tell|Otpqdoa0Cbw
+temperature - thick|Md8JZktTfj0
+thief - Thursday|hzGALRcdGDs
+ticket - tongue|XAEQRX_JQOo
+tonight - tradition|BMVbrM2c9tE
+traditional - try|enlMSqHXzrE
+tube - unhappy|ZvJeuxvjXXs
+uniform - vendor|5lV9bgtxdvc
+very - wall|2vGJjF5wES8
+wallet - week|tCSqzb0B8lE
+weekday - why|Z52c4euuF30
+wide - woman|tLZpsFD7HbE
+wonder - zoo|2124-SZ35CA`;
+
+const P = "?parent-topic-id=eng-junior-2000vocab";
+const GROUPS = RAW.trim().split("\n").map((line, i) => {
+  const [range, vid] = line.split("|");
+  const [from, to] = range.split(" - ");
+  const n = i + 1;
+  return {
+    n, from, to,
+    start: (n - 1) * 20 + 1,
+    end: n === 101 ? 2027 : n * 20,
+    video: `https://www.junyiacademy.org/video/${vid}${P}`,
+    quiz:  `https://www.junyiacademy.org/sequential-quiz/eng-junior2000g${n}${P}`,
+    loop:  `https://www.junyiacademy.org/event/vocabloop/?label=junior2000g${n}`,
+  };
+});
+const ACTS = [["video","影片"],["quiz","測驗"],["loop","迴憶"]];
+
+/* 進度儲存 */
+const KEY = "vocab2000-progress-v1";
+let prog = {};
+try { prog = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(prog)); } catch(e){} };
+const isDone = n => ACTS.every(([k]) => prog[n]?.[k]);
+
+let filter = "all";
+try { filter = localStorage.getItem("vocab2000-filter") || "all"; } catch(e){}
+
+const $ = id => document.getElementById(id);
+const norm = s => s.toLowerCase().replace(/\(.*?\)/g, "").trim();
+
+function card(g){
+  const done = isDone(g.n);
+  const el = document.createElement("article");
+  el.className = "g" + (done ? " done" : "");
+  el.id = "g" + g.n;
+  el.innerHTML = `
+    <div class="g-head"><span class="g-no">GROUP ${g.n}</span><span class="g-num">#${g.start}–${g.end}</span></div>
+    <div class="g-title">${g.from} – ${g.to}${done ? '<span class="done-tag">✓ 完成</span>' : ""}</div>
+    <div class="acts">${ACTS.map(([k, label]) => `
+      <div class="act${prog[g.n]?.[k] ? " checked" : ""}">
+        <a href="${g[k]}" target="_blank" rel="noopener" data-n="${g.n}" data-k="${k}">${label}</a>
+        <label><input type="checkbox" data-n="${g.n}" data-k="${k}" ${prog[g.n]?.[k] ? "checked" : ""}>已完成</label>
+      </div>`).join("")}
+    </div>`;
+  return el;
+}
+
+function render(){
+  const list = $("list");
+  list.innerHTML = "";
+  const shown = GROUPS.filter(g =>
+    filter === "all" || (filter === "done" ? isDone(g.n) : !isDone(g.n)));
+  shown.forEach(g => list.append(card(g)));
+  if (!shown.length) list.innerHTML = `<p class="empty">${filter === "done" ? "還沒有完成的組別，加油！" : "全部完成了，太厲害了！🎉"}</p>`;
+  document.querySelectorAll("#filter button").forEach(b => b.classList.toggle("on", b.dataset.f === filter));
+  renderLetters(shown);
+  updateProgress();
+}
+
+function updateProgress(){
+  const done = GROUPS.filter(g => isDone(g.n)).length;
+  $("progText").textContent = `${done} / 101 組`;
+  $("progBar").style.width = (done / 101 * 100) + "%";
+  const next = GROUPS.find(g => !isDone(g.n));
+  $("continueBtn").textContent = next ? `繼續學習：第 ${next.n} 組` : "全部完成 🎉";
+  $("continueBtn").disabled = !next;
+}
+
+function renderLetters(shown){
+  const nav = $("letters");
+  nav.innerHTML = "";
+  const seen = new Set();
+  shown.forEach(g => {
+    const L = g.from[0].toUpperCase();
+    if (!seen.has(L)) {
+      seen.add(L);
+      const a = document.createElement("a");
+      a.href = "#g" + g.n; a.textContent = L;
+      nav.append(a);
+    }
+  });
+}
+
+function goTo(n){
+  const el = $("g" + n);
+  if (!el) { filter = "all"; render(); return goTo(n); }
+  document.querySelectorAll(".g.hit").forEach(x => x.classList.remove("hit"));
+  el.classList.add("hit");
+  el.scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
+/* 勾選 / 點連結自動勾選 */
+$("list").addEventListener("change", e => {
+  const { n, k } = e.target.dataset;
+  if (!n) return;
+  prog[n] = prog[n] || {};
+  prog[n][k] = e.target.checked;
+  save(); refreshCard(+n);
+});
+function refreshCard(n){
+  const old = $("g" + n);
+  const g = GROUPS[n - 1];
+  const fresh = card(g);
+  if (old.classList.contains("hit")) fresh.classList.add("hit");
+  old.replaceWith(fresh);
+  updateProgress();
+}
+
+/* 找單字：比對字母順序落在哪一組 */
+$("find").addEventListener("input", () => {
+  const w = norm($("find").value);
+  const msg = $("findMsg");
+  document.querySelectorAll(".g.hit").forEach(x => x.classList.remove("hit"));
+  if (!w || !/^[a-z]/.test(w)) { msg.textContent = ""; return; }
+  const cmp = (a, b) => a.localeCompare(b, "en", { sensitivity:"base" });
+  let g = GROUPS.find(g => cmp(w, norm(g.from)) >= 0 && cmp(w, norm(g.to)) <= 0);
+  if (!g) g = [...GROUPS].reverse().find(g => cmp(w, norm(g.from)) >= 0) || GROUPS[0];
+  msg.textContent = `「${$("find").value.trim()}」按字母順序在第 ${g.n} 組（${g.from} – ${g.to}）。如果那一組沒有，代表不在 2000 單裡。`;
+  goTo(g.n);
+});
+
+$("filter").addEventListener("click", e => {
+  const f = e.target.dataset?.f; if (!f) return;
+  filter = f;
+  try { localStorage.setItem("vocab2000-filter", f); } catch(e){}
+  render();
+});
+
+$("continueBtn").onclick = () => {
+  const next = GROUPS.find(g => !isDone(g.n));
+  if (next) goTo(next.n);
+};
+
+let armed = false;
+$("resetBtn").onclick = e => {
+  if (!armed) {
+    armed = true; e.target.textContent = "再按一次確定清除";
+    setTimeout(() => { armed = false; e.target.textContent = "清除所有進度"; }, 3000);
+    return;
+  }
+  prog = {}; save(); render();
+  armed = false; e.target.textContent = "清除所有進度";
+};
+
+render();
+</script>
+</body>
+</html>
