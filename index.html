@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的常用網頁</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231f2937'/><path d='M9 10h14M9 16h14M9 22h9' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --hover:#f1f3f5; --accent:#1f2937; --danger:#dc2626;
+    --shadow:0 1px 2px rgba(0,0,0,.04),0 1px 8px rgba(0,0,0,.04);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#111316; --card:#1a1d21; --text:#e5e7eb; --muted:#9ca3af;
+      --line:#2a2e34; --hover:#23272c; --accent:#e5e7eb; --danger:#f87171;
+      --shadow:none; color-scheme:dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    font-size:15px; line-height:1.5;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:56px 20px 64px}
+  header{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:28px}
+  .greet{font-size:28px; font-weight:600; letter-spacing:.01em; margin:0}
+  .date{color:var(--muted); margin-top:4px}
+  .clock{font-size:40px; font-weight:300; font-variant-numeric:tabular-nums; line-height:1}
+
+  form.search{display:flex; gap:8px; margin-bottom:36px}
+  .search select,.search input{
+    border:1px solid var(--line); background:var(--card); color:var(--text);
+    border-radius:10px; font:inherit; box-shadow:var(--shadow);
+  }
+  .search select{padding:0 10px}
+  .search input{flex:1; min-width:0; padding:12px 14px; font-size:16px; outline:none}
+  .search input:focus,.search select:focus{border-color:var(--muted)}
+
+  .groups{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px}
+  .group{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow)}
+  .group h2{font-size:13px; font-weight:600; color:var(--muted); letter-spacing:.06em; margin:0 0 10px; display:flex; justify-content:space-between; align-items:center}
+  .links{list-style:none; margin:0; padding:0}
+  .links li{display:flex; align-items:center}
+  .links a{
+    flex:1; display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px;
+    color:var(--text); text-decoration:none; min-width:0;
+  }
+  .links a:hover{background:var(--hover)}
+  .links img{width:18px; height:18px; border-radius:4px; flex:none}
+  .links span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+  .x{display:none; border:0; background:none; color:var(--danger); cursor:pointer; font-size:18px; padding:4px 8px; border-radius:6px}
+  .x:hover{background:var(--hover)}
+  .editing .x{display:block}
+  .add{display:none; margin-top:8px; gap:6px; flex-wrap:wrap}
+  .editing .add{display:flex}
+  .add input{flex:1 1 100px; min-width:0; padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); font:inherit; font-size:13px}
+
+  .btn{border:1px solid var(--line); background:var(--card); color:var(--text); border-radius:8px; padding:7px 12px; font:inherit; font-size:13px; cursor:pointer}
+  .btn:hover{background:var(--hover)}
+  .btn.primary{background:var(--accent); color:var(--bg); border-color:var(--accent)}
+  .tools{display:flex; gap:8px; justify-content:flex-end; margin-top:28px; flex-wrap:wrap}
+  .new-group{display:none; gap:8px}
+  .editing .new-group{display:flex}
+  .new-group input{padding:7px 9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; font-size:13px}
+  .hint{color:var(--muted); font-size:12px; text-align:center; margin-top:32px}
+  kbd{border:1px solid var(--line); border-radius:4px; padding:0 5px; font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <div>
+      <h1 class="greet" id="greet">你好</h1>
+      <div class="date" id="date"></div>
+    </div>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <form class="search" id="searchForm">
+    <select id="engine" aria-label="搜尋引擎">
+      <option value="https://www.google.com/search?q=">Google</option>
+      <option value="https://www.youtube.com/results?search_query=">YouTube</option>
+      <option value="https://www.bing.com/search?q=">Bing</option>
+      <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
+    </select>
+    <input id="q" type="search" placeholder="搜尋…" autocomplete="off" autofocus>
+  </form>
+
+  <section class="groups" id="groups"></section>
+
+  <div class="tools">
+    <div class="new-group">
+      <input id="newGroupName" placeholder="新分類名稱">
+      <button class="btn" id="addGroup">新增分類</button>
+    </div>
+    <button class="btn" id="exportBtn" hidden>匯出設定</button>
+    <button class="btn" id="resetBtn" hidden>還原預設</button>
+    <button class="btn primary" id="editBtn">編輯</button>
+  </div>
+
+  <p class="hint">按 <kbd>/</kbd> 快速搜尋 · 修改只存在這台電腦的瀏覽器</p>
+</div>
+
+<script>
+/* ===== 預設連結：想改預設值就改這裡 ===== */
+const DEFAULT_GROUPS = [
+  { name: "日常", links: [
+    { title: "Gmail", url: "https://mail.google.com" },
+    { title: "Google 日曆", url: "https://calendar.google.com" },
+    { title: "Google 雲端硬碟", url: "https://drive.google.com" },
+    { title: "YouTube", url: "https://www.youtube.com" },
+  ]},
+  { name: "工作", links: [
+    { title: "Claude", url: "https://claude.ai" },
+    { title: "GitHub", url: "https://github.com" },
+    { title: "Notion", url: "https://www.notion.so" },
+    { title: "Google 翻譯", url: "https://translate.google.com" },
+  ]},
+  { name: "新聞與資訊", links: [
+    { title: "Google 新聞", url: "https://news.google.com/?hl=zh-TW&gl=TW&ceid=TW:zh-Hant" },
+    { title: "中央氣象署", url: "https://www.cwa.gov.tw" },
+    { title: "Google 地圖", url: "https://maps.google.com" },
+  ]},
+];
+
+const KEY = "startpage-groups-v1";
+let groups = load();
+let editing = false;
+
+function load(){
+  try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch(e){}
+  return structuredClone(DEFAULT_GROUPS);
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(groups)); } catch(e){} }
+
+function favicon(url){
+  try { return "https://www.google.com/s2/favicons?sz=64&domain=" + new URL(url).hostname; }
+  catch(e){ return ""; }
+}
+function el(tag, props = {}, ...kids){
+  const n = document.createElement(tag);
+  Object.assign(n, props);
+  kids.forEach(k => n.append(k));
+  return n;
+}
+
+function render(){
+  const root = document.getElementById("groups");
+  root.innerHTML = "";
+  groups.forEach((g, gi) => {
+    const delGroup = el("button", { className:"x", title:"刪除分類", textContent:"×",
+      onclick: () => { if (g.links.length === 0 || editing) { groups.splice(gi,1); save(); render(); } } });
+    const ul = el("ul", { className:"links" });
+    g.links.forEach((l, li) => {
+      const img = el("img", { src: favicon(l.url), alt:"", loading:"lazy" });
+      img.onerror = () => img.style.visibility = "hidden";
+      ul.append(el("li", {},
+        el("a", { href:l.url }, img, el("span", { textContent:l.title })),
+        el("button", { className:"x", title:"刪除", textContent:"×",
+          onclick: () => { g.links.splice(li,1); save(); render(); } })
+      ));
+    });
+    const t = el("input", { placeholder:"名稱" });
+    const u = el("input", { placeholder:"網址" });
+    const addForm = el("form", { className:"add" }, t, u, el("button", { className:"btn", textContent:"加入" }));
+    addForm.onsubmit = e => {
+      e.preventDefault();
+      let url = u.value.trim(); if (!url) return;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      let title = t.value.trim();
+      if (!title) { try { title = new URL(url).hostname.replace(/^www\./,""); } catch(e){ title = url; } }
+      g.links.push({ title, url }); save(); render();
+    };
+    root.append(el("div", { className:"group" },
+      el("h2", {}, el("span", { textContent:g.name }), delGroup), ul, addForm));
+  });
+}
+
+function setEditing(on){
+  editing = on;
+  document.getElementById("app").classList.toggle("editing", on);
+  document.getElementById("editBtn").textContent = on ? "完成" : "編輯";
+  document.getElementById("resetBtn").hidden = !on;
+  document.getElementById("exportBtn").hidden = !on;
+}
+
+document.getElementById("editBtn").onclick = () => setEditing(!editing);
+document.getElementById("addGroup").onclick = () => {
+  const i = document.getElementById("newGroupName");
+  if (!i.value.trim()) return;
+  groups.push({ name:i.value.trim(), links:[] }); i.value = ""; save(); render();
+};
+let resetArmed = false;
+document.getElementById("resetBtn").onclick = e => {
+  if (!resetArmed) { resetArmed = true; e.target.textContent = "確定還原？"; setTimeout(()=>{resetArmed=false; e.target.textContent="還原預設";}, 3000); return; }
+  groups = structuredClone(DEFAULT_GROUPS); save(); render();
+  resetArmed = false; e.target.textContent = "還原預設";
+};
+// 匯出：把目前設定複製成 JS，可貼回 DEFAULT_GROUPS 讓每台電腦都一樣
+document.getElementById("exportBtn").onclick = async e => {
+  const text = "const DEFAULT_GROUPS = " + JSON.stringify(groups, null, 2) + ";";
+  try { await navigator.clipboard.writeText(text); e.target.textContent = "已複製！"; }
+  catch(err){ e.target.textContent = "複製失敗"; }
+  setTimeout(()=> e.target.textContent = "匯出設定", 2000);
+};
+
+/* 搜尋 */
+const engineSel = document.getElementById("engine");
+try { const s = localStorage.getItem("startpage-engine"); if (s) engineSel.value = s; } catch(e){}
+engineSel.onchange = () => { try { localStorage.setItem("startpage-engine", engineSel.value); } catch(e){} };
+document.getElementById("searchForm").onsubmit = e => {
+  e.preventDefault();
+  const q = document.getElementById("q").value.trim();
+  if (q) location.href = engineSel.value + encodeURIComponent(q);
+};
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
+    e.preventDefault(); document.getElementById("q").focus();
+  }
+});
+
+/* 時間與問候 */
+function tick(){
+  const d = new Date(), h = d.getHours();
+  document.getElementById("clock").textContent =
+    d.toLocaleTimeString("zh-TW", { hour:"2-digit", minute:"2-digit", hour12:false });
+  document.getElementById("date").textContent =
+    d.toLocaleDateString("zh-TW", { year:"numeric", month:"long", day:"numeric", weekday:"long" });
+  document.getElementById("greet").textContent =
+    h < 5 ? "夜深了" : h < 11 ? "早安" : h < 14 ? "午安" : h < 18 ? "下午好" : "晚安";
+}
+tick(); setInterval(tick, 10000);
+render();
+</script>
+</body>
+</html>
