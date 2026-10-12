@@ -193,14 +193,13 @@
   <div class="top-utility-bar">
     <span class="status-badge" id="sourceStatus">🟡 題庫狀態: 載入中...</span>
     <div class="util-links">
-      <label class="util-link" title="手動載入 2240 字題庫">
+      <label class="util-link" title="手動更新或重新載入 JSON">
         📁 載入 JSON
         <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleFileSelect(event)">
       </label>
     </div>
   </div>
 
-  <!-- 登入與訪客入口 -->
   <div id="authSection" class="auth-box">
     <div class="auth-tabs">
       <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">學員登入</div>
@@ -220,7 +219,6 @@
     <button class="btn-guest" onclick="loginAsGuest()">以訪客身分體驗 (匿名模式)</button>
   </div>
 
-  <!-- 測驗操作主介面 -->
   <div id="quizSection" class="hidden">
     <div class="user-header">
       <span class="user-badge" id="displayUsername">👤 學員: </span>
@@ -312,9 +310,10 @@ let FULL_VOCAB = [];
 let DAYS_COUNT = 30;
 let dayPlans = {};
 
-// 載入外部或上傳之 JSON 題庫，全量接納
-function applyNewVocabList(newList, sourceName) {
+// 載入題庫，並儲存至 LocalStorage 作為本機檔案時的持久快取
+function applyNewVocabList(newList, sourceName, saveToCache = true) {
   if (!Array.isArray(newList) || newList.length === 0) return;
+  
   FULL_VOCAB = newList.map(item => ({
     en: item.en || "",
     kk: item.kk || "",
@@ -324,6 +323,15 @@ function applyNewVocabList(newList, sourceName) {
     sentenceZh: item.sentenceZh || `單字「${item.en}」的範例例句。`,
     grammar: item.grammar || "核心單字"
   }));
+
+  if (saveToCache) {
+    try {
+      localStorage.setItem("cached_vocab_dataset", JSON.stringify(FULL_VOCAB));
+    } catch (e) {
+      console.warn("無法寫入 LocalStorage 快取 (可能超出空間限制)");
+    }
+  }
+
   document.getElementById("sourceStatus").innerHTML = `🟢 題庫狀態: ${sourceName} (${FULL_VOCAB.length} 字)`;
   initDayPlans();
   initDaySelector();
@@ -338,11 +346,11 @@ function handleFileSelect(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (Array.isArray(data) && data.length > 0) {
-        applyNewVocabList(data, "本機 JSON");
-        alert(`成功載入！共讀取到 ${data.length} 個單字。`);
+        applyNewVocabList(data, "已載入本機 JSON", true);
+        alert(`成功載入！共讀取到 ${data.length} 個單字，並已自動記憶。`);
       }
     } catch (err) {
-      alert("解析 JSON 失敗。");
+      alert("解析 JSON 失敗，請確認檔案格式。");
     }
   };
   reader.readAsText(file);
@@ -356,7 +364,7 @@ function changeCycleDays(val) {
   changeDay(1);
 }
 
-// 精準均攤演算法：杜絕餘數誤差，平穩分配至每一天
+// 嚴謹均攤演算法：杜絕餘數誤差，平穩分配至每一天
 function initDayPlans() {
   const total = FULL_VOCAB.length;
   dayPlans = {};
@@ -547,7 +555,7 @@ function renderQuestion() {
   document.getElementById("explanationBox").classList.add("hidden");
 
   if (currentTestQueue.length === 0) {
-    document.getElementById("wordDisplay").innerText = "此範圍無單字";
+    document.getElementById("wordDisplay").innerText = "此天數無單字";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("optionsGrid").innerHTML = "";
     return;
@@ -767,21 +775,40 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+// 啟動自動導入機制：自動 fetch 同目錄 JSON -> 嘗試讀取本地記憶快取
 window.onload = async () => {
-  let loadedFromFetch = false;
+  let loadedSuccessfully = false;
+
+  // 1. 自動帶防快取參數請求同目錄下的 vocab2000.json
   try {
-    const res = await fetch("vocab2000.json");
+    const res = await fetch("vocab2000.json?t=" + new Date().getTime());
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        applyNewVocabList(data, "伺服器 JSON");
-        loadedFromFetch = true;
+        applyNewVocabList(data, "同目錄 vocab2000.json", true);
+        loadedSuccessfully = true;
       }
     }
-  } catch (err) {}
+  } catch (err) {
+    // 當以 file:/// 雙擊開啟時，瀏覽器會因安全政策擋下 fetch，轉向本機持久記憶
+  }
 
-  if (!loadedFromFetch) {
-    document.getElementById("sourceStatus").innerHTML = `🟡 題庫狀態: 請點擊右上角載入 vocab2000.json`;
+  // 2. 若自動 fetch 受阻，自動自 LocalStorage 快取中讀取先前已載入之資料
+  if (!loadedSuccessfully) {
+    try {
+      const cached = localStorage.getItem("cached_vocab_dataset");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          applyNewVocabList(parsed, "本地已記憶題庫", false);
+          loadedSuccessfully = true;
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (!loadedSuccessfully) {
+    document.getElementById("sourceStatus").innerHTML = `🟡 題庫狀態: 請點選右上角手動載入一次 JSON 檔`;
   }
 
   const activeSession = localStorage.getItem("vocab_active_session");
