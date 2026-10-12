@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>國中會考單字 30 天測驗系統</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --success-bg: #dcfce7;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 620px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+      position: relative;
+    }
+    .hidden { display: none !important; }
+    
+    .top-utility-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+    .util-link {
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+    }
+    .util-link:hover { color: var(--primary); }
+
+    .auth-box { display: flex; flex-direction: column; gap: 14px; }
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 10px; }
+    .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: 600; color: var(--muted); }
+    .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .input-group input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none; }
+    .input-group input:focus { border-color: var(--primary); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 8px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border);
+    }
+    .divider::before { margin-right: 10px; }
+    .divider::after { margin-left: 10px; }
+
+    .btn-guest {
+      background: #f1f5f9;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .btn-guest:hover { background: #e2e8f0; }
+
+    .user-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+    .user-badge { font-weight: 700; color: var(--primary); font-size: 15px; }
+    .guest-tag { font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: normal; }
+    .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
+
+    .mode-selector { display: flex; gap: 8px; margin-bottom: 12px; }
+    .mode-btn {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .mode-btn.active {
+      background: #eff6ff;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .filter-panel {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .filter-options {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 500;
+      color: #334155;
+    }
+    .filter-label input { cursor: pointer; }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; }
+    select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fff; cursor: pointer; outline: none; }
+    .stats-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 20px; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease; }
+
+    .word-card { background: #f8fafc; border: 1px dashed var(--border); border-radius: 12px; text-align: center; padding: 18px 10px; margin-bottom: 16px; }
+    .word-title { font-size: 34px; font-weight: 800; margin-bottom: 4px; }
+    .word-kk { font-size: 15px; color: #475569; font-family: "Lucida Sans Unicode", "DejaVu Sans", sans-serif; margin-bottom: 10px; font-weight: 500; }
+    .sound-btn { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--primary); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .sound-btn:hover { background: #f1f5f9; }
+
+    .options-grid { display: grid; gap: 10px; margin-bottom: 16px; }
+    .option-btn { display: flex; align-items: center; padding: 14px 16px; background: #fff; border: 2px solid var(--border); border-radius: 10px; font-size: 15px; cursor: pointer; text-align: left; transition: 0.15s; outline: none; }
+    .option-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
+    .opt-key { width: 24px; height: 24px; background: #f1f5f9; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--muted); margin-right: 12px; flex-shrink: 0; }
+    .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; }
+    .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
+
+    .explanation-card {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+    .explanation-title { font-weight: 700; color: #1e40af; margin-bottom: 6px; }
+    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+    .sentence-zh { color: #475569; margin-bottom: 6px; }
+    .grammar-note { font-size: 12.5px; color: #1d4ed8; background: #dbeafe; padding: 4px 8px; border-radius: 6px; display: inline-block; }
+
+    .btn { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.15s; }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .footer-bar { display: flex; justify-content: space-between; align-items: center; }
+    .link-btn { font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .history-card { background: #f8fafc; border-radius: 10px; padding: 12px; margin-top: 15px; font-size: 13px; border: 1px solid var(--border); }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(2px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      z-index: 999;
+    }
+    .modal-content {
+      background: #ffffff;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      border-radius: 14px;
+      padding: 22px;
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .modal-title { font-size: 17px; font-weight: 700; color: var(--text); }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+    .modal-body { font-size: 13.5px; line-height: 1.6; color: #334155; }
+    .modal-body h4 { margin: 12px 0 4px 0; color: var(--primary); font-size: 14px; }
+    .modal-body ul { padding-left: 20px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-utility-bar">
+    <a class="util-link" onclick="openModal('guideModal')">📖 使用說明</a>
+    <a class="util-link" onclick="openModal('historyModal')">🕒 開發歷程</a>
+  </div>
+
+  <div id="authSection" class="auth-box">
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">學員登入</div>
+      <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">註冊帳號</div>
+    </div>
+    <div class="input-group">
+      <label>學員帳號</label>
+      <input type="text" id="authUsername" placeholder="請輸入學員名稱..." autocomplete="off">
+    </div>
+    <div class="input-group">
+      <label>密碼</label>
+      <input type="password" id="authPassword" placeholder="請輸入密碼..." autocomplete="off">
+    </div>
+    <button class="btn" id="authSubmitBtn" onclick="handleAuthSubmit()">開始學習</button>
+
+    <div class="divider">或</div>
+    <button class="btn-guest" onclick="loginAsGuest()">以訪客身分體驗 (匿名模式)</button>
+  </div>
+
+  <div id="quizSection" class="hidden">
+    <div class="user-header">
+      <span class="user-badge" id="displayUsername">👤 學員: </span>
+      <div>
+        <span class="link-btn" id="historyLink" onclick="toggleDashboard()" style="margin-right: 12px;">學習成果</span>
+        <button class="logout-btn" onclick="logout()">登出</button>
+      </div>
+    </div>
+
+    <div class="mode-selector">
+      <button class="mode-btn active" id="mode1200" onclick="setVocabScope('core1200')">會考核心 (1,200字)</button>
+      <button class="mode-btn" id="mode2000" onclick="setVocabScope('all2000')">會考完整 (2,000字)</button>
+    </div>
+
+    <div class="filter-panel">
+      <div class="filter-row">
+        <span><b>考題範圍設置：</b></span>
+        <div class="filter-options">
+          <label class="filter-label">
+            <input type="radio" name="scopeType" value="todayOnly" checked onchange="handleFilterChange()">
+            僅今日新單字
+          </label>
+          <label class="filter-label">
+            <input type="radio" name="scopeType" value="cumulative" onchange="handleFilterChange()">
+            包含以往範圍 (滾動複習)
+          </label>
+        </div>
+      </div>
+      <div class="filter-row" style="border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+        <label class="filter-label">
+          <input type="checkbox" id="includeMistakesCheckbox" onchange="handleFilterChange()">
+          <span>⚠️ 題目中混合加入「錯題本」加強複習</span>
+        </label>
+        <span class="link-btn" id="mistakeLink" onclick="reviewMistakes()">純錯題特訓 (0)</span>
+      </div>
+    </div>
+
+    <div id="dashboardSection" class="history-card hidden">
+      <strong>📊 30天完成進度：</strong>
+      <div id="statsSummary" style="margin: 8px 0; max-height: 120px; overflow-y: auto;">尚無紀錄</div>
+      <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="toggleDashboard()">關閉面板</button>
+    </div>
+
+    <div class="controls">
+      <select id="daySelect" onchange="changeDay(this.value)"></select>
+      <span id="poolInfoText" style="font-size: 12px; color: var(--muted);">題庫共 0 題</span>
+    </div>
+
+    <div class="stats-info">
+      <span id="progressText">第 1 題</span>
+      <span id="scoreText">正確: 0 | 錯誤: 0</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <div class="word-card">
+      <div class="word-title" id="wordDisplay">載入中...</div>
+      <div class="word-kk" id="wordKk">[/.../]</div>
+      <button class="sound-btn" onclick="speakCurrentWord()">🔊 聆聽發音</button>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <div id="explanationBox" class="explanation-card hidden">
+      <div class="explanation-title">💡 會考重點解析與例句</div>
+      <div class="sentence-en" id="expSentenceEn"></div>
+      <div class="sentence-zh" id="expSentenceZh"></div>
+      <div class="grammar-note" id="expGrammar"></div>
+    </div>
+
+    <div class="footer-bar">
+      <span style="font-size: 12px; color: var(--muted);">鍵盤捷徑: 1-4 / A-D</span>
+      <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>下一題 (Space)</button>
+    </div>
+  </div>
+</div>
+
+<div id="guideModal" class="modal-overlay hidden" onclick="closeModalOnOverlay(event, 'guideModal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="modal-title">📖 系統使用說明</span>
+      <button class="modal-close" onclick="closeModal('guideModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h4>🎯 複習範圍機制</h4>
+      <ul>
+        <li><b>僅今日新單字</b>：針對當天劃分的新單字進行專注記憶。</li>
+        <li><b>包含以往範圍 (滾動複習)</b>：選取後，題目將涵蓋從 Day 1 到當天所學的所有單字，幫助對抗遺忘曲線。</li>
+        <li><b>混合加入錯題本</b>：將過去曾答錯的單字混入當日題庫中反覆測驗，直到掌握為止。</li>
+      </ul>
+      <h4>⌨️ 快速作答快捷鍵</h4>
+      <ul>
+        <li>作答：數字鍵 <b>1, 2, 3, 4</b> 或 <b>A, B, C, D</b>。</li>
+        <li>下一題：<b>Space (空白鍵)</b> 或 <b>Enter</b>。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="historyModal" class="modal-overlay hidden" onclick="closeModalOnOverlay(event, 'historyModal')">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="modal-title">🕒 版本開發歷程</span>
+      <button class="modal-close" onclick="closeModal('historyModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div><b>v2.6 - 滾動式複習與錯題混合機制</b>：支援隨選「包含以往範圍」及「混合錯題」模式，達成真正 30 天熟背 2000 單字。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function safeHash(str) {
+  return encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1));
+}
+
+function openModal(id) { document.getElementById(id).classList.remove("hidden"); }
+function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+function closeModalOnOverlay(e, id) { if (e.target.id === id) closeModal(id); }
+
+function createVocab(en, kk, zh, level, senEn, senZh, gr) {
+  return {
+    en, kk, zh, level,
+    sentenceEn: senEn || `This is an example for the word "${en}".`,
+    sentenceZh: senZh || `這是單字「${en}」的範例例句。`,
+    grammar: gr || "會考核心單字"
+  };
+}
+
+const SEED_DATA = [
+  ["about","[əˈbaʊt]","關於；大約",1,"The story is about a brave dog.","這故事是關於一隻勇敢的狗。","片語：be about to + V (即將)"],
+  ["above","[əˈbʌv]","在...上方",1,"We saw the moon above the hill.","我們看到山丘上方的月亮。","介系詞：above + 基準"],
+  ["across","[əˈkrɔs]","穿過；橫越",1,"Walk across the street carefully.","過馬路時請小心。","搭配：walk across + 地點"],
+  ["action","[ˈækʃən]","行動；動作",1,"Actions speak louder than words.","事實勝於雄辯。","搭配：take action (採取行動)"],
+  ["actor","[ˈæktɚ]","男演員",1,"He is a popular movie actor.","他是一位受歡迎的電影演員。","延伸：actress (女演員)"],
+  ["afraid","[əˈfred]","害怕的",1,"She is afraid of snakes.","她害怕蛇。","句型：be afraid of + N/V-ing"],
+  ["after","[ˈæftɚ]","在...之後",1,"Let's play basketball after school.","放學後我們去打籃球吧。","連接詞/介系詞"],
+  ["again","[əˈɡɛn]","再一次",1,"Can you say that again, please?","你能再說一次嗎？","副詞"],
+  ["agree","[əˈɡri]","同意",1,"I agree with your suggestion.","我同意你的提議。","搭配：agree with + 人"],
+  ["ahead","[əˈhɛd]","在前面",1,"Go straight ahead for two blocks.","往前直走兩個街區。","片語：ahead of time (提早)"],
+  ["air","[ɛr]","空氣",1,"Fresh air is good for your health.","新鮮空氣有益健康。","不可數名詞"],
+  ["airport","[ˈɛrˌpɔrt]","機場",1,"We arrived at the airport early.","我們很早就到了機場。","搭配：at the airport"],
+  ["almost","[ˈɔlˌmost]","幾乎",1,"Dinner is almost ready.","晚餐快準備好了。","副詞用法"],
+  ["already","[ɔlˈrɛdi]","已經",1,"I have already finished my work.","我已經完成工作了。","完成式常見副詞"],
+  ["always","[ˈɔlwez]","總是",1,"He always arrives on time.","他總是準時到達。","頻率副詞"],
+  ["angry","[ˈæŋɡri]","生氣的",1,"The teacher was angry with Tom.","老師對湯姆很生氣。","搭配：be angry with + 人"],
+  ["animal","[ˈænəməl]","動物",1,"The dog is a loyal animal.","狗是忠誠的動物。","可數名詞"],
+  ["answer","[ˈænsɚ]","回答；答案",1,"Please answer my question.","請回答我的問題。","動詞/名詞同形"],
+  ["appear","[əˈpɪr]","出現；似乎",1,"A rainbow appeared in the sky.","天空出現了一道彩虹。","反義：disappear (消失)"],
+  ["apple","[ˈæpəl]","蘋果",1,"An apple a day keeps the doctor away.","一天一蘋果，醫生遠離我。","常用名詞"],
+  ["arrive","[əˈraɪv]","到達",1,"The train arrived on time.","火車準時抵達。","搭配：arrive at/in"],
+  ["ask","[æsk]","詢問；請求",1,"Feel free to ask questions.","請隨時發問。","搭配：ask for help"],
+  ["autumn","[ˈɔtəm]","秋天",1,"Leaves turn red in autumn.","秋天樹葉變紅。","同義：fall"],
+  ["away","[əˈwe]","離開；遠離",1,"Put your toys away now.","現在把你的玩具收好。","搭配：run away, keep away"],
+  ["baby","[ˈbebi]","嬰兒",1,"The baby is sleeping peacefully.","嬰兒正安詳地睡著。","可數名詞"],
+  ["back","[bæk]","後面；返回",1,"I will come back soon.","我很快就會回來。","副詞/名詞"],
+  ["bad","[bæd]","壞的；糟糕的",1,"Eating too much junk food is bad.","吃太多垃圾食物是不好的。","比較級：worse, worst"],
+  ["bag","[bæɡ]","袋子；包包",1,"Her school bag is very heavy.","她的書包非常重。","生活名詞"],
+  ["ball","[bɔl]","球",1,"He kicked the ball into the net.","他把球踢進球門。","生活名詞"],
+  ["banana","[bəˈnænə]","香蕉",1,"Monkeys love to eat bananas.","猴子喜歡吃香蕉。","可數名詞"],
+  ["bank","[bæŋk]","銀行；河岸",1,"I need to deposit money in the bank.","我需要存錢到銀行。","一字多義"],
+  ["baseball","[ˈbesˌbɔl]","棒球",1,"Baseball is very popular in Taiwan.","棒球在台灣非常受歡迎。","運動單字"],
+  ["basket","[ˈbæskɪt]","籃子",1,"A basket full of fresh fruit.","裝滿新鮮水果的籃子。","搭配：a basket of"],
+  ["basketball","[ˈbæskɪtˌbɔl]","籃球",1,"Let's play basketball together.","我們一起打籃球吧。","運動單字"],
+  ["bath","[bæθ]","泡澡；沐浴",1,"Take a hot bath after work.","下班後泡個熱水澡。","搭配：take a bath"],
+  ["beach","[bitʃ]","海灘",1,"We built sandcastles on the beach.","我們在沙灘上堆沙堡。","搭配：at the beach"],
+  ["bear","[bɛr]","熊；忍受",1,"I cannot bear the loud noise.","我無法忍受那巨大的噪音。","動詞用法：忍受"],
+  ["beautiful","[ˈbjutəfəl]","美麗的",1,"What a beautiful sunset!","多麼美麗的日落！","形容詞"],
+  ["because","[bɪˈkɔz]","因為",1,"I stayed home because it rained.","因為下雨所以我待在家。","連接詞"],
+  ["become","[bɪˈkʌm]","變成",1,"He wants to become a doctor.","他想成為一名醫生。","連綴動詞"],
+  ["bed","[bɛd]","床",1,"It is time to go to bed.","該上床睡覺了。","搭配：go to bed"],
+  ["bedroom","[ˈbɛdˌrum]","臥室",1,"My bedroom is clean and tidy.","我的臥室既乾淨又整齊。","名詞"],
+  ["beef","[bif]","牛肉",1,"I'd like a bowl of beef soup.","我想要一碗牛肉湯。","不可數名詞"],
+  ["before","[bɪˈfɔr]","在...之前",1,"Wash your hands before eating.","吃東西前請洗手。","介系詞/連接詞"],
+  ["begin","[bɪˈɡɪn]","開始",1,"Class begins at eight o'clock.","八點開始上課。","動詞三態：begin, began, begun"],
+  ["behind","[bɪˈhaɪnd]","在...後面",1,"The cat hid behind the door.","貓躲在門後面。","方位介系詞"],
+  ["believe","[bəˈliv]","相信",1,"I believe you can do it.","我相信你能做到。","動詞"],
+  ["bell","[bɛl]","鈴；鐘",1,"The school bell rang loudly.","學校鐘聲大聲響起。","名詞"],
+  ["belong","[bəˈlɔŋ]","屬於",1,"This red pencil belongs to me.","這支紅鉛筆是我的。","搭配：belong to + 人"],
+  ["below","[bɪˈlo]","在...下方",1,"The temperature is below zero.","氣溫在零度以下。","反義：above"],
+  ["beside","[bɪˈsaɪd]","在...旁邊",1,"Sit beside me, please.","請坐在我旁邊。","同義：next to"],
+  ["between","[bɪˈtwin]","在...之間",1,"The bank is between two stores.","銀行在兩家店之間。","句型：between A and B"],
+  ["bicycle","[ˈbaɪsɪkəl]","腳踏車",1,"He rides a bicycle to school.","他騎腳踏車上學。","搭配：ride a bicycle"],
+  ["big","[bɪɡ]","大的",1,"An elephant is a big animal.","大象是龐大的動物。","形容詞"],
+  ["bird","[bɝd]","鳥",1,"Birds are singing in the tree.","鳥兒在樹上歌唱。","名詞"],
+  ["birthday","[ˈbɝθˌde]","生日",1,"Happy birthday to you!","祝你生日快樂！","名詞"],
+  ["bite","[baɪt]","咬",1,"The dog might bite strangers.","這隻狗可能會咬陌生人。","三態：bite, bit, bitten"],
+  ["black","[blæk]","黑色的",1,"She wears a black jacket.","她穿著一件黑色外套。","顏色單字"],
+  ["blow","[blo]","吹",1,"The wind began to blow hard.","風開始猛烈地吹。","三態：blow, blew, blown"],
+  ["blue","[blu]","藍色的",1,"The sky is blue and clear.","天空蔚藍且晴朗。","顏色單字"],
+  ["boat","[bot]","小船",1,"They rowed a boat on the lake.","他們在湖上划船。","搭配：by boat"],
+  ["body","[ˈbɑdi]","身體",1,"Regular exercise keeps your body fit.","規律運動讓身體健康。","名詞"],
+  ["book","[bʊk]","書本；預訂",1,"I booked a table for two.","我預訂了兩個人的位子。","動詞用法：預約"],
+  ["bored","[bɔrd]","感到無聊的",1,"He felt bored during the lecture.","他在演講時感到無聊。","修飾人感到無聊"],
+  ["boring","[ˈbɔrɪŋ]","令人無聊的",1,"The movie was very boring.","這部電影非常無聊。","修飾事物令人無聊"],
+  ["borrow","[ˈbɑro]","借入",1,"Can I borrow your pencil?","我可以借你的鉛筆嗎？","辨析：borrow vs lend"],
+  ["boss","[bɔs]","老闆",1,"My boss is friendly and kind.","我的老闆親切又仁慈。","名詞"],
+  ["bottle","[ˈbɑtəl]","瓶子",1,"A bottle of water, please.","請給我一瓶水。","搭配：a bottle of"],
+  ["bowl","[bol]","碗",1,"He ate a bowl of hot soup.","他喝了一碗熱湯。","搭配：a bowl of"],
+  ["box","[bɑks]","盒子；箱子",1,"Open the gift box carefully.","小心地打開禮物盒。","複數：boxes"],
+  ["boy","[bɔɪ]","男孩",1,"The boy is playing football.","這個男孩正在踢足球。","名詞"],
+  ["bread","[brɛd]","麵包",1,"I had bread and milk for breakfast.","我早餐吃了麵包配牛奶。","不可數名詞"],
+  ["break","[brek]","打破；休息",1,"Let's take a ten-minute break.","我們休息十分鐘吧。","名詞用法：休息"],
+  ["breakfast","[ˈbrɛkfəst]","早餐",1,"Never skip your breakfast.","絕對不要不吃早餐。","搭配：have breakfast"],
+  ["bridge","[brɪdʒ]","橋",1,"Cross the bridge to the town.","穿過這座橋進城。","名詞"],
+  ["bright","[braɪt]","明亮的；聰明的",1,"The stars are bright tonight.","今晚繁星明亮。","形容詞"],
+  ["bring","[brɪŋ]","帶來",1,"Bring your umbrella with you.","記得帶你的雨傘。","三態：bring, brought, brought"],
+  ["brother","[ˈbrʌðɚ]","兄弟",1,"My elder brother goes to college.","我的哥哥讀大學。","名詞"],
+  ["brown","[braʊn]","棕色的",1,"He has brown eyes.","他有一雙棕色的眼睛。","顏色單字"],
+  ["brush","[brʌʃ]","刷子；刷",1,"Brush your teeth twice a day.","每天刷牙兩次。","動詞用法：刷牙"],
+  ["build","[bɪld]","建造",1,"They built a new library.","他們建了一座新圖書館。","三態：build, built, built"],
+  ["burn","[bɝn]","燃燒",1,"Wood burns easily.","木頭容易燃燒。","動詞"],
+  ["bus","[bʌs]","公車",1,"I go to school by bus.","我搭公車上學。","搭配：take a bus"],
+  ["busy","[ˈbɪzi]","忙碌的",1,"Mom is busy cooking dinner.","媽媽正忙著煮晚餐。","句型：be busy + V-ing"],
+  ["butter","[ˈbʌtɚ]","奶油",1,"Spread some butter on the toast.","在吐司上抹些奶油。","不可數名詞"],
+  ["buy","[baɪ]","買",1,"I bought a new book yesterday.","我昨天買了一本新書。","三態：buy, bought, bought"],
+  ["achieve","[əˈtʃiv]","實現；達到",2,"Work hard to achieve your goals.","努力以達成你的目標。","搭配：achieve goals"],
+  ["admire","[ədˈmaɪr]","欽佩；欣賞",2,"I admire her great courage.","我欽佩她的勇氣。","動詞"],
+  ["advantage","[ədˈvæntɪdʒ]","優勢；利益",2,"He has the advantage of height.","他具有身高的優勢。","反義：disadvantage"],
+  ["apologize","[əˈpɑləˌdʒaɪz]","道歉",2,"You must apologize for being late.","你必須為遲到道歉。","搭配：apologize to 人 for 事"],
+  ["attitude","[ˈætəˌtjud]","態度",2,"A positive attitude is everything.","積極的態度決定一切。","名詞"],
+  ["attract","[əˈtrækt]","吸引",2,"The concert attracted thousands.","演唱會吸引了數千人。","形容詞：attractive"],
+  ["benefit","[ˈbɛnəfɪt]","好處；獲益",2,"Exercise brings great benefits.","運動帶來莫大好處。","搭配：benefit from"],
+  ["courage","[ˈkɝrɪdʒ]","勇氣",2,"It takes courage to speak up.","發聲需要無畏的勇氣。","形容詞：courageous"],
+  ["create","[kriˈet]","創造",2,"The artist created a masterpiece.","這位藝術家創造了傑作。","名詞：creation"],
+  ["culture","[ˈkʌltʃɚ]","文化",2,"Respect different cultures.","尊重多元文化。","形容詞：cultural"],
+  ["damage","[ˈdæmɪdʒ]","損害；破壞",2,"The typhoon caused heavy damage.","颱風造成了嚴重損害。","動詞/名詞"],
+  ["environment","[ɪnˈvaɪrənmənt]","環境",2,"Protect the natural environment.","保護自然環境。","形容詞：environmental"],
+  ["government","[ˈɡʌvɚnmənt]","政府",2,"The government built a new highway.","政府興建了一條新公路。","名詞"],
+  ["improve","[ɪmˈpruv]","改善；進步",2,"Practice helps improve your English.","練習能改善你的英文。","名詞：improvement"],
+  ["protect","[prəˈtɛkt]","保護",2,"Wear a helmet to protect your head.","戴安全帽以保護頭部。","搭配：protect from/against"],
+  ["pollution","[pəˈluʃən]","污染",2,"Air pollution is getting worse.","空氣污染正日益惡化。","動詞：pollute"],
+  ["population","[ˌpɑpjəˈleʃən]","人口",2,"The world population is growing.","世界人口正在增長。","名詞"],
+  ["respect","[rɪˈspɛkt]","尊敬；尊重",2,"Show respect to your teachers.","對你的老師展現尊重。","動詞/名詞"],
+  ["society","[səˈsaɪəti]","社會",2,"We all live in this society.","我們都生活在這個社會中。","形容詞：social"],
+  ["tradition","[trəˈdɪʃən]","傳統",2,"It is a tradition to eat mooncakes.","中秋吃月餅是一項傳統。","形容詞：traditional"],
+  ["valuable","[ˈvæljuəbəl]","有價值的",2,"Time is our most valuable treasure.","時間是我們最寶貴的財富。","名詞：value"]
+];
+
+let FULL_VOCAB = SEED_DATA.map(d => createVocab(d[0], d[1], d[2], d[3], d[4], d[5], d[6]));
+let activeScope = "core1200";
+let activeVocabList = [];
+const DAYS_COUNT = 30;
+let dayPlans = {};
+
+function setVocabScope(scope) {
+  activeScope = scope;
+  document.getElementById("mode1200").classList.toggle("active", scope === "core1200");
+  document.getElementById("mode2000").classList.toggle("active", scope === "all2000");
+
+  activeVocabList = (scope === "core1200") 
+    ? FULL_VOCAB.filter(item => item.level === 1) 
+    : FULL_VOCAB;
+
+  initDayPlans();
+  initDaySelector();
+  changeDay(currentDay || 1);
+}
+
+function initDayPlans() {
+  const perDay = Math.ceil(activeVocabList.length / DAYS_COUNT) || 1;
+  dayPlans = {};
+  for (let d = 1; d <= DAYS_COUNT; d++) {
+    const start = (d - 1) * perDay;
+    const end = Math.min(d * perDay, activeVocabList.length);
+    dayPlans[d] = activeVocabList.slice(start, end);
+  }
+}
+
+function shuffle(arr) {
+  const list = arr.slice();
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+let currentUser = null;
+let isGuest = false;
+let guestData = { history: {}, mistakes: [] };
+let authMode = "login";
+
+function getUsersDB() {
+  try { return JSON.parse(localStorage.getItem("vocab_users_db") || "{}"); } catch (e) { return {}; }
+}
+function saveUsersDB(db) {
+  try { localStorage.setItem("vocab_users_db", JSON.stringify(db)); } catch (e) { alert("儲存空間不足！"); }
+}
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById("tabLogin").classList.toggle("active", mode === "login");
+  document.getElementById("tabRegister").classList.toggle("active", mode === "register");
+  document.getElementById("authSubmitBtn").innerText = mode === "login" ? "開始學習" : "註冊並開始測驗";
+}
+
+function loginAsGuest() {
+  isGuest = true;
+  currentUser = "Guest";
+  guestData = { history: {}, mistakes: [] };
+  document.getElementById("authSection").classList.add("hidden");
+  document.getElementById("quizSection").classList.remove("hidden");
+  document.getElementById("displayUsername").innerHTML = `👤 訪客 <span class="guest-tag">匿名模式</span>`;
+  setVocabScope("core1200");
+  updateMistakeCount();
+}
+
+function handleAuthSubmit() {
+  const u = document.getElementById("authUsername").value.trim();
+  const p = document.getElementById("authPassword").value.trim();
+  if (!u || !p) return alert("請輸入完整帳號與密碼！");
+
+  const db = getUsersDB();
+  if (authMode === "register") {
+    if (db[u] || u.toLowerCase() === "guest") return alert("此帳號名稱已被使用！");
+    db[u] = { password: safeHash(p), history: {}, mistakes: [] };
+    saveUsersDB(db);
+    alert("註冊成功！即將為您登入測驗系統。");
+    loginSuccess(u);
+  } else {
+    if (!db[u] || db[u].password !== safeHash(p)) return alert("帳號不存在或密碼錯誤！");
+    loginSuccess(u);
+  }
+}
+
+function loginSuccess(u) {
+  isGuest = false;
+  currentUser = u;
+  localStorage.setItem("vocab_active_session", u);
+  document.getElementById("authSection").classList.add("hidden");
+  document.getElementById("quizSection").classList.remove("hidden");
+  document.getElementById("displayUsername").innerText = `👤 學員: ${currentUser}`;
+  setVocabScope("core1200");
+  updateMistakeCount();
+}
+
+function logout() {
+  if (isGuest) {
+    isGuest = false;
+    currentUser = null;
+    guestData = { history: {}, mistakes: [] };
+  } else {
+    localStorage.removeItem("vocab_active_session");
+    currentUser = null;
+  }
+  document.getElementById("authSection").classList.remove("hidden");
+  document.getElementById("quizSection").classList.add("hidden");
+  document.getElementById("dashboardSection").classList.add("hidden");
+  document.getElementById("authUsername").value = "";
+  document.getElementById("authPassword").value = "";
+}
+
+function getUserData() {
+  if (isGuest) return guestData;
+  const db = getUsersDB();
+  return (currentUser && db[currentUser]) ? db[currentUser] : { history: {}, mistakes: [] };
+}
+
+function saveUserData(data) {
+  if (isGuest) { guestData = data; return; }
+  if (!currentUser) return;
+  const db = getUsersDB();
+  db[currentUser] = data;
+  saveUsersDB(db);
+}
+
+let currentTestQueue = [];
+let currentIndex = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let hasAnswered = false;
+let currentDay = 1;
+
+function initDaySelector() {
+  const select = document.getElementById("daySelect");
+  select.innerHTML = "";
+  const userData = getUserData();
+
+  for (let d = 1; d <= DAYS_COUNT; d++) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    const isDone = userData.history[`${activeScope}_Day_${d}`] ? "✓ " : "";
+    const count = dayPlans[d]?.length || 0;
+    opt.innerText = `${isDone}第 ${d} 天 (${count} 題)`;
+    select.appendChild(opt);
+  }
+}
+
+function buildQuestionPool(targetDay) {
+  const scopeType = document.querySelector('input[name="scopeType"]:checked').value;
+  const includeMistakes = document.getElementById("includeMistakesCheckbox").checked;
+  const userData = getUserData();
+
+  let pool = [];
+
+  if (scopeType === "cumulative") {
+    for (let d = 1; d <= targetDay; d++) {
+      if (dayPlans[d]) {
+        pool.push(...dayPlans[d]);
+      }
+    }
+  } else {
+    pool = (dayPlans[targetDay] || []).slice();
+  }
+
+  if (includeMistakes && userData.mistakes && userData.mistakes.length > 0) {
+    userData.mistakes.forEach(m => {
+      if (!pool.some(item => item.en === m.en)) {
+        pool.push(m);
+      }
+    });
+  }
+
+  return pool;
+}
+
+function handleFilterChange() {
+  changeDay(currentDay);
+}
+
+function changeDay(day) {
+  currentDay = Number(day);
+  const pool = buildQuestionPool(currentDay);
+  document.getElementById("poolInfoText").innerText = `題庫共 ${pool.length} 題`;
+  
+  currentTestQueue = shuffle(pool);
+  currentIndex = 0;
+  correctCount = 0;
+  wrongCount = 0;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  hasAnswered = false;
+  document.getElementById("nextBtn").disabled = true;
+  document.getElementById("explanationBox").classList.add("hidden");
+
+  if (currentTestQueue.length === 0) {
+    document.getElementById("wordDisplay").innerText = "此範圍無單字";
+    document.getElementById("wordKk").innerText = "";
+    document.getElementById("optionsGrid").innerHTML = "";
+    return;
+  }
+
+  if (currentIndex >= currentTestQueue.length) {
+    recordDayCompletion();
+    document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
+    document.getElementById("wordKk").innerText = "";
+    document.getElementById("optionsGrid").innerHTML = `
+      <div style="text-align: center; padding: 20px; font-size: 15px; color: var(--muted);">
+        完成！正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b><br>
+        本次共完成 ${currentTestQueue.length} 題。
+      </div>
+    `;
+    document.getElementById("progressText").innerText = "已完成所有題數";
+    document.getElementById("progressBar").style.width = "100%";
+    return;
+  }
+
+  const currentItem = currentTestQueue[currentIndex];
+  document.getElementById("wordDisplay").innerText = currentItem.en;
+  document.getElementById("wordKk").innerText = currentItem.kk || "";
+  document.getElementById("progressText").innerText = `第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
+  document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
+  document.getElementById("progressBar").style.width = `${(currentIndex / currentTestQueue.length) * 100}%`;
+
+  const distractors = shuffle(activeVocabList.filter(i => i.zh !== currentItem.zh).map(i => i.zh)).slice(0, 3);
+  const options = shuffle([currentItem.zh, ...distractors]);
+
+  const grid = document.getElementById("optionsGrid");
+  grid.innerHTML = "";
+  const keys = ["A", "B", "C", "D"];
+
+  options.forEach((optText, idx) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.innerHTML = `<span class="opt-key">${keys[idx]}</span><span>${optText}</span>`;
+    btn.onclick = () => checkAnswer(btn, optText, currentItem);
+    grid.appendChild(btn);
+  });
+}
+
+function checkAnswer(btn, selectedText, item) {
+  if (hasAnswered) return;
+  hasAnswered = true;
+
+  const buttons = document.querySelectorAll(".option-btn");
+  buttons.forEach(b => {
+    if (b.querySelector("span:last-child").innerText === item.zh) {
+      b.classList.add("correct");
+    }
+  });
+
+  const userData = getUserData();
+  if (selectedText === item.zh) {
+    correctCount++;
+  } else {
+    btn.classList.add("wrong");
+    wrongCount++;
+    if (!userData.mistakes.some(m => m.en === item.en)) {
+      userData.mistakes.push(item);
+      saveUserData(userData);
+      updateMistakeCount();
+    }
+  }
+
+  if (item.sentenceEn) {
+    document.getElementById("expSentenceEn").innerText = `• ${item.sentenceEn}`;
+    document.getElementById("expSentenceZh").innerText = item.sentenceZh || "";
+    document.getElementById("expGrammar").innerText = item.grammar || "核心常用單字";
+    document.getElementById("explanationBox").classList.remove("hidden");
+  }
+
+  document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
+  document.getElementById("nextBtn").disabled = false;
+}
+
+function nextQuestion() {
+  if (!hasAnswered) return;
+  currentIndex++;
+  renderQuestion();
+}
+
+function recordDayCompletion() {
+  const userData = getUserData();
+  userData.history[`${activeScope}_Day_${currentDay}`] = {
+    accuracy: Math.round((correctCount / currentTestQueue.length) * 100),
+    score: correctCount,
+    total: currentTestQueue.length,
+    date: new Date().toLocaleDateString()
+  };
+  saveUserData(userData);
+  initDaySelector();
+  document.getElementById("daySelect").value = currentDay;
+}
+
+function updateMistakeCount() {
+  const userData = getUserData();
+  document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userData.mistakes.length})`;
+}
+
+function reviewMistakes() {
+  const userData = getUserData();
+  if (userData.mistakes.length === 0) return alert("目前無錯題！");
+  if (confirm(`是否複習累積的 ${userData.mistakes.length} 道錯題？`)) {
+    currentTestQueue = shuffle(userData.mistakes);
+    currentIndex = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    document.getElementById("poolInfoText").innerText = `錯題庫共 ${currentTestQueue.length} 題`;
+    renderQuestion();
+  }
+}
+
+function toggleDashboard() {
+  const panel = document.getElementById("dashboardSection");
+  panel.classList.toggle("hidden");
+  if (!panel.classList.contains("hidden")) {
+    const history = getUserData().history;
+    const records = Object.entries(history);
+    document.getElementById("statsSummary").innerHTML = records.length === 0
+      ? "尚無完成記錄"
+      : records.map(([key, d]) => `<div>• <b>${key}</b>: 正確率 ${d.accuracy}% (${d.score}/${d.total}) - ${d.date}</div>`).join("");
+  }
+}
+
+let currentAudio = null;
+const audioUrlCache = new Map();
+
+function playLocalSpeech(word) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.pitch = 1.05;
+
+  const voices = window.speechSynthesis.getVoices();
+  const femaleKeywords = ["samantha", "karen", "victoria", "ava", "allison", "susan", "zira", "jenny", "aria", "female"];
+  let selectedVoice = voices.find(v => {
+    const name = v.name.toLowerCase();
+    const lang = (v.lang || "").replace("_", "-");
+    return lang === "en-US" && femaleKeywords.some(k => name.includes(k));
+  }) || voices.find(v => (v.lang || "").replace("_", "-") === "en-US");
+
+  if (selectedVoice) utterance.voice = selectedVoice;
+  window.speechSynthesis.speak(utterance);
+}
+
+async function speakCurrentWord() {
+  if (currentIndex >= currentTestQueue.length) return;
+  const word = currentTestQueue[currentIndex].en.trim().toLowerCase();
+
+  if (audioUrlCache.has(word) && audioUrlCache.get(word)) {
+    try {
+      if (currentAudio) currentAudio.pause();
+      currentAudio = new Audio(audioUrlCache.get(word));
+      await currentAudio.play();
+      return;
+    } catch (e) {
+      playLocalSpeech(word);
+      return;
+    }
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1800);
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      let targetAudio = null;
+      if (data && data[0] && Array.isArray(data[0].phonetics)) {
+        const usItem = data[0].phonetics.find(p => p.audio && p.audio.includes("-us.mp3"));
+        if (usItem && usItem.audio) targetAudio = usItem.audio;
+        else {
+          const anyItem = data[0].phonetics.find(p => p.audio && p.audio.trim() !== "");
+          if (anyItem) targetAudio = anyItem.audio;
+        }
+      }
+      if (targetAudio) {
+        if (targetAudio.startsWith("//")) targetAudio = "https:" + targetAudio;
+        audioUrlCache.set(word, targetAudio);
+        if (currentAudio) currentAudio.pause();
+        currentAudio = new Audio(targetAudio);
+        await currentAudio.play();
+        return;
+      }
+    }
+  } catch (err) {}
+
+  audioUrlCache.set(word, null);
+  playLocalSpeech(word);
+}
+
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+}
+
+window.addEventListener("keydown", (e) => {
+  const k = e.key.toUpperCase();
+  const btns = document.querySelectorAll(".option-btn");
+  if (!hasAnswered) {
+    if (["1", "A"].includes(k) && btns[0]) btns[0].click();
+    if (["2", "B"].includes(k) && btns[1]) btns[1].click();
+    if (["3", "C"].includes(k) && btns[2]) btns[2].click();
+    if (["4", "D"].includes(k) && btns[3]) btns[3].click();
+  } else if (e.code === "Space" || e.key === "Enter") {
+    e.preventDefault();
+    nextQuestion();
+  }
+});
+
+window.onload = async () => {
+  try {
+    const res = await fetch("vocab2000.json");
+    if (res.ok) {
+      const externalData = await res.json();
+      if (Array.isArray(externalData) && externalData.length > 50) {
+        FULL_VOCAB = externalData;
+      }
+    }
+  } catch (err) {}
+
+  initDayPlans();
+
+  const activeSession = localStorage.getItem("vocab_active_session");
+  if (activeSession && getUsersDB()[activeSession]) {
+    loginSuccess(activeSession);
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,965 @@
+[
+  {
+    "en": "about",
+    "kk": "[əˈbaʊt]",
+    "zh": "關於；大約",
+    "level": 1,
+    "sentenceEn": "The story is about a brave dog.",
+    "sentenceZh": "這故事是關於一隻勇敢的狗。",
+    "grammar": "片語：be about to + V (即將)"
+  },
+  {
+    "en": "above",
+    "kk": "[əˈbʌv]",
+    "zh": "在...上方",
+    "level": 1,
+    "sentenceEn": "We saw the moon above the hill.",
+    "sentenceZh": "我們看到山丘上方的月亮。",
+    "grammar": "介系詞：above + 基準"
+  },
+  {
+    "en": "across",
+    "kk": "[əˈkrɔs]",
+    "zh": "穿過；橫越",
+    "level": 1,
+    "sentenceEn": "Walk across the street carefully.",
+    "sentenceZh": "過馬路時請小心。",
+    "grammar": "搭配：walk across + 地點"
+  },
+  {
+    "en": "action",
+    "kk": "[ˈækʃən]",
+    "zh": "行動；動作",
+    "level": 1,
+    "sentenceEn": "Actions speak louder than words.",
+    "sentenceZh": "事實勝於雄辯。",
+    "grammar": "搭配：take action (採取行動)"
+  },
+  {
+    "en": "actor",
+    "kk": "[ˈæktɚ]",
+    "zh": "男演員",
+    "level": 1,
+    "sentenceEn": "He is a popular movie actor.",
+    "sentenceZh": "他是一位受歡迎的電影演員。",
+    "grammar": "延伸：actress (女演員)"
+  },
+  {
+    "en": "afraid",
+    "kk": "[əˈfred]",
+    "zh": "害怕的",
+    "level": 1,
+    "sentenceEn": "She is afraid of snakes.",
+    "sentenceZh": "她害怕蛇。",
+    "grammar": "句型：be afraid of + N/V-ing"
+  },
+  {
+    "en": "after",
+    "kk": "[ˈæftɚ]",
+    "zh": "在...之後",
+    "level": 1,
+    "sentenceEn": "Let's play basketball after school.",
+    "sentenceZh": "放學後我們去打籃球吧。",
+    "grammar": "連接詞/介系詞"
+  },
+  {
+    "en": "again",
+    "kk": "[əˈɡɛn]",
+    "zh": "再一次",
+    "level": 1,
+    "sentenceEn": "Can you say that again, please?",
+    "sentenceZh": "你能再說一次嗎？",
+    "grammar": "副詞"
+  },
+  {
+    "en": "agree",
+    "kk": "[əˈɡri]",
+    "zh": "同意",
+    "level": 1,
+    "sentenceEn": "I agree with your suggestion.",
+    "sentenceZh": "我同意你的提議。",
+    "grammar": "搭配：agree with + 人"
+  },
+  {
+    "en": "ahead",
+    "kk": "[əˈhɛd]",
+    "zh": "在前面",
+    "level": 1,
+    "sentenceEn": "Go straight ahead for two blocks.",
+    "sentenceZh": "往前直走兩個街區。",
+    "grammar": "片語：ahead of time (提早)"
+  },
+  {
+    "en": "air",
+    "kk": "[ɛr]",
+    "zh": "空氣",
+    "level": 1,
+    "sentenceEn": "Fresh air is good for your health.",
+    "sentenceZh": "新鮮空氣有益健康。",
+    "grammar": "不可數名詞"
+  },
+  {
+    "en": "airport",
+    "kk": "[ˈɛrˌpɔrt]",
+    "zh": "機場",
+    "level": 1,
+    "sentenceEn": "We arrived at the airport early.",
+    "sentenceZh": "我們很早就到了機場。",
+    "grammar": "搭配：at the airport"
+  },
+  {
+    "en": "almost",
+    "kk": "[ˈɔlˌmost]",
+    "zh": "幾乎",
+    "level": 1,
+    "sentenceEn": "Dinner is almost ready.",
+    "sentenceZh": "晚餐快準備好了。",
+    "grammar": "副詞用法"
+  },
+  {
+    "en": "already",
+    "kk": "[ɔlˈrɛdi]",
+    "zh": "已經",
+    "level": 1,
+    "sentenceEn": "I have already finished my work.",
+    "sentenceZh": "我已經完成工作了。",
+    "grammar": "完成式常見副詞"
+  },
+  {
+    "en": "always",
+    "kk": "[ˈɔlwez]",
+    "zh": "總是",
+    "level": 1,
+    "sentenceEn": "He always arrives on time.",
+    "sentenceZh": "他總是準時到達。",
+    "grammar": "頻率副詞"
+  },
+  {
+    "en": "angry",
+    "kk": "[ˈæŋɡri]",
+    "zh": "生氣的",
+    "level": 1,
+    "sentenceEn": "The teacher was angry with Tom.",
+    "sentenceZh": "老師對湯姆很生氣。",
+    "grammar": "搭配：be angry with + 人"
+  },
+  {
+    "en": "animal",
+    "kk": "[ˈænəməl]",
+    "zh": "動物",
+    "level": 1,
+    "sentenceEn": "The dog is a loyal animal.",
+    "sentenceZh": "狗是忠誠的動物。",
+    "grammar": "可數名詞"
+  },
+  {
+    "en": "answer",
+    "kk": "[ˈænsɚ]",
+    "zh": "回答；答案",
+    "level": 1,
+    "sentenceEn": "Please answer my question.",
+    "sentenceZh": "請回答我的問題。",
+    "grammar": "動詞/名詞同形"
+  },
+  {
+    "en": "appear",
+    "kk": "[əˈpɪr]",
+    "zh": "出現；似乎",
+    "level": 1,
+    "sentenceEn": "A rainbow appeared in the sky.",
+    "sentenceZh": "天空出現了一道彩虹。",
+    "grammar": "反義：disappear (消失)"
+  },
+  {
+    "en": "apple",
+    "kk": "[ˈæpəl]",
+    "zh": "蘋果",
+    "level": 1,
+    "sentenceEn": "An apple a day keeps the doctor away.",
+    "sentenceZh": "一天一蘋果，醫生遠離我。",
+    "grammar": "常用名詞"
+  },
+  {
+    "en": "arrive",
+    "kk": "[əˈraɪv]",
+    "zh": "到達",
+    "level": 1,
+    "sentenceEn": "The train arrived on time.",
+    "sentenceZh": "火車準時抵達。",
+    "grammar": "搭配：arrive at/in"
+  },
+  {
+    "en": "ask",
+    "kk": "[æsk]",
+    "zh": "詢問；請求",
+    "level": 1,
+    "sentenceEn": "Feel free to ask questions.",
+    "sentenceZh": "請隨時發問。",
+    "grammar": "搭配：ask for help"
+  },
+  {
+    "en": "autumn",
+    "kk": "[ˈɔtəm]",
+    "zh": "秋天",
+    "level": 1,
+    "sentenceEn": "Leaves turn red in autumn.",
+    "sentenceZh": "秋天樹葉變紅。",
+    "grammar": "同義：fall"
+  },
+  {
+    "en": "away",
+    "kk": "[əˈwe]",
+    "zh": "離開；遠離",
+    "level": 1,
+    "sentenceEn": "Put your toys away now.",
+    "sentenceZh": "現在把你的玩具收好。",
+    "grammar": "搭配：run away, keep away"
+  },
+  {
+    "en": "baby",
+    "kk": "[ˈbebi]",
+    "zh": "嬰兒",
+    "level": 1,
+    "sentenceEn": "The baby is sleeping peacefully.",
+    "sentenceZh": "嬰兒正安詳地睡著。",
+    "grammar": "可數名詞"
+  },
+  {
+    "en": "back",
+    "kk": "[bæk]",
+    "zh": "後面；返回",
+    "level": 1,
+    "sentenceEn": "I will come back soon.",
+    "sentenceZh": "我很快就會回來。",
+    "grammar": "副詞/名詞"
+  },
+  {
+    "en": "bad",
+    "kk": "[bæd]",
+    "zh": "壞的；糟糕的",
+    "level": 1,
+    "sentenceEn": "Eating too much junk food is bad.",
+    "sentenceZh": "吃太多垃圾食物是不好的。",
+    "grammar": "比較級：worse, worst"
+  },
+  {
+    "en": "bag",
+    "kk": "[bæɡ]",
+    "zh": "袋子；包包",
+    "level": 1,
+    "sentenceEn": "Her school bag is very heavy.",
+    "sentenceZh": "她的書包非常重。",
+    "grammar": "生活名詞"
+  },
+  {
+    "en": "ball",
+    "kk": "[bɔl]",
+    "zh": "球",
+    "level": 1,
+    "sentenceEn": "He kicked the ball into the net.",
+    "sentenceZh": "他把球踢進球門。",
+    "grammar": "生活名詞"
+  },
+  {
+    "en": "banana",
+    "kk": "[bəˈnænə]",
+    "zh": "香蕉",
+    "level": 1,
+    "sentenceEn": "Monkeys love to eat bananas.",
+    "sentenceZh": "猴子喜歡吃香蕉。",
+    "grammar": "可數名詞"
+  },
+  {
+    "en": "bank",
+    "kk": "[bæŋk]",
+    "zh": "銀行；河岸",
+    "level": 1,
+    "sentenceEn": "I need to deposit money in the bank.",
+    "sentenceZh": "我需要存錢到銀行。",
+    "grammar": "一字多義"
+  },
+  {
+    "en": "baseball",
+    "kk": "[ˈbesˌbɔl]",
+    "zh": "棒球",
+    "level": 1,
+    "sentenceEn": "Baseball is very popular in Taiwan.",
+    "sentenceZh": "棒球在台灣非常受歡迎。",
+    "grammar": "運動單字"
+  },
+  {
+    "en": "basket",
+    "kk": "[ˈbæskɪt]",
+    "zh": "籃子",
+    "level": 1,
+    "sentenceEn": "A basket full of fresh fruit.",
+    "sentenceZh": "裝滿新鮮水果的籃子。",
+    "grammar": "搭配：a basket of"
+  },
+  {
+    "en": "basketball",
+    "kk": "[ˈbæskɪtˌbɔl]",
+    "zh": "籃球",
+    "level": 1,
+    "sentenceEn": "Let's play basketball together.",
+    "sentenceZh": "我們一起打籃球吧。",
+    "grammar": "運動單字"
+  },
+  {
+    "en": "bath",
+    "kk": "[bæθ]",
+    "zh": "泡澡；沐浴",
+    "level": 1,
+    "sentenceEn": "Take a hot bath after work.",
+    "sentenceZh": "下班後泡個熱水澡。",
+    "grammar": "搭配：take a bath"
+  },
+  {
+    "en": "beach",
+    "kk": "[bitʃ]",
+    "zh": "海灘",
+    "level": 1,
+    "sentenceEn": "We built sandcastles on the beach.",
+    "sentenceZh": "我們在沙灘上堆沙堡。",
+    "grammar": "搭配：at the beach"
+  },
+  {
+    "en": "bear",
+    "kk": "[bɛr]",
+    "zh": "熊；忍受",
+    "level": 1,
+    "sentenceEn": "I cannot bear the loud noise.",
+    "sentenceZh": "我無法忍受那巨大的噪音。",
+    "grammar": "動詞用法：忍受"
+  },
+  {
+    "en": "beautiful",
+    "kk": "[ˈbjutəfəl]",
+    "zh": "美麗的",
+    "level": 1,
+    "sentenceEn": "What a beautiful sunset!",
+    "sentenceZh": "多麼美麗的日落！",
+    "grammar": "形容詞"
+  },
+  {
+    "en": "because",
+    "kk": "[bɪˈkɔz]",
+    "zh": "因為",
+    "level": 1,
+    "sentenceEn": "I stayed home because it rained.",
+    "sentenceZh": "因為下雨所以我待在家。",
+    "grammar": "連接詞"
+  },
+  {
+    "en": "become",
+    "kk": "[bɪˈkʌm]",
+    "zh": "變成",
+    "level": 1,
+    "sentenceEn": "He wants to become a doctor.",
+    "sentenceZh": "他想成為一名醫生。",
+    "grammar": "連綴動詞"
+  },
+  {
+    "en": "bed",
+    "kk": "[bɛd]",
+    "zh": "床",
+    "level": 1,
+    "sentenceEn": "It is time to go to bed.",
+    "sentenceZh": "該上床睡覺了。",
+    "grammar": "搭配：go to bed"
+  },
+  {
+    "en": "bedroom",
+    "kk": "[ˈbɛdˌrum]",
+    "zh": "臥室",
+    "level": 1,
+    "sentenceEn": "My bedroom is clean and tidy.",
+    "sentenceZh": "我的臥室既乾淨又整齊。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "beef",
+    "kk": "[bif]",
+    "zh": "牛肉",
+    "level": 1,
+    "sentenceEn": "I'd like a bowl of beef soup.",
+    "sentenceZh": "我想要一碗牛肉湯。",
+    "grammar": "不可數名詞"
+  },
+  {
+    "en": "before",
+    "kk": "[bɪˈfɔr]",
+    "zh": "在...之前",
+    "level": 1,
+    "sentenceEn": "Wash your hands before eating.",
+    "sentenceZh": "吃東西前請洗手。",
+    "grammar": "介系詞/連接詞"
+  },
+  {
+    "en": "begin",
+    "kk": "[bɪˈɡɪn]",
+    "zh": "開始",
+    "level": 1,
+    "sentenceEn": "Class begins at eight o'clock.",
+    "sentenceZh": "八點開始上課。",
+    "grammar": "動詞三態：begin, began, begun"
+  },
+  {
+    "en": "behind",
+    "kk": "[bɪˈhaɪnd]",
+    "zh": "在...後面",
+    "level": 1,
+    "sentenceEn": "The cat hid behind the door.",
+    "sentenceZh": "貓躲在門後面。",
+    "grammar": "方位介系詞"
+  },
+  {
+    "en": "believe",
+    "kk": "[bəˈliv]",
+    "zh": "相信",
+    "level": 1,
+    "sentenceEn": "I believe you can do it.",
+    "sentenceZh": "我相信你能做到。",
+    "grammar": "動詞"
+  },
+  {
+    "en": "bell",
+    "kk": "[bɛl]",
+    "zh": "鈴；鐘",
+    "level": 1,
+    "sentenceEn": "The school bell rang loudly.",
+    "sentenceZh": "學校鐘聲大聲響起。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "belong",
+    "kk": "[bəˈlɔŋ]",
+    "zh": "屬於",
+    "level": 1,
+    "sentenceEn": "This red pencil belongs to me.",
+    "sentenceZh": "這支紅鉛筆是我的。",
+    "grammar": "搭配：belong to + 人"
+  },
+  {
+    "en": "below",
+    "kk": "[bɪˈlo]",
+    "zh": "在...下方",
+    "level": 1,
+    "sentenceEn": "The temperature is below zero.",
+    "sentenceZh": "氣溫在零度以下。",
+    "grammar": "反義：above"
+  },
+  {
+    "en": "beside",
+    "kk": "[bɪˈsaɪd]",
+    "zh": "在...旁邊",
+    "level": 1,
+    "sentenceEn": "Sit beside me, please.",
+    "sentenceZh": "請坐在我旁邊。",
+    "grammar": "同義：next to"
+  },
+  {
+    "en": "between",
+    "kk": "[bɪˈtwin]",
+    "zh": "在...之間",
+    "level": 1,
+    "sentenceEn": "The bank is between two stores.",
+    "sentenceZh": "銀行在兩家店之間。",
+    "grammar": "句型：between A and B"
+  },
+  {
+    "en": "bicycle",
+    "kk": "[ˈbaɪsɪkəl]",
+    "zh": "腳踏車",
+    "level": 1,
+    "sentenceEn": "He rides a bicycle to school.",
+    "sentenceZh": "他騎腳踏車上學。",
+    "grammar": "搭配：ride a bicycle"
+  },
+  {
+    "en": "big",
+    "kk": "[bɪɡ]",
+    "zh": "大的",
+    "level": 1,
+    "sentenceEn": "An elephant is a big animal.",
+    "sentenceZh": "大象是龐大的動物。",
+    "grammar": "形容詞"
+  },
+  {
+    "en": "bird",
+    "kk": "[bɝd]",
+    "zh": "鳥",
+    "level": 1,
+    "sentenceEn": "Birds are singing in the tree.",
+    "sentenceZh": "鳥兒在樹上歌唱。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "birthday",
+    "kk": "[ˈbɝθˌde]",
+    "zh": "生日",
+    "level": 1,
+    "sentenceEn": "Happy birthday to you!",
+    "sentenceZh": "祝你生日快樂！",
+    "grammar": "名詞"
+  },
+  {
+    "en": "bite",
+    "kk": "[baɪt]",
+    "zh": "咬",
+    "level": 1,
+    "sentenceEn": "The dog might bite strangers.",
+    "sentenceZh": "這隻狗可能會咬陌生人。",
+    "grammar": "三態：bite, bit, bitten"
+  },
+  {
+    "en": "black",
+    "kk": "[blæk]",
+    "zh": "黑色的",
+    "level": 1,
+    "sentenceEn": "She wears a black jacket.",
+    "sentenceZh": "她穿著一件黑色外套。",
+    "grammar": "顏色單字"
+  },
+  {
+    "en": "blow",
+    "kk": "[blo]",
+    "zh": "吹",
+    "level": 1,
+    "sentenceEn": "The wind began to blow hard.",
+    "sentenceZh": "風開始猛烈地吹。",
+    "grammar": "三態：blow, blew, blown"
+  },
+  {
+    "en": "blue",
+    "kk": "[blu]",
+    "zh": "藍色的",
+    "level": 1,
+    "sentenceEn": "The sky is blue and clear.",
+    "sentenceZh": "天空蔚藍且晴朗。",
+    "grammar": "顏色單字"
+  },
+  {
+    "en": "boat",
+    "kk": "[bot]",
+    "zh": "小船",
+    "level": 1,
+    "sentenceEn": "They rowed a boat on the lake.",
+    "sentenceZh": "他們在湖上划船。",
+    "grammar": "搭配：by boat"
+  },
+  {
+    "en": "body",
+    "kk": "[ˈbɑdi]",
+    "zh": "身體",
+    "level": 1,
+    "sentenceEn": "Regular exercise keeps your body fit.",
+    "sentenceZh": "規律運動讓身體健康。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "book",
+    "kk": "[bʊk]",
+    "zh": "書本；預訂",
+    "level": 1,
+    "sentenceEn": "I booked a table for two.",
+    "sentenceZh": "我預訂了兩個人的位子。",
+    "grammar": "動詞用法：預約"
+  },
+  {
+    "en": "bored",
+    "kk": "[bɔrd]",
+    "zh": "感到無聊的",
+    "level": 1,
+    "sentenceEn": "He felt bored during the lecture.",
+    "sentenceZh": "他在演講時感到無聊。",
+    "grammar": "修飾人感到無聊"
+  },
+  {
+    "en": "boring",
+    "kk": "[ˈbɔrɪŋ]",
+    "zh": "令人無聊的",
+    "level": 1,
+    "sentenceEn": "The movie was very boring.",
+    "sentenceZh": "這部電影非常無聊。",
+    "grammar": "修飾事物令人無聊"
+  },
+  {
+    "en": "borrow",
+    "kk": "[ˈbɑro]",
+    "zh": "借入",
+    "level": 1,
+    "sentenceEn": "Can I borrow your pencil?",
+    "sentenceZh": "我可以借你的鉛筆嗎？",
+    "grammar": "辨析：borrow vs lend"
+  },
+  {
+    "en": "boss",
+    "kk": "[bɔs]",
+    "zh": "老闆",
+    "level": 1,
+    "sentenceEn": "My boss is friendly and kind.",
+    "sentenceZh": "我的老闆親切又仁慈。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "bottle",
+    "kk": "[ˈbɑtəl]",
+    "zh": "瓶子",
+    "level": 1,
+    "sentenceEn": "A bottle of water, please.",
+    "sentenceZh": "請給我一瓶水。",
+    "grammar": "搭配：a bottle of"
+  },
+  {
+    "en": "bowl",
+    "kk": "[bol]",
+    "zh": "碗",
+    "level": 1,
+    "sentenceEn": "He ate a bowl of hot soup.",
+    "sentenceZh": "他喝了一碗熱湯。",
+    "grammar": "搭配：a bowl of"
+  },
+  {
+    "en": "box",
+    "kk": "[bɑks]",
+    "zh": "盒子；箱子",
+    "level": 1,
+    "sentenceEn": "Open the gift box carefully.",
+    "sentenceZh": "小心地打開禮物盒。",
+    "grammar": "複數：boxes"
+  },
+  {
+    "en": "boy",
+    "kk": "[bɔɪ]",
+    "zh": "男孩",
+    "level": 1,
+    "sentenceEn": "The boy is playing football.",
+    "sentenceZh": "這個男孩正在踢足球。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "bread",
+    "kk": "[brɛd]",
+    "zh": "麵包",
+    "level": 1,
+    "sentenceEn": "I had bread and milk for breakfast.",
+    "sentenceZh": "我早餐吃了麵包配牛奶。",
+    "grammar": "不可數名詞"
+  },
+  {
+    "en": "break",
+    "kk": "[brek]",
+    "zh": "打破；休息",
+    "level": 1,
+    "sentenceEn": "Let's take a ten-minute break.",
+    "sentenceZh": "我們休息十分鐘吧。",
+    "grammar": "名詞用法：休息"
+  },
+  {
+    "en": "breakfast",
+    "kk": "[ˈbrɛkfəst]",
+    "zh": "早餐",
+    "level": 1,
+    "sentenceEn": "Never skip your breakfast.",
+    "sentenceZh": "絕對不要不吃早餐。",
+    "grammar": "搭配：have breakfast"
+  },
+  {
+    "en": "bridge",
+    "kk": "[brɪdʒ]",
+    "zh": "橋",
+    "level": 1,
+    "sentenceEn": "Cross the bridge to the town.",
+    "sentenceZh": "穿過這座橋進城。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "bright",
+    "kk": "[braɪt]",
+    "zh": "明亮的；聰明的",
+    "level": 1,
+    "sentenceEn": "The stars are bright tonight.",
+    "sentenceZh": "今晚繁星明亮。",
+    "grammar": "形容詞"
+  },
+  {
+    "en": "bring",
+    "kk": "[brɪŋ]",
+    "zh": "帶來",
+    "level": 1,
+    "sentenceEn": "Bring your umbrella with you.",
+    "sentenceZh": "記得帶你的雨傘。",
+    "grammar": "三態：bring, brought, brought"
+  },
+  {
+    "en": "brother",
+    "kk": "[ˈbrʌðɚ]",
+    "zh": "兄弟",
+    "level": 1,
+    "sentenceEn": "My elder brother goes to college.",
+    "sentenceZh": "我的哥哥讀大學。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "brown",
+    "kk": "[braʊn]",
+    "zh": "棕色的",
+    "level": 1,
+    "sentenceEn": "He has brown eyes.",
+    "sentenceZh": "他有一雙棕色的眼睛。",
+    "grammar": "顏色單字"
+  },
+  {
+    "en": "brush",
+    "kk": "[brʌʃ]",
+    "zh": "刷子；刷",
+    "level": 1,
+    "sentenceEn": "Brush your teeth twice a day.",
+    "sentenceZh": "每天刷牙兩次。",
+    "grammar": "動詞用法：刷牙"
+  },
+  {
+    "en": "build",
+    "kk": "[bɪld]",
+    "zh": "建造",
+    "level": 1,
+    "sentenceEn": "They built a new library.",
+    "sentenceZh": "他們建了一座新圖書館。",
+    "grammar": "三態：build, built, built"
+  },
+  {
+    "en": "burn",
+    "kk": "[bɝn]",
+    "zh": "燃燒",
+    "level": 1,
+    "sentenceEn": "Wood burns easily.",
+    "sentenceZh": "木頭容易燃燒。",
+    "grammar": "動詞"
+  },
+  {
+    "en": "bus",
+    "kk": "[bʌs]",
+    "zh": "公車",
+    "level": 1,
+    "sentenceEn": "I go to school by bus.",
+    "sentenceZh": "我搭公車上學。",
+    "grammar": "搭配：take a bus"
+  },
+  {
+    "en": "busy",
+    "kk": "[ˈbɪzi]",
+    "zh": "忙碌的",
+    "level": 1,
+    "sentenceEn": "Mom is busy cooking dinner.",
+    "sentenceZh": "媽媽正忙著煮晚餐。",
+    "grammar": "句型：be busy + V-ing"
+  },
+  {
+    "en": "butter",
+    "kk": "[ˈbʌtɚ]",
+    "zh": "奶油",
+    "level": 1,
+    "sentenceEn": "Spread some butter on the toast.",
+    "sentenceZh": "在吐司上抹些奶油。",
+    "grammar": "不可數名詞"
+  },
+  {
+    "en": "buy",
+    "kk": "[baɪ]",
+    "zh": "買",
+    "level": 1,
+    "sentenceEn": "I bought a new book yesterday.",
+    "sentenceZh": "我昨天買了一本新書。",
+    "grammar": "三態：buy, bought, bought"
+  },
+  {
+    "en": "achieve",
+    "kk": "[əˈtʃiv]",
+    "zh": "實現；達到",
+    "level": 2,
+    "sentenceEn": "Work hard to achieve your goals.",
+    "sentenceZh": "努力以達成你的目標。",
+    "grammar": "搭配：achieve goals"
+  },
+  {
+    "en": "admire",
+    "kk": "[ədˈmaɪr]",
+    "zh": "欽佩；欣賞",
+    "level": 2,
+    "sentenceEn": "I admire her great courage.",
+    "sentenceZh": "我欽佩她的勇氣。",
+    "grammar": "動詞"
+  },
+  {
+    "en": "advantage",
+    "kk": "[ədˈvæntɪdʒ]",
+    "zh": "優勢；利益",
+    "level": 2,
+    "sentenceEn": "He has the advantage of height.",
+    "sentenceZh": "他具有身高的優勢。",
+    "grammar": "反義：disadvantage"
+  },
+  {
+    "en": "apologize",
+    "kk": "[əˈpɑləˌdʒaɪz]",
+    "zh": "道歉",
+    "level": 2,
+    "sentenceEn": "You must apologize for being late.",
+    "sentenceZh": "你必須為遲到道歉。",
+    "grammar": "搭配：apologize to 人 for 事"
+  },
+  {
+    "en": "attitude",
+    "kk": "[ˈætəˌtjud]",
+    "zh": "態度",
+    "level": 2,
+    "sentenceEn": "A positive attitude is everything.",
+    "sentenceZh": "積極的態度決定一切。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "attract",
+    "kk": "[əˈtrækt]",
+    "zh": "吸引",
+    "level": 2,
+    "sentenceEn": "The concert attracted thousands.",
+    "sentenceZh": "演唱會吸引了數千人。",
+    "grammar": "形容詞：attractive"
+  },
+  {
+    "en": "benefit",
+    "kk": "[ˈbɛnəfɪt]",
+    "zh": "好處；獲益",
+    "level": 2,
+    "sentenceEn": "Exercise brings great benefits.",
+    "sentenceZh": "運動帶來莫大好處。",
+    "grammar": "搭配：benefit from"
+  },
+  {
+    "en": "courage",
+    "kk": "[ˈkɝrɪdʒ]",
+    "zh": "勇氣",
+    "level": 2,
+    "sentenceEn": "It takes courage to speak up.",
+    "sentenceZh": "發聲需要無畏的勇氣。",
+    "grammar": "形容詞：courageous"
+  },
+  {
+    "en": "create",
+    "kk": "[kriˈet]",
+    "zh": "創造",
+    "level": 2,
+    "sentenceEn": "The artist created a masterpiece.",
+    "sentenceZh": "這位藝術家創造了傑作。",
+    "grammar": "名詞：creation"
+  },
+  {
+    "en": "culture",
+    "kk": "[ˈkʌltʃɚ]",
+    "zh": "文化",
+    "level": 2,
+    "sentenceEn": "Respect different cultures.",
+    "sentenceZh": "尊重多元文化。",
+    "grammar": "形容詞：cultural"
+  },
+  {
+    "en": "damage",
+    "kk": "[ˈdæmɪdʒ]",
+    "zh": "損害；破壞",
+    "level": 2,
+    "sentenceEn": "The typhoon caused heavy damage.",
+    "sentenceZh": "颱風造成了嚴重損害。",
+    "grammar": "動詞/名詞"
+  },
+  {
+    "en": "environment",
+    "kk": "[ɪnˈvaɪrənmənt]",
+    "zh": "環境",
+    "level": 2,
+    "sentenceEn": "Protect the natural environment.",
+    "sentenceZh": "保護自然環境。",
+    "grammar": "形容詞：environmental"
+  },
+  {
+    "en": "government",
+    "kk": "[ˈɡʌvɚnmənt]",
+    "zh": "政府",
+    "level": 2,
+    "sentenceEn": "The government built a new highway.",
+    "sentenceZh": "政府興建了一條新公路。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "improve",
+    "kk": "[ɪmˈpruv]",
+    "zh": "改善；進步",
+    "level": 2,
+    "sentenceEn": "Practice helps improve your English.",
+    "sentenceZh": "練習能改善你的英文。",
+    "grammar": "名詞：improvement"
+  },
+  {
+    "en": "protect",
+    "kk": "[prəˈtɛkt]",
+    "zh": "保護",
+    "level": 2,
+    "sentenceEn": "Wear a helmet to protect your head.",
+    "sentenceZh": "戴安全帽以保護頭部。",
+    "grammar": "搭配：protect from/against"
+  },
+  {
+    "en": "pollution",
+    "kk": "[pəˈluʃən]",
+    "zh": "污染",
+    "level": 2,
+    "sentenceEn": "Air pollution is getting worse.",
+    "sentenceZh": "空氣污染正日益惡化。",
+    "grammar": "動詞：pollute"
+  },
+  {
+    "en": "population",
+    "kk": "[ˌpɑpjəˈleʃən]",
+    "zh": "人口",
+    "level": 2,
+    "sentenceEn": "The world population is growing.",
+    "sentenceZh": "世界人口正在增長。",
+    "grammar": "名詞"
+  },
+  {
+    "en": "respect",
+    "kk": "[rɪˈspɛkt]",
+    "zh": "尊敬；尊重",
+    "level": 2,
+    "sentenceEn": "Show respect to your teachers.",
+    "sentenceZh": "對你的老師展現尊重。",
+    "grammar": "動詞/名詞"
+  },
+  {
+    "en": "society",
+    "kk": "[səˈsaɪəti]",
+    "zh": "社會",
+    "level": 2,
+    "sentenceEn": "We all live in this society.",
+    "sentenceZh": "我們都生活在這個社會中。",
+    "grammar": "形容詞：social"
+  },
+  {
+    "en": "tradition",
+    "kk": "[trəˈdɪʃən]",
+    "zh": "傳統",
+    "level": 2,
+    "sentenceEn": "It is a tradition to eat mooncakes.",
+    "sentenceZh": "中秋吃月餅是一項傳統。",
+    "grammar": "形容詞：traditional"
+  },
+  {
+    "en": "valuable",
+    "kk": "[ˈvæljuəbəl]",
+    "zh": "有價值的",
+    "level": 2,
+    "sentenceEn": "Time is our most valuable treasure.",
+    "sentenceZh": "時間是我們最寶貴的財富。",
+    "grammar": "名詞：value"
+  }
+]
