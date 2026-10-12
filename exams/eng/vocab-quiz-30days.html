@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>國中 / 初中英語單字背誦測驗系統 (全量 2240 字)</title>
-  <!-- 直接以 JS 方式繞過瀏覽器本地 CORS 阻擋 -->
+  <!-- 直接透過 JS 腳本讀入，徹底繞過本機瀏覽器 CORS 限制 -->
   <script src="vocab2000.js"></script>
   <style>
     :root {
@@ -14,6 +14,8 @@
       --success-bg: #dcfce7;
       --danger: #dc2626;
       --danger-bg: #fee2e2;
+      --purple: #7c3aed;
+      --purple-hover: #6d28d9;
       --bg: #f8fafc;
       --card-bg: #ffffff;
       --text: #0f172a;
@@ -113,6 +115,53 @@
     .guest-tag { font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: normal; }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
 
+    /* 亂數刷題控制列 */
+    .random-panel {
+      background: #faf5ff;
+      border: 1px solid #e9d5ff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .random-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6b21a8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .random-btn-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .random-btn {
+      background: #fff;
+      color: var(--purple);
+      border: 1px solid #d8b4fe;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .random-btn:hover {
+      background: var(--purple);
+      color: #fff;
+    }
+    .random-btn.active {
+      background: var(--purple);
+      color: #fff;
+      border-color: var(--purple);
+    }
+
     .filter-panel {
       background: #f1f5f9;
       border: 1px solid var(--border);
@@ -193,7 +242,7 @@
 
 <div class="container">
   <div class="top-utility-bar">
-    <span class="status-badge" id="sourceStatus">🟡 題庫狀態: 檢測中...</span>
+    <span class="status-badge" id="sourceStatus">🟡 題庫狀態: 載入中...</span>
     <div class="util-links">
       <label class="util-link" title="手動更新或重新載入 JSON">
         📁 載入 JSON
@@ -230,8 +279,18 @@
       </div>
     </div>
 
+    <!-- 🎲 亂數刷題控制列 -->
+    <div class="random-panel">
+      <div class="random-title">🎲 快速亂數刷題：</div>
+      <div class="random-btn-group">
+        <button class="random-btn" id="btnRand100" onclick="startRandomQuiz(100)">⚡ 隨機 100 題</button>
+        <button class="random-btn" id="btnRand200" onclick="startRandomQuiz(200)">🔥 隨機 200 題</button>
+        <button class="random-btn" id="btnRandAll" onclick="startRandomQuiz('all')">🏆 全量隨機 (2240題)</button>
+      </div>
+    </div>
+
     <!-- 週期天數選擇 (30/40/50/60天) 與滾動複習設置 -->
-    <div class="filter-panel">
+    <div class="filter-panel" id="normalPlanPanel">
       <div class="filter-row">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span><b>背誦週期：</b></span>
@@ -263,7 +322,7 @@
     </div>
 
     <div id="dashboardSection" class="history-card hidden">
-      <strong id="dashboardTitle">📊 30 天完成進度：</strong>
+      <strong id="dashboardTitle">📊 完成進度：</strong>
       <div id="statsSummary" style="margin: 8px 0; max-height: 120px; overflow-y: auto;">尚無紀錄</div>
       <button class="btn" style="padding: 4px 10px; font-size: 12px;" onclick="toggleDashboard()">關閉面板</button>
     </div>
@@ -311,6 +370,8 @@ function safeHash(str) {
 let FULL_VOCAB = [];
 let DAYS_COUNT = 30;
 let dayPlans = {};
+let isRandomMode = false;
+let randomModeCount = 0;
 
 function applyNewVocabList(newList, sourceName, saveToCache = true) {
   if (!Array.isArray(newList) || newList.length === 0) return;
@@ -390,6 +451,44 @@ function shuffle(arr) {
     [list[i], list[j]] = [list[j], list[i]];
   }
   return list;
+}
+
+// 🎲 亂數刷題核心啟動模組
+function startRandomQuiz(count) {
+  if (FULL_VOCAB.length === 0) {
+    return alert("題庫尚未載入完成！");
+  }
+
+  isRandomMode = true;
+  document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
+  
+  if (count === 100) {
+    document.getElementById("btnRand100").classList.add("active");
+    randomModeCount = 100;
+  } else if (count === 200) {
+    document.getElementById("btnRand200").classList.add("active");
+    randomModeCount = 200;
+  } else {
+    document.getElementById("btnRandAll").classList.add("active");
+    randomModeCount = FULL_VOCAB.length;
+  }
+
+  // 將全題庫打亂並切出指定題數
+  const shuffledAll = shuffle(FULL_VOCAB);
+  currentTestQueue = (count === 'all' || count >= FULL_VOCAB.length)
+    ? shuffledAll
+    : shuffledAll.slice(0, count);
+
+  currentIndex = 0;
+  correctCount = 0;
+  wrongCount = 0;
+
+  document.getElementById("poolInfoText").innerText = `🎲 亂數模式：隨機出題 ${currentTestQueue.length} 題`;
+  
+  // 更新進度條顏色醒目提示
+  document.getElementById("progressBar").style.background = "var(--purple)";
+
+  renderQuestion();
 }
 
 let currentUser = null;
@@ -532,10 +631,16 @@ function buildQuestionPool(targetDay) {
 }
 
 function handleFilterChange() {
-  changeDay(currentDay);
+  if (!isRandomMode) {
+    changeDay(currentDay);
+  }
 }
 
 function changeDay(day) {
+  isRandomMode = false;
+  document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("progressBar").style.background = "var(--primary)";
+
   currentDay = Number(day);
   const pool = buildQuestionPool(currentDay);
   document.getElementById("poolInfoText").innerText = `全量共 ${FULL_VOCAB.length} 字 (今日出題 ${pool.length} 題)`;
@@ -553,20 +658,21 @@ function renderQuestion() {
   document.getElementById("explanationBox").classList.add("hidden");
 
   if (currentTestQueue.length === 0) {
-    document.getElementById("wordDisplay").innerText = "此天數無單字";
+    document.getElementById("wordDisplay").innerText = "此範圍無單字";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("optionsGrid").innerHTML = "";
     return;
   }
 
   if (currentIndex >= currentTestQueue.length) {
-    recordDayCompletion();
+    recordCompletion();
     document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("optionsGrid").innerHTML = `
       <div style="text-align: center; padding: 20px; font-size: 15px; color: var(--muted);">
+        ${isRandomMode ? '<b>🎲 亂數刷題完成！</b><br>' : ''}
         完成！正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b><br>
-        本次共完成 ${currentTestQueue.length} 題。
+        本次共完成 ${currentTestQueue.length} 題 (正確: ${correctCount} | 錯誤: ${wrongCount})。
       </div>
     `;
     document.getElementById("progressText").innerText = "已完成所有題數";
@@ -577,7 +683,7 @@ function renderQuestion() {
   const currentItem = currentTestQueue[currentIndex];
   document.getElementById("wordDisplay").innerText = currentItem.en;
   document.getElementById("wordKk").innerText = currentItem.kk || "";
-  document.getElementById("progressText").innerText = `第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
+  document.getElementById("progressText").innerText = `${isRandomMode ? '🎲 亂數模式 ' : ''}第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
   document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
   document.getElementById("progressBar").style.width = `${(currentIndex / currentTestQueue.length) * 100}%`;
 
@@ -638,17 +744,23 @@ function nextQuestion() {
   renderQuestion();
 }
 
-function recordDayCompletion() {
+function recordCompletion() {
   const userData = getUserData();
-  userData.history[`Full_${DAYS_COUNT}D_Day_${currentDay}`] = {
+  const recKey = isRandomMode 
+    ? `Random_${randomModeCount}_${new Date().toLocaleTimeString()}`
+    : `Full_${DAYS_COUNT}D_Day_${currentDay}`;
+
+  userData.history[recKey] = {
     accuracy: Math.round((correctCount / currentTestQueue.length) * 100),
     score: correctCount,
     total: currentTestQueue.length,
     date: new Date().toLocaleDateString()
   };
   saveUserData(userData);
-  initDaySelector();
-  document.getElementById("daySelect").value = currentDay;
+  if (!isRandomMode) {
+    initDaySelector();
+    document.getElementById("daySelect").value = currentDay;
+  }
 }
 
 function updateMistakeCount() {
@@ -660,6 +772,8 @@ function reviewMistakes() {
   const userData = getUserData();
   if (userData.mistakes.length === 0) return alert("目前無錯題！");
   if (confirm(`是否複習累積的 ${userData.mistakes.length} 道錯題？`)) {
+    isRandomMode = false;
+    document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
     currentTestQueue = shuffle(userData.mistakes);
     currentIndex = 0;
     correctCount = 0;
@@ -773,13 +887,13 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// 全自動載入模組 (依序：JS 全域變數 -> fetch JSON -> 本地快取)
+// 全自動讀取排程
 window.onload = async () => {
   let loadedSuccessfully = false;
 
-  // 1. 最優先：讀取由 <script src="vocab2000.js"> 帶入之全域變數 (完全不受本地 CORS 限制)
+  // 1. 最優先：讀取由 <script src="vocab2000.js"> 帶入之全域變數
   if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB) && window.EXTERNAL_VOCAB.length > 0) {
-    applyNewVocabList(window.EXTERNAL_VOCAB, "同目錄 vocab2000.js", true);
+    applyNewVocabList(window.EXTERNAL_VOCAB, "vocab2000.js", true);
     loadedSuccessfully = true;
   }
 
@@ -790,7 +904,7 @@ window.onload = async () => {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          applyNewVocabList(data, "同目錄 vocab2000.json", true);
+          applyNewVocabList(data, "同目錄 JSON", true);
           loadedSuccessfully = true;
         }
       }
