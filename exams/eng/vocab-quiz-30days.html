@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>國中 / 初中英語單字背誦測驗系統 (全量 2240 字)</title>
+  <!-- 直接以 JS 方式繞過瀏覽器本地 CORS 阻擋 -->
+  <script src="vocab2000.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -191,7 +193,7 @@
 
 <div class="container">
   <div class="top-utility-bar">
-    <span class="status-badge" id="sourceStatus">🟡 題庫狀態: 載入中...</span>
+    <span class="status-badge" id="sourceStatus">🟡 題庫狀態: 檢測中...</span>
     <div class="util-links">
       <label class="util-link" title="手動更新或重新載入 JSON">
         📁 載入 JSON
@@ -310,7 +312,6 @@ let FULL_VOCAB = [];
 let DAYS_COUNT = 30;
 let dayPlans = {};
 
-// 載入題庫，並儲存至 LocalStorage 作為本機檔案時的持久快取
 function applyNewVocabList(newList, sourceName, saveToCache = true) {
   if (!Array.isArray(newList) || newList.length === 0) return;
   
@@ -321,15 +322,13 @@ function applyNewVocabList(newList, sourceName, saveToCache = true) {
     level: item.level || 1,
     sentenceEn: item.sentenceEn || `Example for "${item.en}".`,
     sentenceZh: item.sentenceZh || `單字「${item.en}」的範例例句。`,
-    grammar: item.grammar || "核心單字"
+    grammar: item.grammar || "核心實用單字"
   }));
 
   if (saveToCache) {
     try {
       localStorage.setItem("cached_vocab_dataset", JSON.stringify(FULL_VOCAB));
-    } catch (e) {
-      console.warn("無法寫入 LocalStorage 快取 (可能超出空間限制)");
-    }
+    } catch (e) {}
   }
 
   document.getElementById("sourceStatus").innerHTML = `🟢 題庫狀態: ${sourceName} (${FULL_VOCAB.length} 字)`;
@@ -346,11 +345,11 @@ function handleFileSelect(event) {
     try {
       const data = JSON.parse(e.target.result);
       if (Array.isArray(data) && data.length > 0) {
-        applyNewVocabList(data, "已載入本機 JSON", true);
-        alert(`成功載入！共讀取到 ${data.length} 個單字，並已自動記憶。`);
+        applyNewVocabList(data, "已手動載入 JSON", true);
+        alert(`成功載入！共讀取到 ${data.length} 個單字。`);
       }
     } catch (err) {
-      alert("解析 JSON 失敗，請確認檔案格式。");
+      alert("解析 JSON 失敗。");
     }
   };
   reader.readAsText(file);
@@ -364,7 +363,6 @@ function changeCycleDays(val) {
   changeDay(1);
 }
 
-// 嚴謹均攤演算法：杜絕餘數誤差，平穩分配至每一天
 function initDayPlans() {
   const total = FULL_VOCAB.length;
   dayPlans = {};
@@ -775,25 +773,31 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// 啟動自動導入機制：自動 fetch 同目錄 JSON -> 嘗試讀取本地記憶快取
+// 全自動載入模組 (依序：JS 全域變數 -> fetch JSON -> 本地快取)
 window.onload = async () => {
   let loadedSuccessfully = false;
 
-  // 1. 自動帶防快取參數請求同目錄下的 vocab2000.json
-  try {
-    const res = await fetch("vocab2000.json?t=" + new Date().getTime());
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        applyNewVocabList(data, "同目錄 vocab2000.json", true);
-        loadedSuccessfully = true;
-      }
-    }
-  } catch (err) {
-    // 當以 file:/// 雙擊開啟時，瀏覽器會因安全政策擋下 fetch，轉向本機持久記憶
+  // 1. 最優先：讀取由 <script src="vocab2000.js"> 帶入之全域變數 (完全不受本地 CORS 限制)
+  if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB) && window.EXTERNAL_VOCAB.length > 0) {
+    applyNewVocabList(window.EXTERNAL_VOCAB, "同目錄 vocab2000.js", true);
+    loadedSuccessfully = true;
   }
 
-  // 2. 若自動 fetch 受阻，自動自 LocalStorage 快取中讀取先前已載入之資料
+  // 2. 次要：伺服器環境下自動 fetch 同目錄之 vocab2000.json
+  if (!loadedSuccessfully) {
+    try {
+      const res = await fetch("vocab2000.json?t=" + new Date().getTime());
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          applyNewVocabList(data, "同目錄 vocab2000.json", true);
+          loadedSuccessfully = true;
+        }
+      }
+    } catch (err) {}
+  }
+
+  // 3. 備援：讀取先前儲存之 LocalStorage 快取
   if (!loadedSuccessfully) {
     try {
       const cached = localStorage.getItem("cached_vocab_dataset");
@@ -808,7 +812,7 @@ window.onload = async () => {
   }
 
   if (!loadedSuccessfully) {
-    document.getElementById("sourceStatus").innerHTML = `🟡 題庫狀態: 請點選右上角手動載入一次 JSON 檔`;
+    document.getElementById("sourceStatus").innerHTML = `🟡 題庫狀態: 請放入 vocab2000.js 或手動載入 JSON`;
   }
 
   const activeSession = localStorage.getItem("vocab_active_session");
