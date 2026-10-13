@@ -1,12 +1,13 @@
 /* 單字王 2000 離線快取（Service Worker）
    更新網頁後，把下面的版本號 +1（例如 v2），手機上的 App 就會抓新版 */
-const CACHE = "wb2000-v1";
+const CACHE = "wb2000-v2"; // 已更新版本號，強制抓取帶有真實 Supabase 金鑰的新版
 
 const CORE = [
   "./",
   "./index.html",
   "./2000words.html",
   "./vocab.html",
+  "./vocab2000.js", // 補上我們的題庫檔
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-192.png",
