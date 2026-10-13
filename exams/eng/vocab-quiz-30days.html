@@ -34,7 +34,6 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-    /* 全裝置自適應視窗高度 (電腦與手機自動撐開) */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: var(--bg);
@@ -79,6 +78,16 @@
     }
     .status-badge { font-weight: 600; color: #334155; }
     .cloud-badge { color: #0284c7; font-weight: 600; }
+    .changelog-btn {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+    }
 
     .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
     .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
@@ -214,7 +223,6 @@
     .progress-bar { width: 100%; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
     .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease; }
 
-    /* 題幹主卡片 (自適應字體) */
     .word-card {
       background: #f8fafc;
       border: 1px dashed var(--border);
@@ -335,10 +343,7 @@
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
 
-    /* ========================================================
-       ★ 空間預留核心：考點解析與會考完整語境卡片
-       答題前保持預留高度 (min-height)，避免作答後版面暴增跳動！
-       ======================================================== */
+    /* 考點解析與會考完整語境 (空間預留與滾動) */
     .explanation-card {
       background: #eff6ff;
       border: 1.5px dashed #bfdbfe;
@@ -348,7 +353,7 @@
       font-size: clamp(12.5px, 2.2vw, 14px);
       line-height: 1.55;
       text-align: left;
-      min-height: 110px; /* ★ 提交答案前預留空間，穩定高度 */
+      min-height: 110px;
       max-height: 24vh;
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -357,7 +362,6 @@
       justify-content: center;
       transition: all 0.2s ease;
     }
-    /* 作答前：半透明佔位提示樣式 */
     .explanation-card.placeholder {
       background: #f8fafc;
       border-color: #cbd5e1;
@@ -389,6 +393,64 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
+    /* ========================================================
+       ★ 軟體維護歷程 (Changelog Modal)
+       ======================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(3px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      padding: 16px;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      padding: 20px 18px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .modal-body {
+      overflow-y: auto;
+      padding-top: 14px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .history-item {
+      margin-bottom: 16px;
+      border-left: 3px solid var(--primary);
+      padding-left: 10px;
+    }
+    .history-tag { font-weight: 700; color: var(--primary); font-size: 13.5px; margin-bottom: 2px; }
+    .history-desc { color: #334155; }
+    .history-desc ul { margin-left: 16px; margin-top: 4px; }
+
     @media (max-width: 500px) {
       .hint-keyboard { display: none; }
       .random-panel { flex-direction: column; align-items: flex-start; }
@@ -403,7 +465,10 @@
 <div class="container">
   <div class="top-utility-bar">
     <span class="status-badge" id="sourceStatus">🟡 題庫檢測中...</span>
-    <span class="cloud-badge" id="syncStatus">☁️ 本地模式</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="cloud-badge" id="syncStatus">☁️ 本地模式</span>
+      <button class="changelog-btn" onclick="toggleChangelogModal(true)">🛠️ 維護紀錄</button>
+    </div>
   </div>
 
   <div id="authSection" class="auth-box">
@@ -419,7 +484,6 @@
       <label>密碼</label>
       <input type="password" id="authPassword" placeholder="至少 6 位數密碼" autocomplete="current-password">
     </div>
-    <!-- 註冊密碼二次比對欄位 -->
     <div class="input-group hidden" id="confirmPasswordGroup">
       <label>確認密碼</label>
       <input type="password" id="authPasswordConfirm" placeholder="請再次輸入密碼" autocomplete="new-password">
@@ -515,7 +579,6 @@
 
     <div class="options-grid" id="optionsGrid"></div>
 
-    <!-- 💡 考點解析與會考完整語境 (答題前預留空間，絕不跳動) -->
     <div id="explanationBox" class="explanation-card placeholder">
       <span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>
     </div>
@@ -523,6 +586,56 @@
     <div class="footer-bar">
       <span class="hint-keyboard">鍵盤快捷鍵: 1-4 / 空白鍵 / R</span>
       <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>下一題</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🛠️ 軟體維護歷程彈出視窗 (Changelog Modal) -->
+<div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">🛠️ 軟體維護與版本紀錄 (Version History)</div>
+      <button class="modal-close" onclick="toggleChangelogModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="history-item">
+        <div class="history-tag">v2.3.0 - UI 空間穩定與註冊驗證強化</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>密碼雙重比對：</b>註冊標籤頁新增「確認密碼」欄位，提交前前端自動比對一致性[cite: 2]。</li>
+            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面瞬間下移的痛點[cite: 2]。</li>
+            <li><b>跨裝置彈性適配：</b>採用 `clamp` 與動態視窗高度單位（`dvh`），自動適配手機與桌面螢幕。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v2.2.0 - 雲端同步邏輯與資料表防禦修復</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>Supabase URL 格式修復：</b>移除網址結尾 `/rest/v1/` 與多餘斜線，解決 Auth 註冊無效路徑錯誤[cite: 2]。</li>
+            <li><b>新用戶空狀態優化：</b>修復全新註冊使用者在 `user_progress` 查無舊進度時卡在同步中的問題[cite: 2]。</li>
+            <li><b>發音長句防截斷：</b>導入 7 秒心跳計時器（`keep-alive`），避免 iOS Safari 截斷長音檔[cite: 2]。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v2.1.0 - PWA 雙專案離線相容快取架構</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim` 強制更新客戶端[cite: 5]。</li>
+            <li><b>多專案資產快取：</b>支援新舊 HTML 頁面及外部題庫 `vocab2000.js` 共存離線運作[cite: 2, 5]。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v2.0.0 - 會考特訓核心題型發布</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>四大專屬題型上線：</b>支援單字識義、句子填空、會考真題與會考聽力模式[cite: 2]。</li>
+            <li><b>彈性學習計畫：</b>支援 30~60 天週期排程、滾動複習與快速亂數刷題（100 / 200 / 全題庫）[cite: 2]。</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -825,6 +938,13 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
+// 軟體維護彈窗控制
+function toggleChangelogModal(show) {
+  const modal = document.getElementById("changelogModal");
+  if (show) modal.classList.remove("hidden");
+  else modal.classList.add("hidden");
+}
+
 // ========================================================
 // 3. 測驗引擎核心
 // ========================================================
@@ -1064,7 +1184,6 @@ function renderQuestion() {
   hasAnswered = false;
   document.getElementById("nextBtn").disabled = true;
 
-  // ★ 答題前：重設解析區為預留卡片，避免高度跳動
   const expBox = document.getElementById("explanationBox");
   expBox.className = "explanation-card placeholder";
   expBox.innerHTML = `<span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>`;
@@ -1236,7 +1355,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
 
   const zhHintEl = document.getElementById("clozeZhHint");
   const expBox = document.getElementById("explanationBox");
-  expBox.className = "explanation-card"; // 移除 placeholder 樣式，載入正式解析
+  expBox.className = "explanation-card";
 
   if (currentQuizType === "listen") {
     const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
