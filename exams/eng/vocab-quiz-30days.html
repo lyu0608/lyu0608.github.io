@@ -116,6 +116,12 @@
     .btn:hover:not(:disabled) { background: var(--primary-hover); }
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
     .btn-guest {
       background: #f1f5f9;
       color: var(--text);
@@ -343,7 +349,6 @@
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
 
-    /* 考點解析與會考完整語境 (空間預留與滾動) */
     .explanation-card {
       background: #eff6ff;
       border: 1.5px dashed #bfdbfe;
@@ -376,7 +381,6 @@
     .sentence-zh { color: #475569; margin-bottom: 6px; display: block; line-height: 1.45; }
     .grammar-note { font-size: 12px; color: #1d4ed8; background: #dbeafe; padding: 5px 8px; border-radius: 6px; display: block; line-height: 1.4; }
 
-    /* 底部操作固定列 (Sticky) */
     .footer-bar {
       display: flex;
       justify-content: space-between;
@@ -393,9 +397,7 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* ========================================================
-       ★ 軟體維護歷程 (Changelog Modal)
-       ======================================================== */
+    /* 通用 Modal 彈出視窗 */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -497,8 +499,9 @@
   <div id="quizSection" class="hidden">
     <div class="user-header">
       <span class="user-badge" id="displayUsername">👤 學員</span>
-      <div>
-        <span class="link-btn" onclick="toggleHistory()" style="margin-right: 12px;">學習成果</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="link-btn" onclick="toggleHistory()">學習成果</span>
+        <span class="link-btn" onclick="promptClearRecords()" style="color:var(--danger);">清空紀錄</span>
         <button class="logout-btn" onclick="handleLogout()">登出</button>
       </div>
     </div>
@@ -544,7 +547,10 @@
     </div>
 
     <div id="historyBox" class="explanation-card hidden" style="border:1px solid #bfdbfe; background:#eff6ff;">
-      <div class="explanation-title">📊 學習成果紀錄</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
+        <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空所有進度與錯題</button>
+      </div>
       <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
     </div>
 
@@ -590,6 +596,29 @@
   </div>
 </div>
 
+<!-- 🔐 清空紀錄密碼驗證彈窗 -->
+<div id="clearConfirmModal" class="modal-overlay hidden" onclick="toggleClearModal(false)">
+  <div class="modal-card" style="max-width:400px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">⚠️ 清空紀錄確認</div>
+      <button class="modal-close" onclick="toggleClearModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px; color:#475569;" id="clearModalNotice">
+        清空後將永久刪除「所有天數作答紀錄」與「所有錯題本」，無法復原。為確保安全，請輸入您的使用者密碼：
+      </p>
+      <div class="input-group" id="clearPasswordInputGroup">
+        <label>使用者密碼</label>
+        <input type="password" id="clearVerifyPassword" placeholder="請輸入目前的登入密碼" autocomplete="current-password">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button class="btn btn-guest" onclick="toggleClearModal(false)">取消</button>
+        <button class="btn btn-danger" id="confirmClearBtn" onclick="executeClearRecords()">確定清空</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 🛠️ 軟體維護歷程彈出視窗 (Changelog Modal) -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
@@ -599,11 +628,20 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v2.4.0 - 資料安全重置與密碼驗證防護</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>密碼二次身分驗證：</b>新增「清空紀錄」功能，執行前強制比對帳號登入密碼，防止誤觸或他人竄改進度。</li>
+            <li><b>雲端與本地同步抹除：</b>驗證通過後同時將 Supabase 雲端資料表與 LocalStorage 中的歷史紀錄、錯題本重置為初始空值。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v2.3.0 - UI 空間穩定與註冊驗證強化</div>
         <div class="history-desc">
           <ul>
-            <li><b>密碼雙重比對：</b>註冊標籤頁新增「確認密碼」欄位，提交前前端自動比對一致性[cite: 2]。</li>
-            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面瞬間下移的痛點[cite: 2]。</li>
+            <li><b>密碼雙重比對：</b>註冊標籤頁新增「確認密碼」欄位，提交前前端自動比對一致性。</li>
+            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面瞬間下移的痛點。</li>
             <li><b>跨裝置彈性適配：</b>採用 `clamp` 與動態視窗高度單位（`dvh`），自動適配手機與桌面螢幕。</li>
           </ul>
         </div>
@@ -612,9 +650,9 @@
         <div class="history-tag">v2.2.0 - 雲端同步邏輯與資料表防禦修復</div>
         <div class="history-desc">
           <ul>
-            <li><b>Supabase URL 格式修復：</b>移除網址結尾 `/rest/v1/` 與多餘斜線，解決 Auth 註冊無效路徑錯誤[cite: 2]。</li>
-            <li><b>新用戶空狀態優化：</b>修復全新註冊使用者在 `user_progress` 查無舊進度時卡在同步中的問題[cite: 2]。</li>
-            <li><b>發音長句防截斷：</b>導入 7 秒心跳計時器（`keep-alive`），避免 iOS Safari 截斷長音檔[cite: 2]。</li>
+            <li><b>Supabase URL 格式修復：</b>移除網址結尾 `/rest/v1/` 與多餘斜線，解決 Auth 註冊無效路徑錯誤。</li>
+            <li><b>新用戶空狀態優化：</b>修復全新註冊使用者在 `user_progress` 查無舊進度時卡在同步中的問題。</li>
+            <li><b>發音長句防截斷：</b>導入 7 秒心跳計時器（`keep-alive`），避免 iOS Safari 截斷長音檔。</li>
           </ul>
         </div>
       </div>
@@ -622,8 +660,8 @@
         <div class="history-tag">v2.1.0 - PWA 雙專案離線相容快取架構</div>
         <div class="history-desc">
           <ul>
-            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim` 強制更新客戶端[cite: 5]。</li>
-            <li><b>多專案資產快取：</b>支援新舊 HTML 頁面及外部題庫 `vocab2000.js` 共存離線運作[cite: 2, 5]。</li>
+            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim` 強制更新客戶端。</li>
+            <li><b>多專案資產快取：</b>支援新舊 HTML 頁面及外部題庫 `vocab2000.js` 共存離線運作。</li>
           </ul>
         </div>
       </div>
@@ -631,8 +669,8 @@
         <div class="history-tag">v2.0.0 - 會考特訓核心題型發布</div>
         <div class="history-desc">
           <ul>
-            <li><b>四大專屬題型上線：</b>支援單字識義、句子填空、會考真題與會考聽力模式[cite: 2]。</li>
-            <li><b>彈性學習計畫：</b>支援 30~60 天週期排程、滾動複習與快速亂數刷題（100 / 200 / 全題庫）[cite: 2]。</li>
+            <li><b>四大專屬題型上線：</b>支援單字識義、句子填空、會考真題與會考聽力模式。</li>
+            <li><b>彈性學習計畫：</b>支援 30~60 天週期排程、滾動複習與快速亂數刷題（100 / 200 / 全題庫）。</li>
           </ul>
         </div>
       </div>
@@ -943,6 +981,93 @@ function toggleChangelogModal(show) {
   const modal = document.getElementById("changelogModal");
   if (show) modal.classList.remove("hidden");
   else modal.classList.add("hidden");
+}
+
+// ========================================================
+// ★ 清空紀錄與密碼二階段驗證功能
+// ========================================================
+function toggleClearModal(show) {
+  const modal = document.getElementById("clearConfirmModal");
+  const pwdInput = document.getElementById("clearVerifyPassword");
+  const pwdGroup = document.getElementById("clearPasswordInputGroup");
+  const notice = document.getElementById("clearModalNotice");
+
+  pwdInput.value = "";
+  if (isGuest) {
+    pwdGroup.classList.add("hidden");
+    notice.innerText = "您目前處於訪客模式。確定要清空所有本地練習紀錄與錯題本嗎？此操作無法復原。";
+  } else {
+    pwdGroup.classList.remove("hidden");
+    notice.innerText = "清空後將永久刪除「所有天數作答紀錄」與「所有錯題本」，無法復原。為確保安全，請輸入您的登入密碼：";
+  }
+
+  if (show) modal.classList.remove("hidden");
+  else modal.classList.add("hidden");
+}
+
+function promptClearRecords() {
+  toggleClearModal(true);
+}
+
+async function executeClearRecords() {
+  const btn = document.getElementById("confirmClearBtn");
+  btn.disabled = true;
+
+  if (isGuest) {
+    userStore = { history: {}, mistakes: [] };
+    localStorage.removeItem("local_vocab_progress");
+    updateMistakeCount();
+    initDaySelector();
+    toggleClearModal(false);
+    btn.disabled = false;
+    alert("✅ 本地紀錄已全數清空！");
+    changeDay(currentDay);
+    return;
+  }
+
+  const pwd = document.getElementById("clearVerifyPassword").value.trim();
+  if (!pwd) {
+    alert("請輸入密碼以驗證身分！");
+    btn.disabled = false;
+    return;
+  }
+
+  // 密碼二次驗證
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: currentUser.email,
+    password: pwd
+  });
+
+  if (error) {
+    alert("❌ 密碼驗證失敗：" + error.message);
+    btn.disabled = false;
+    return;
+  }
+
+  // 驗證成功，執行雲端與本地清空
+  try {
+    userStore = { history: {}, mistakes: [] };
+    localStorage.removeItem("local_vocab_progress");
+
+    await supabaseClient
+      .from('user_progress')
+      .upsert({
+        user_id: currentUser.id,
+        history: {},
+        mistakes: [],
+        updated_at: new Date().toISOString()
+      });
+
+    updateMistakeCount();
+    initDaySelector();
+    toggleClearModal(false);
+    alert("✅ 驗證成功！雲端與本地學習紀錄已全部清空重置。");
+    changeDay(currentDay);
+  } catch (err) {
+    alert("清空紀錄時發生錯誤：" + err.message);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ========================================================
