@@ -34,15 +34,17 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
+    /* 全裝置自適應視窗高度 (電腦與手機自動撐開) */
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       display: flex;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
       min-height: 100dvh;
-      padding: 12px;
+      padding: clamp(8px, 2vw, 20px);
       padding-top: env(safe-area-inset-top, 12px);
       padding-bottom: env(safe-area-inset-bottom, 16px);
     }
@@ -50,13 +52,17 @@
     .container {
       width: 100%;
       max-width: 680px;
+      height: 100%;
+      max-height: 96vh;
+      max-height: 96dvh;
       background: var(--card-bg);
-      border-radius: 18px;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-      padding: 18px 16px;
+      border-radius: clamp(12px, 2.5vw, 20px);
+      box-shadow: 0 4px 25px -4px rgba(0, 0, 0, 0.06);
+      padding: clamp(12px, 2.5vw, 20px);
       display: flex;
       flex-direction: column;
       position: relative;
+      overflow-y: auto;
     }
 
     .hidden { display: none !important; }
@@ -65,10 +71,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       padding-bottom: 8px;
       border-bottom: 1px dashed var(--border);
-      font-size: 12px;
+      font-size: clamp(11px, 2vw, 13px);
+      flex-shrink: 0;
     }
     .status-badge { font-weight: 600; color: #334155; }
     .cloud-badge { color: #0284c7; font-weight: 600; }
@@ -121,9 +128,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
     }
     .user-badge { font-weight: 700; color: var(--primary); font-size: 14px; }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
@@ -132,55 +140,45 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 5px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
     }
     .quiz-type-btn {
-      padding: 8px 2px;
+      padding: clamp(6px, 1.2vw, 9px) 2px;
       border-radius: 8px;
       border: 1.5px solid var(--border);
       background: #fff;
       color: var(--muted);
-      font-size: 12px;
+      font-size: clamp(11px, 2.2vw, 13px);
       font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s;
     }
-    .quiz-type-btn.active {
-      background: #eff6ff;
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    .quiz-type-btn.exam-active {
-      background: #fef3c7;
-      border-color: var(--amber);
-      color: #b45309;
-    }
-    .quiz-type-btn.listen-active {
-      background: #ecfeff;
-      border-color: var(--cyan);
-      color: #0e7490;
-    }
+    .quiz-type-btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+    .quiz-type-btn.exam-active { background: #fef3c7; border-color: var(--amber); color: #b45309; }
+    .quiz-type-btn.listen-active { background: #ecfeff; border-color: var(--cyan); color: #0e7490; }
 
     .random-panel {
       background: #faf5ff;
       border: 1px solid #e9d5ff;
       border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
-    .random-title { font-size: 13px; font-weight: 700; color: #6b21a8; }
-    .random-btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .random-title { font-size: 12px; font-weight: 700; color: #6b21a8; }
+    .random-btn-group { display: flex; gap: 6px; }
     .random-btn {
       background: #fff;
       color: var(--purple);
       border: 1px solid #d8b4fe;
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -192,42 +190,39 @@
       background: #f1f5f9;
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      font-size: 13px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
-    .filter-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .filter-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
     select {
-      padding: 6px 10px;
+      padding: 5px 8px;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: 6px;
+      font-size: 12px;
       background: #fff;
       outline: none;
       cursor: pointer;
     }
 
-    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .stats-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-    .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
+    .stats-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; flex-shrink: 0; }
+    .progress-bar { width: 100%; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
     .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease; }
 
+    /* 題幹主卡片 (自適應字體) */
     .word-card {
       background: #f8fafc;
       border: 1px dashed var(--border);
       border-radius: 14px;
       text-align: center;
-      padding: 16px 12px;
-      margin-bottom: 12px;
+      padding: 12px 10px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
     }
     .exam-tag {
       display: inline-flex;
@@ -236,139 +231,148 @@
       background: #fef3c7;
       color: #92400e;
       border: 1px solid #fde68a;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 4px 12px;
+      padding: 3px 10px;
       border-radius: 6px;
-      margin-bottom: 10px;
-    }
-    .exam-tag.listen-tag {
-      background: #ecfeff;
-      color: #0e7490;
-      border-color: #a5f3fc;
-    }
-    .word-title {
-      font-size: clamp(18px, 5vw, 24px);
-      font-weight: 800;
       margin-bottom: 6px;
+    }
+    .exam-tag.listen-tag { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+    .word-title {
+      font-size: clamp(17px, 4.5vw, 24px);
+      font-weight: 800;
+      margin-bottom: 4px;
       word-break: break-word;
-      line-height: 1.55;
+      line-height: 1.45;
     }
 
     .audio-player-box {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      margin: 12px 0;
+      gap: 6px;
+      margin: 8px 0;
     }
     .listen-btn-main {
       background: #0891b2;
       color: #fff;
       border: none;
-      padding: 11px 26px;
+      padding: 9px 22px;
       border-radius: 99px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
-      transition: background 0.15s, transform 0.05s;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(8, 145, 178, 0.2);
     }
     .listen-btn-main:active { transform: scale(0.97); }
-    .listen-btn-main:hover { background: #0e7490; }
 
     .cloze-blank {
       display: inline-block;
-      min-width: 65px;
-      border-bottom: 3px solid var(--primary);
+      min-width: 60px;
+      border-bottom: 2.5px solid var(--primary);
       color: var(--primary);
       padding: 0 4px;
       font-weight: 800;
     }
     .cloze-translation-hint {
-      font-size: 14px;
+      font-size: 13px;
       color: #166534;
       background: #f0fdf4;
       border: 1px solid #bbf7d0;
       border-radius: 8px;
-      padding: 8px 12px;
-      margin-top: 10px;
+      padding: 6px 10px;
+      margin-top: 8px;
       font-weight: 600;
-      line-height: 1.45;
+      line-height: 1.4;
     }
-    .word-kk { font-size: 14px; color: #64748b; margin-bottom: 8px; }
+    .word-kk { font-size: 13px; color: #64748b; margin-bottom: 6px; }
     .sound-btn {
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 13px;
+      padding: 5px 14px;
+      font-size: 12px;
       cursor: pointer;
       color: var(--primary);
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
-    .options-grid { display: grid; gap: 10px; margin-bottom: 14px; }
+    .options-grid { display: grid; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
     .option-btn {
       display: flex;
       align-items: center;
-      padding: 13px 14px;
-      min-height: 50px;
+      padding: 10px 12px;
+      min-height: 46px;
       background: #fff;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 15.5px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: clamp(14px, 2.5vw, 15.5px);
       cursor: pointer;
       text-align: left;
-      transition: all 0.15s;
+      transition: all 0.12s;
     }
     .option-btn:active { transform: scale(0.98); }
-    .option-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
     .opt-key {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       background: #f1f5f9;
       border-radius: 6px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--muted);
-      margin-right: 12px;
+      margin-right: 10px;
       flex-shrink: 0;
     }
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
 
-    /* 💡 考點解析與會考完整語境 (自適應高度與舒適閱讀) */
+    /* ========================================================
+       ★ 空間預留核心：考點解析與會考完整語境卡片
+       答題前保持預留高度 (min-height)，避免作答後版面暴增跳動！
+       ======================================================== */
     .explanation-card {
       background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin-bottom: 14px;
-      font-size: 14px;
-      line-height: 1.65;
+      border: 1.5px dashed #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-size: clamp(12.5px, 2.2vw, 14px);
+      line-height: 1.55;
       text-align: left;
-      max-height: 35vh; /* 避免擠壓答題可視區 */
+      min-height: 110px; /* ★ 提交答案前預留空間，穩定高度 */
+      max-height: 24vh;
       overflow-y: auto;
       overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.2s ease;
     }
-    .explanation-card::-webkit-scrollbar { width: 6px; }
+    /* 作答前：半透明佔位提示樣式 */
+    .explanation-card.placeholder {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+      align-items: center;
+      font-style: italic;
+    }
+    .explanation-card::-webkit-scrollbar { width: 5px; }
     .explanation-card::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
-    .explanation-title { font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 8px; border-bottom: 1px dashed #bfdbfe; padding-bottom: 6px; }
-    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 6px; display: block; line-height: 1.5; }
-    .sentence-zh { color: #475569; margin-bottom: 10px; display: block; line-height: 1.5; }
-    .grammar-note { font-size: 13px; color: #1d4ed8; background: #dbeafe; padding: 8px 12px; border-radius: 8px; display: block; line-height: 1.5; }
+    .explanation-title { font-size: 13.5px; font-weight: 700; color: #1e40af; margin-bottom: 6px; border-bottom: 1px dashed #bfdbfe; padding-bottom: 4px; }
+    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 4px; display: block; line-height: 1.45; }
+    .sentence-zh { color: #475569; margin-bottom: 6px; display: block; line-height: 1.45; }
+    .grammar-note { font-size: 12px; color: #1d4ed8; background: #dbeafe; padding: 5px 8px; border-radius: 6px; display: block; line-height: 1.4; }
 
-    /* 底部功能列：吸底固定 */
+    /* 底部操作固定列 (Sticky) */
     .footer-bar {
       display: flex;
       justify-content: space-between;
@@ -376,23 +380,21 @@
       position: sticky;
       bottom: -6px;
       background: var(--card-bg);
-      padding: 10px 0 6px 0;
+      padding: 8px 0 4px 0;
       border-top: 1px solid var(--border);
       z-index: 10;
       margin-top: auto;
+      flex-shrink: 0;
     }
-    .link-btn { font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: underline; }
-    .hint-keyboard { font-size: 12px; color: var(--muted); }
+    .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
     @media (max-width: 500px) {
-      body { padding: 8px; }
-      .container { padding: 14px 12px; border-radius: 14px; }
       .hint-keyboard { display: none; }
-      .quiz-type-btn { font-size: 11px; padding: 7px 1px; }
       .random-panel { flex-direction: column; align-items: flex-start; }
       .random-btn-group { width: 100%; display: flex; justify-content: space-between; }
-      .random-btn { flex: 1; text-align: center; padding: 7px 4px; }
-      .explanation-card { max-height: 30vh; font-size: 13.5px; }
+      .random-btn { flex: 1; text-align: center; }
+      .explanation-card { min-height: 95px; }
     }
   </style>
 </head>
@@ -417,7 +419,7 @@
       <label>密碼</label>
       <input type="password" id="authPassword" placeholder="至少 6 位數密碼" autocomplete="current-password">
     </div>
-    <!-- 註冊時二次確認密碼 -->
+    <!-- 註冊密碼二次比對欄位 -->
     <div class="input-group hidden" id="confirmPasswordGroup">
       <label>確認密碼</label>
       <input type="password" id="authPasswordConfirm" placeholder="請再次輸入密碼" autocomplete="new-password">
@@ -437,7 +439,6 @@
       </div>
     </div>
 
-    <!-- 四大題型切換 -->
     <div class="quiz-type-selector">
       <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 單字識義</button>
       <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 句子填空</button>
@@ -478,7 +479,7 @@
       </div>
     </div>
 
-    <div id="historyBox" class="explanation-card hidden">
+    <div id="historyBox" class="explanation-card hidden" style="border:1px solid #bfdbfe; background:#eff6ff;">
       <div class="explanation-title">📊 學習成果紀錄</div>
       <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
     </div>
@@ -504,7 +505,7 @@
         <button class="listen-btn-main" id="playAudioBtn" onclick="playCurrentListeningAudio()">
           ▶️ 播放聽力考題 (美式標準音)
         </button>
-        <span id="audioStatusText" style="font-size: 12px; color: var(--muted);">原生發音引擎，點擊即可完整播放</span>
+        <span id="audioStatusText" style="font-size: 11px; color: var(--muted);">原生發音引擎，點擊即可完整播放</span>
       </div>
 
       <div class="cloze-translation-hint hidden" id="clozeZhHint"></div>
@@ -514,12 +515,9 @@
 
     <div class="options-grid" id="optionsGrid"></div>
 
-    <!-- 💡 考點解析與會考完整語境 (空間最佳化) -->
-    <div id="explanationBox" class="explanation-card hidden">
-      <div class="explanation-title">💡 考點解析與會考完整語境</div>
-      <div class="sentence-en" id="expSentenceEn"></div>
-      <div class="sentence-zh" id="expSentenceZh"></div>
-      <div class="grammar-note" id="expGrammar"></div>
+    <!-- 💡 考點解析與會考完整語境 (答題前預留空間，絕不跳動) -->
+    <div id="explanationBox" class="explanation-card placeholder">
+      <span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>
     </div>
 
     <div class="footer-bar">
@@ -759,7 +757,6 @@ function switchAuthTab(tab) {
   document.getElementById("tabRegister").classList.toggle("active", tab === "register");
   document.getElementById("authSubmitBtn").innerText = tab === "login" ? "登入並同步進度" : "註冊新帳號並登入";
   
-  // 註冊時切換顯示「確認密碼」
   const confirmGroup = document.getElementById("confirmPasswordGroup");
   if (tab === "register") {
     confirmGroup.classList.remove("hidden");
@@ -829,7 +826,7 @@ async function handleLogout() {
 }
 
 // ========================================================
-// 3. 測驗引擎核心 (純原生優質美音朗讀引擎)
+// 3. 測驗引擎核心
 // ========================================================
 let FULL_VOCAB = [];
 let DAYS_COUNT = 30;
@@ -1066,7 +1063,11 @@ function createClozeSentence(sentence, targetWord) {
 function renderQuestion() {
   hasAnswered = false;
   document.getElementById("nextBtn").disabled = true;
-  document.getElementById("explanationBox").classList.add("hidden");
+
+  // ★ 答題前：重設解析區為預留卡片，避免高度跳動
+  const expBox = document.getElementById("explanationBox");
+  expBox.className = "explanation-card placeholder";
+  expBox.innerHTML = `<span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>`;
 
   const zhHintEl = document.getElementById("clozeZhHint");
   zhHintEl.classList.add("hidden");
@@ -1092,6 +1093,7 @@ function renderQuestion() {
     document.getElementById("wordKk").innerText = "";
     document.getElementById("examSourceTag").classList.add("hidden");
     audioBox.classList.add("hidden");
+    expBox.classList.add("hidden");
     document.getElementById("optionsGrid").innerHTML = `
       <div style="text-align:center; padding:18px; color:var(--muted); line-height:1.6;">
         <b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>
@@ -1233,14 +1235,20 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   }
 
   const zhHintEl = document.getElementById("clozeZhHint");
+  const expBox = document.getElementById("explanationBox");
+  expBox.className = "explanation-card"; // 移除 placeholder 樣式，載入正式解析
+
   if (currentQuizType === "listen") {
     const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
     zhHintEl.innerText = `聽力原文：${listenData.scriptEn}\n中文翻譯：${listenData.scriptZh}`;
     zhHintEl.classList.remove("hidden");
 
-    document.getElementById("expSentenceEn").innerText = `• 完整聽力文本：${listenData.scriptEn}`;
-    document.getElementById("expSentenceZh").innerText = `• 題目中文翻譯：${listenData.scriptZh}`;
-    document.getElementById("expGrammar").innerText = `【${listenData.year} ${listenData.section}】 ${listenData.explanation}`;
+    expBox.innerHTML = `
+      <div class="explanation-title">💡 考點解析與會考完整語境</div>
+      <span class="sentence-en">• 完整聽力文本：${listenData.scriptEn}</span>
+      <span class="sentence-zh">• 題目中文翻譯：${listenData.scriptZh}</span>
+      <div class="grammar-note">【${listenData.year} ${listenData.section}】 ${listenData.explanation}</div>
+    `;
   } else {
     const cleanWord = item.en.trim().toLowerCase();
     const examData = CAP_EXAM_BANK[cleanWord];
@@ -1256,12 +1264,14 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
       ? `【${examData.year} ${examData.section}】` 
       : CAP_YEAR_MAPPING.getSource(item.en, item.level);
 
-    document.getElementById("expSentenceEn").innerText = `• 完整會考語境：${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}`;
-    document.getElementById("expSentenceZh").innerText = `• 題目中文翻譯：${examData ? examData.zh : (item.sentenceZh || '')} (核心單字：${item.zh})`;
-    document.getElementById("expGrammar").innerText = `${sourceLabel} ${item.grammar || '會考核心重要高頻詞'}`;
+    expBox.innerHTML = `
+      <div class="explanation-title">💡 考點解析與會考完整語境</div>
+      <span class="sentence-en">• 完整會考語境：${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span>
+      <span class="sentence-zh">• 題目中文翻譯：${examData ? examData.zh : (item.sentenceZh || '')} (核心單字：${item.zh})</span>
+      <div class="grammar-note">${sourceLabel} ${item.grammar || '會考核心重要高頻詞'}</div>
+    `;
   }
 
-  document.getElementById("explanationBox").classList.remove("hidden");
   document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
   document.getElementById("nextBtn").disabled = false;
 }
