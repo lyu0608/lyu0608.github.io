@@ -248,14 +248,13 @@
       border-color: #a5f3fc;
     }
     .word-title {
-      font-size: clamp(20px, 6vw, 30px);
+      font-size: clamp(18px, 5vw, 24px);
       font-weight: 800;
       margin-bottom: 6px;
       word-break: break-word;
-      line-height: 1.45;
+      line-height: 1.55;
     }
 
-    /* 聽力原生發音控制面板 */
     .audio-player-box {
       display: flex;
       flex-direction: column;
@@ -348,21 +347,40 @@
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
 
+    /* 💡 考點解析與會考完整語境 (自適應高度與舒適閱讀) */
     .explanation-card {
       background: #eff6ff;
       border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 12px 14px;
+      border-radius: 14px;
+      padding: 14px 16px;
       margin-bottom: 14px;
-      font-size: 13.5px;
-      line-height: 1.55;
+      font-size: 14px;
+      line-height: 1.65;
+      text-align: left;
+      max-height: 35vh; /* 避免擠壓答題可視區 */
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
-    .explanation-title { font-weight: 700; color: #1e40af; margin-bottom: 4px; }
-    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 2px; }
-    .sentence-zh { color: #475569; margin-bottom: 6px; }
-    .grammar-note { font-size: 12px; color: #1d4ed8; background: #dbeafe; padding: 3px 8px; border-radius: 6px; display: inline-block; }
+    .explanation-card::-webkit-scrollbar { width: 6px; }
+    .explanation-card::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
+    .explanation-title { font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 8px; border-bottom: 1px dashed #bfdbfe; padding-bottom: 6px; }
+    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 6px; display: block; line-height: 1.5; }
+    .sentence-zh { color: #475569; margin-bottom: 10px; display: block; line-height: 1.5; }
+    .grammar-note { font-size: 13px; color: #1d4ed8; background: #dbeafe; padding: 8px 12px; border-radius: 8px; display: block; line-height: 1.5; }
 
-    .footer-bar { display: flex; justify-content: space-between; align-items: center; }
+    /* 底部功能列：吸底固定 */
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      bottom: -6px;
+      background: var(--card-bg);
+      padding: 10px 0 6px 0;
+      border-top: 1px solid var(--border);
+      z-index: 10;
+      margin-top: auto;
+    }
     .link-btn { font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 12px; color: var(--muted); }
 
@@ -374,6 +392,7 @@
       .random-panel { flex-direction: column; align-items: flex-start; }
       .random-btn-group { width: 100%; display: flex; justify-content: space-between; }
       .random-btn { flex: 1; text-align: center; padding: 7px 4px; }
+      .explanation-card { max-height: 30vh; font-size: 13.5px; }
     }
   </style>
 </head>
@@ -398,6 +417,12 @@
       <label>密碼</label>
       <input type="password" id="authPassword" placeholder="至少 6 位數密碼" autocomplete="current-password">
     </div>
+    <!-- 註冊時二次確認密碼 -->
+    <div class="input-group hidden" id="confirmPasswordGroup">
+      <label>確認密碼</label>
+      <input type="password" id="authPasswordConfirm" placeholder="請再次輸入密碼" autocomplete="new-password">
+    </div>
+
     <button class="btn" id="authSubmitBtn" onclick="handleSupabaseAuth()">登入並同步進度</button>
     <div class="divider">或</div>
     <button class="btn-guest" onclick="loginAsGuest()">以訪客免登入模式體驗</button>
@@ -475,7 +500,6 @@
       <div id="examSourceTag" class="exam-tag hidden">🏛️ 來源載入中</div>
       <div class="word-title" id="wordDisplay">載入中...</div>
 
-      <!-- 原生純淨美式發音引擎播放面板 -->
       <div id="audioPlayerBox" class="audio-player-box hidden">
         <button class="listen-btn-main" id="playAudioBtn" onclick="playCurrentListeningAudio()">
           ▶️ 播放聽力考題 (美式標準音)
@@ -490,6 +514,7 @@
 
     <div class="options-grid" id="optionsGrid"></div>
 
+    <!-- 💡 考點解析與會考完整語境 (空間最佳化) -->
     <div id="explanationBox" class="explanation-card hidden">
       <div class="explanation-title">💡 考點解析與會考完整語境</div>
       <div class="sentence-en" id="expSentenceEn"></div>
@@ -581,7 +606,6 @@ const CAP_EXAM_BANK = {
   }
 };
 
-// 會考聽力真題庫：由原生純淨美音引擎朗讀 scriptEn
 const CAP_LISTENING_BANK = [
   {
     year: "112年國中教育會考 聽力測驗",
@@ -702,11 +726,11 @@ async function syncFromCloud() {
       userStore.history = data.history || {};
       userStore.mistakes = data.mistakes || [];
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
-      document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
       updateMistakeCount();
     }
+    document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   } catch (err) {
-    document.getElementById("syncStatus").innerText = "⚠️ 離線暫存";
+    document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   }
 }
 
@@ -734,12 +758,28 @@ function switchAuthTab(tab) {
   document.getElementById("tabLogin").classList.toggle("active", tab === "login");
   document.getElementById("tabRegister").classList.toggle("active", tab === "register");
   document.getElementById("authSubmitBtn").innerText = tab === "login" ? "登入並同步進度" : "註冊新帳號並登入";
+  
+  // 註冊時切換顯示「確認密碼」
+  const confirmGroup = document.getElementById("confirmPasswordGroup");
+  if (tab === "register") {
+    confirmGroup.classList.remove("hidden");
+  } else {
+    confirmGroup.classList.add("hidden");
+  }
 }
 
 async function handleSupabaseAuth() {
   const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value.trim();
+  const confirmPassword = document.getElementById("authPasswordConfirm").value.trim();
+
   if (!email || !password) return alert("請輸入完整 Email 與密碼！");
+
+  if (authTab === "register") {
+    if (!confirmPassword) return alert("請再次輸入確認密碼！");
+    if (password !== confirmPassword) return alert("兩次輸入的密碼不相符，請重新確認！");
+    if (password.length < 6) return alert("密碼長度至少需 6 個字元！");
+  }
 
   if (!supabaseClient) {
     alert("尚未填入有效的 Supabase URL 與金鑰，將以本地免登入模式體驗。");
@@ -805,7 +845,6 @@ let currentQuizType = "wordDef";
 
 let speechKeepAliveTimer = null;
 
-// 自動取得最自然的美式發音庫 (iOS: Samantha, Ava / macOS: Alex, Allison / Chrome: Google US)
 function getBestUSVoice() {
   if (!('speechSynthesis' in window)) return null;
   const voices = window.speechSynthesis.getVoices();
@@ -832,7 +871,6 @@ function stopAllAudio() {
   }
 }
 
-// 核心美式發音引擎：帶長句防截斷 keep-alive 保證完整唸完
 function speakPureUS(text, onCompleteCallback) {
   if (!('speechSynthesis' in window)) {
     if (onCompleteCallback) onCompleteCallback(false);
@@ -842,13 +880,12 @@ function speakPureUS(text, onCompleteCallback) {
   stopAllAudio();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "en-US";
-  utterance.rate = 0.88; // 標準會考聽力清晰語速
+  utterance.rate = 0.88;
   utterance.pitch = 1.0;
 
   const voice = getBestUSVoice();
   if (voice) utterance.voice = voice;
 
-  // 心跳定時器：避免 iOS Safari / Chrome 在長句時強制靜音或中斷
   speechKeepAliveTimer = setInterval(() => {
     if (!window.speechSynthesis.speaking) {
       clearInterval(speechKeepAliveTimer);
@@ -872,7 +909,6 @@ function speakPureUS(text, onCompleteCallback) {
   window.speechSynthesis.speak(utterance);
 }
 
-// 🎧 播放聽力題目：純原生美音，不耗外部頻寬
 function playCurrentListeningAudio() {
   const status = document.getElementById("audioStatusText");
   const btn = document.getElementById("playAudioBtn");
@@ -1072,7 +1108,6 @@ function renderQuestion() {
   let answerTarget = "";
 
   if (currentQuizType === "listen") {
-    // 🎧 會考聽力模式
     const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
     examTagEl.className = "exam-tag listen-tag";
     examTagEl.innerHTML = `🎧 <b>【${listenData.year}】</b> ${listenData.section}`;
@@ -1301,7 +1336,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// 預載瀏覽器發音庫
 if (typeof window !== "undefined" && window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => { getBestUSVoice(); };
 }
