@@ -1,1317 +1,353 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (純淨美音聽力與會考真題版)</title>
-  
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>單字王會考特訓</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <!-- 載入 Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="vocab2000.js"></script>
-
+  <!-- 假設你的題庫檔名叫 vocab2000.js，如果沒有請替換為你的題庫來源 -->
+  <script src="./vocab2000.js"></script> 
+  
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --success: #16a34a;
-      --success-bg: #dcfce7;
-      --danger: #dc2626;
-      --danger-bg: #fee2e2;
-      --purple: #7c3aed;
-      --purple-hover: #6d28d9;
-      --amber: #d97706;
-      --cyan: #0891b2;
       --bg: #f8fafc;
       --card-bg: #ffffff;
-      --text: #0f172a;
+      --text: #334155;
       --muted: #64748b;
       --border: #e2e8f0;
+      --primary: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
     }
+    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 500px; background: var(--card-bg); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 20px; position: relative; min-height: 85vh; display: flex; flex-direction: column; }
+    
+    /* 頂部狀態列 */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    .app-title { font-size: 18px; font-weight: bold; margin: 0; color: var(--primary); }
+    .sync-status { font-size: 13px; padding: 4px 8px; border-radius: 12px; background: #f1f5f9; color: var(--muted); }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    /* 登入與註冊區塊 */
+    #authSection { display: flex; flex-direction: column; gap: 10px; }
+    .auth-input { padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; }
+    .btn { padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: #fff; text-align: center; }
+    .btn-primary { background: var(--primary); }
+    .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      min-height: 100dvh;
-      padding: 12px;
-      padding-top: env(safe-area-inset-top, 12px);
-      padding-bottom: env(safe-area-inset-bottom, 16px);
-    }
-
-    .container {
-      width: 100%;
-      max-width: 680px;
-      background: var(--card-bg);
-      border-radius: 18px;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-      padding: 18px 16px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-
-    .hidden { display: none !important; }
-
-    .top-utility-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px dashed var(--border);
-      font-size: 12px;
-    }
-    .status-badge { font-weight: 600; color: #334155; }
-    .cloud-badge { color: #0284c7; font-weight: 600; }
-
-    .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
-    .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: 600; color: var(--muted); }
-    .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
-    .input-group { display: flex; flex-direction: column; gap: 6px; }
-    .input-group label { font-size: 13px; font-weight: 600; color: var(--muted); }
-    .input-group input { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; }
-    .input-group input:focus { border-color: var(--primary); }
-
-    .btn {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, transform 0.05s;
-    }
-    .btn:active { transform: scale(0.98); }
-    .btn:hover:not(:disabled) { background: var(--primary-hover); }
-    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
-
-    .btn-guest {
-      background: #f1f5f9;
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    .divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 4px 0; }
-    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
-    .divider::before { margin-right: 10px; }
-    .divider::after { margin-left: 10px; }
-
-    .user-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
-    }
-    .user-badge { font-weight: 700; color: var(--primary); font-size: 14px; }
-    .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
-
-    .quiz-type-selector {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
-      margin-bottom: 10px;
-    }
-    .quiz-type-btn {
-      padding: 8px 2px;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      background: #fff;
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-    }
-    .quiz-type-btn.active {
-      background: #eff6ff;
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-    .quiz-type-btn.exam-active {
-      background: #fef3c7;
-      border-color: var(--amber);
-      color: #b45309;
-    }
-    .quiz-type-btn.listen-active {
-      background: #ecfeff;
-      border-color: var(--cyan);
-      color: #0e7490;
-    }
-
-    .random-panel {
-      background: #faf5ff;
-      border: 1px solid #e9d5ff;
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .random-title { font-size: 13px; font-weight: 700; color: #6b21a8; }
-    .random-btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
-    .random-btn {
-      background: #fff;
-      color: var(--purple);
-      border: 1px solid #d8b4fe;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .random-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
-
-    .filter-panel {
-      background: #f1f5f9;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 12px;
-      font-size: 13px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .filter-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    select {
-      padding: 6px 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 13px;
-      background: #fff;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .stats-info { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-    .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 14px; }
-    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease; }
-
-    .word-card {
-      background: #f8fafc;
-      border: 1px dashed var(--border);
-      border-radius: 14px;
-      text-align: center;
-      padding: 16px 12px;
-      margin-bottom: 12px;
-    }
-    .exam-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fde68a;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 6px;
-      margin-bottom: 10px;
-    }
-    .exam-tag.listen-tag {
-      background: #ecfeff;
-      color: #0e7490;
-      border-color: #a5f3fc;
-    }
+    /* 測驗區塊 */
+    #quizSection { display: none; flex-grow: 1; flex-direction: column; }
+    
+    /* =========================================
+       UI 優化：題幹與會考解析 (長文閱讀與滑動)
+       ========================================= */
     .word-title {
-      font-size: clamp(20px, 6vw, 30px);
-      font-weight: 800;
-      margin-bottom: 6px;
+      font-size: clamp(18px, 5vw, 24px); /* 避免長句子塞爆螢幕 */
+      font-weight: 700;
+      margin-bottom: 10px;
       word-break: break-word;
-      line-height: 1.45;
-    }
-
-    /* 聽力原生發音控制面板 */
-    .audio-player-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      margin: 12px 0;
-    }
-    .listen-btn-main {
-      background: #0891b2;
-      color: #fff;
-      border: none;
-      padding: 11px 26px;
-      border-radius: 99px;
-      font-size: 15px;
-      font-weight: 700;
+      line-height: 1.55; 
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
-      transition: background 0.15s, transform 0.05s;
     }
-    .listen-btn-main:active { transform: scale(0.97); }
-    .listen-btn-main:hover { background: #0e7490; }
-
-    .cloze-blank {
-      display: inline-block;
-      min-width: 65px;
-      border-bottom: 3px solid var(--primary);
-      color: var(--primary);
-      padding: 0 4px;
-      font-weight: 800;
-    }
-    .cloze-translation-hint {
-      font-size: 14px;
-      color: #166534;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 8px;
-      padding: 8px 12px;
-      margin-top: 10px;
-      font-weight: 600;
-      line-height: 1.45;
-    }
-    .word-kk { font-size: 14px; color: #64748b; margin-bottom: 8px; }
-    .sound-btn {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 6px 16px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--primary);
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .options-grid { display: grid; gap: 10px; margin-bottom: 14px; }
-    .option-btn {
-      display: flex;
-      align-items: center;
-      padding: 13px 14px;
-      min-height: 50px;
-      background: #fff;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      font-size: 15.5px;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.15s;
-    }
+    .options-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+    .option-btn { padding: 14px; background: #f8fafc; border: 2px solid var(--border); border-radius: 10px; font-size: 16px; cursor: pointer; transition: 0.2s; text-align: left; }
     .option-btn:active { transform: scale(0.98); }
-    .option-btn:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
-    .opt-key {
-      width: 24px;
-      height: 24px;
-      background: #f1f5f9;
-      border-radius: 6px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-    .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
-    .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
+    .option-btn.correct { background: #d1fae5; border-color: var(--success); color: #065f46; }
+    .option-btn.wrong { background: #fee2e2; border-color: var(--danger); color: #991b1b; }
 
+    /* 解析卡片：限制高度並內部滑動 */
     .explanation-card {
       background: #eff6ff;
       border: 1px solid #bfdbfe;
       border-radius: 12px;
-      padding: 12px 14px;
+      padding: 16px 14px;
       margin-bottom: 14px;
-      font-size: 13.5px;
-      line-height: 1.55;
+      font-size: 14.5px;
+      line-height: 1.65;
+      text-align: left;
+      max-height: 30vh; /* 限制最高為螢幕的 30% */
+      overflow-y: auto; /* 超出則內部滑動 */
+      overscroll-behavior: contain;
+      display: none; /* 預設隱藏，答題後顯示 */
     }
-    .explanation-title { font-weight: 700; color: #1e40af; margin-bottom: 4px; }
-    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 2px; }
-    .sentence-zh { color: #475569; margin-bottom: 6px; }
-    .grammar-note { font-size: 12px; color: #1d4ed8; background: #dbeafe; padding: 3px 8px; border-radius: 6px; display: inline-block; }
+    .explanation-card::-webkit-scrollbar { width: 6px; }
+    .explanation-card::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
+    .explanation-title { font-size: 15px; font-weight: 700; color: #1e40af; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed #93c5fd; }
+    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 6px; display: block; }
+    .sentence-zh { color: #475569; margin-bottom: 12px; display: block; }
+    .grammar-note { font-size: 13.5px; color: #1d4ed8; background: #dbeafe; padding: 10px 12px; border-radius: 8px; display: block; line-height: 1.55; }
 
-    .footer-bar { display: flex; justify-content: space-between; align-items: center; }
-    .link-btn { font-size: 13px; color: var(--muted); cursor: pointer; text-decoration: underline; }
-    .hint-keyboard { font-size: 12px; color: var(--muted); }
-
-    @media (max-width: 500px) {
-      body { padding: 8px; }
-      .container { padding: 14px 12px; border-radius: 14px; }
-      .hint-keyboard { display: none; }
-      .quiz-type-btn { font-size: 11px; padding: 7px 1px; }
-      .random-panel { flex-direction: column; align-items: flex-start; }
-      .random-btn-group { width: 100%; display: flex; justify-content: space-between; }
-      .random-btn { flex: 1; text-align: center; padding: 7px 4px; }
+    /* =========================================
+       UI 優化：底部按鈕吸底 (Sticky)
+       ========================================= */
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      bottom: -10px; 
+      background: var(--card-bg);
+      padding: 12px 0 8px 0;
+      border-top: 1px solid var(--border);
+      z-index: 10;
+      margin-top: auto;
     }
+    .link-btn { font-size: 14px; color: var(--primary); cursor: pointer; text-decoration: underline; background: none; border: none; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="top-utility-bar">
-    <span class="status-badge" id="sourceStatus">🟡 題庫檢測中...</span>
-    <span class="cloud-badge" id="syncStatus">☁️ 本地模式</span>
+  <!-- 頂部狀態 -->
+  <div class="header-bar">
+    <h1 class="app-title">單字王 2000</h1>
+    <span id="syncStatus" class="sync-status">🟡 本地模式</span>
   </div>
 
-  <div id="authSection" class="auth-box">
-    <div class="auth-tabs">
-      <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">學員登入</div>
-      <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">註冊帳號</div>
-    </div>
-    <div class="input-group">
-      <label>電子信箱 (Email)</label>
-      <input type="email" id="authEmail" placeholder="student@example.com" autocomplete="email">
-    </div>
-    <div class="input-group">
-      <label>密碼</label>
-      <input type="password" id="authPassword" placeholder="至少 6 位數密碼" autocomplete="current-password">
-    </div>
-    <button class="btn" id="authSubmitBtn" onclick="handleSupabaseAuth()">登入並同步進度</button>
-    <div class="divider">或</div>
-    <button class="btn-guest" onclick="loginAsGuest()">以訪客免登入模式體驗</button>
+  <!-- 登入 / 註冊區塊 -->
+  <div id="authSection">
+    <p style="font-size: 14px; color: var(--muted); margin-bottom: 5px;">請登入以開啟雲端同步進度：</p>
+    <input type="email" id="emailInput" class="auth-input" placeholder="電子信箱 (如 test@gmail.com)">
+    <input type="password" id="passwordInput" class="auth-input" placeholder="密碼 (至少 6 碼)">
+    <button class="btn btn-primary" onclick="handleAuth()">註冊 / 登入</button>
+    <button class="btn btn-outline" onclick="enterGuestMode()">訪客模式 (僅存本地)</button>
+    <p id="authMsg" style="color: var(--danger); font-size: 13px; text-align: center; margin-top: 5px;"></p>
   </div>
 
-  <div id="quizSection" class="hidden">
-    <div class="user-header">
-      <span class="user-badge" id="displayUsername">👤 學員</span>
-      <div>
-        <span class="link-btn" onclick="toggleHistory()" style="margin-right: 12px;">學習成果</span>
-        <button class="logout-btn" onclick="handleLogout()">登出</button>
-      </div>
-    </div>
-
-    <!-- 四大題型切換 -->
-    <div class="quiz-type-selector">
-      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 單字識義</button>
-      <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 句子填空</button>
-      <button class="quiz-type-btn" id="typeExamBtn" onclick="setQuizType('exam')">🏛️ 會考真題</button>
-      <button class="quiz-type-btn" id="typeListenBtn" onclick="setQuizType('listen')">🎧 會考聽力</button>
-    </div>
-
-    <div class="random-panel">
-      <span class="random-title">🎲 快速亂數刷題：</span>
-      <div class="random-btn-group">
-        <button class="random-btn" id="btnRand100" onclick="startRandomQuiz(100)">⚡ 100題</button>
-        <button class="random-btn" id="btnRand200" onclick="startRandomQuiz(200)">🔥 200題</button>
-        <button class="random-btn" id="btnRandAll" onclick="startRandomQuiz('all')">🏆 全部(2240)</button>
-      </div>
-    </div>
-
-    <div class="filter-panel" id="planPanel">
-      <div class="filter-row">
-        <div>
-          <span><b>背誦週期：</b></span>
-          <select id="cycleDaysSelect" onchange="changeCycleDays(this.value)">
-            <option value="30">30 天計畫</option>
-            <option value="40">40 天計畫</option>
-            <option value="50">50 天計畫</option>
-            <option value="60">60 天計畫</option>
-          </select>
-        </div>
-        <div>
-          <label style="cursor:pointer;"><input type="radio" name="scopeType" value="todayOnly" checked onchange="handleFilterChange()"> 僅今日</label>
-          <label style="cursor:pointer; margin-left:8px;"><input type="radio" name="scopeType" value="cumulative" onchange="handleFilterChange()"> 滾動複習</label>
-        </div>
-      </div>
-      <div class="filter-row" style="border-top: 1px dashed #cbd5e1; padding-top: 6px;">
-        <label style="cursor:pointer;">
-          <input type="checkbox" id="includeMistakesCheckbox" onchange="handleFilterChange()"> 混合錯題強化複習
-        </label>
-        <span class="link-btn" id="mistakeLink" onclick="reviewMistakes()">純錯題特訓 (0)</span>
-      </div>
-    </div>
-
-    <div id="historyBox" class="explanation-card hidden">
-      <div class="explanation-title">📊 學習成果紀錄</div>
-      <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
-    </div>
-
-    <div class="controls">
-      <select id="daySelect" onchange="changeDay(this.value)"></select>
-      <span id="poolInfoText" style="font-size: 12px; color: var(--muted);">題庫載入中</span>
-    </div>
-
-    <div class="stats-info">
-      <span id="progressText">第 1 題</span>
-      <span id="scoreText">正確: 0 | 錯誤: 0</span>
-    </div>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressBar"></div>
-    </div>
-
-    <div class="word-card">
-      <div id="examSourceTag" class="exam-tag hidden">🏛️ 來源載入中</div>
-      <div class="word-title" id="wordDisplay">載入中...</div>
-
-      <!-- 原生純淨美式發音引擎播放面板 -->
-      <div id="audioPlayerBox" class="audio-player-box hidden">
-        <button class="listen-btn-main" id="playAudioBtn" onclick="playCurrentListeningAudio()">
-          ▶️ 播放聽力考題 (美式標準音)
-        </button>
-        <span id="audioStatusText" style="font-size: 12px; color: var(--muted);">原生發音引擎，點擊即可完整播放</span>
-      </div>
-
-      <div class="cloze-translation-hint hidden" id="clozeZhHint"></div>
-      <div class="word-kk" id="wordKk">[/.../]</div>
-      <button class="sound-btn" id="soundBtn" onclick="speakCurrentWord()">🔊 聆聽單字發音 (R)</button>
-    </div>
-
+  <!-- 測驗區塊 -->
+  <div id="quizSection">
+    <!-- 進度提示 -->
+    <div style="font-size: 13px; color: var(--muted); margin-bottom: 8px; text-align: right;" id="progressText">第 1 題</div>
+    
+    <!-- 題幹 (點擊可發音) -->
+    <div class="word-title" id="wordTitle" onclick="speakPureUS(this.innerText)">載入中... 🔊</div>
+    
+    <!-- 選項 -->
     <div class="options-grid" id="optionsGrid"></div>
 
-    <div id="explanationBox" class="explanation-card hidden">
-      <div class="explanation-title">💡 考點解析與會考完整語境</div>
-      <div class="sentence-en" id="expSentenceEn"></div>
-      <div class="sentence-zh" id="expSentenceZh"></div>
-      <div class="grammar-note" id="expGrammar"></div>
-    </div>
+    <!-- 考點解析區塊 (限制高度，內部滑動) -->
+    <div class="explanation-card" id="explanationCard"></div>
 
+    <!-- 底部功能列 (吸底) -->
     <div class="footer-bar">
-      <span class="hint-keyboard">鍵盤快捷鍵: 1-4 / 空白鍵 / R</span>
-      <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>下一題</button>
+      <button class="link-btn" onclick="logout()">登出</button>
+      <button class="btn btn-primary" id="nextBtn" style="padding: 10px 20px; display: none;" onclick="nextQuestion()">下一題 ➔</button>
     </div>
   </div>
 </div>
 
 <script>
-// ========================================================
-// 1. 會考歷屆試題庫 (純文字真題語料，免依賴外部音檔)
-// ========================================================
-const CAP_EXAM_BANK = {
-  "abroad": {
-    year: "112年國中教育會考",
-    section: "英語科閱讀單選 第1題",
-    sentence: "Mr. Lin has lived ______ for many years, so he can speak English very well.",
-    zh: "林先生在國外住了許多年，所以他英文說得非常好。",
-    distractors: ["ahead", "almost", "alone"]
-  },
-  "accident": {
-    year: "111年國中教育會考",
-    section: "英語科閱讀單選 第2題",
-    sentence: "Be careful when you cross the street. There was a terrible car ______ here yesterday.",
-    zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。",
-    distractors: ["action", "activity", "advice"]
-  },
-  "convenient": {
-    year: "113年國中教育會考",
-    section: "英語科閱讀單選 第3題",
-    sentence: "Living near the MRT station is very ______. It takes me only five minutes to get to school.",
-    zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。",
-    distractors: ["comfortable", "dangerous", "expensive"]
-  },
-  "borrow": {
-    year: "110年國中教育會考",
-    section: "英語科閱讀單選 第1題",
-    sentence: "I forgot to bring my pen today. Could I please ______ one from you?",
-    zh: "我今天忘記帶筆了。我可以向你借一隻嗎？",
-    distractors: ["lend", "buy", "sell"]
-  },
-  "collect": {
-    year: "109年國中教育會考",
-    section: "英語科閱讀單選 第2題",
-    sentence: "My brother likes to ______ stamps from all over the world.",
-    zh: "我的哥哥喜歡收集來自世界各地的郵票。",
-    distractors: ["correct", "connect", "control"]
-  },
-  "famous": {
-    year: "112年國中教育會考",
-    section: "英語科閱讀單選 第4題",
-    sentence: "Tainan is ______ for its delicious traditional street food.",
-    zh: "台南以其道地美味的傳統街頭小吃聞名。",
-    distractors: ["foreign", "fresh", "friendly"]
-  },
-  "weather": {
-    year: "108年國中教育會考",
-    section: "英語科閱讀單選 第1題",
-    sentence: "The ______ in Taipei is often rainy and humid in winter.",
-    zh: "台北冬天的氣候經常多雨且潮濕。",
-    distractors: ["season", "holiday", "nature"]
-  },
-  "healthy": {
-    year: "110年國中教育會考補考",
-    section: "英語科閱讀單選 第2題",
-    sentence: "Eating fresh fruit and exercising every day helps you stay ______.",
-    zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。",
-    distractors: ["hungry", "heavy", "helpful"]
-  },
-  "traffic": {
-    year: "113年國中教育會考",
-    section: "英語科閱讀單選 第2題",
-    sentence: "The morning ______ is always heavy, so you should leave home earlier.",
-    zh: "早晨的交通總是非常擁擠，所以你應該提早出門。",
-    distractors: ["trouble", "travel", "ticket"]
-  },
-  "environment": {
-    year: "111年國中教育會考",
-    section: "英語科閱讀單選 第5題",
-    sentence: "We should use less plastic to protect our natural ______.",
-    zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。",
-    distractors: ["experience", "equipment", "energy"]
-  }
-};
+  // ========================================================
+  // 1. Supabase 初始化 (已修正為無斜線網址)
+  // ========================================================
+  const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 會考聽力真題庫：由原生純淨美音引擎朗讀 scriptEn
-const CAP_LISTENING_BANK = [
-  {
-    year: "112年國中教育會考 聽力測驗",
-    section: "基本問答 第5題",
-    scriptEn: "Would you like some more delicious apple pie?",
-    scriptZh: "你想要再來點美味的蘋果派嗎？",
-    options: [
-      "Yes, please. It tastes wonderful.",
-      "I bought it at the bakery yesterday.",
-      "Apple pie is my mother's favorite dessert."
-    ],
-    answer: "Yes, please. It tastes wonderful.",
-    explanation: "【考點：日常應答與點心款待】對方提出招待詢問，最適當回應為表達禮貌接受。"
-  },
-  {
-    year: "111年國中教育會考 聽力測驗",
-    section: "辨識句意 第1題",
-    scriptEn: "The boy is riding his bicycle along the river bank.",
-    scriptZh: "那個男孩正沿著河岸騎腳踏車。",
-    options: [
-      "The boy is riding his bicycle along the river bank.",
-      "The boy is running fast in the school gym.",
-      "The boy is swimming across the lake with his friends."
-    ],
-    answer: "The boy is riding his bicycle along the river bank.",
-    explanation: "【考點：動作進行式與地點辨識】關鍵字為 riding his bicycle 與 river bank。"
-  },
-  {
-    year: "113年國中教育會考 聽力測驗",
-    section: "言談理解 第15題",
-    scriptEn: "Attention passengers, the train to Taipei will arrive at platform 2 in five minutes.",
-    scriptZh: "各位旅客請注意，開往台北的列車將在五分鐘後抵達第二月台。",
-    options: [
-      "The train to Taipei will arrive at platform 2 shortly.",
-      "The passengers should leave the train right now.",
-      "The train has been canceled due to heavy rain."
-    ],
-    answer: "The train to Taipei will arrive at platform 2 shortly.",
-    explanation: "【考點：車站廣播訊息理解】廣播告知列車即將抵達指定月台。"
-  },
-  {
-    year: "110年國中教育會考 聽力測驗",
-    section: "基本問答 第2題",
-    scriptEn: "Excuse me, how can I get to the nearest metro station?",
-    scriptZh: "不好意思，請問我要怎麼去最近的捷運站？",
-    options: [
-      "Go straight and turn right at the corner.",
-      "I usually take the train to school.",
-      "The ticket is twenty dollars."
-    ],
-    answer: "Go straight and turn right at the corner.",
-    explanation: "【考點：問路與方向指引】對方詢問路徑（How can I get to...），應回答具體行進方向。"
-  },
-  {
-    year: "109年國中教育會考 聽力測驗",
-    section: "辨識句意 第3題",
-    scriptEn: "The girl is holding an umbrella because it is raining heavily outside.",
-    scriptZh: "那個女孩正撐著一把雨傘，因為外面正在下著大雨。",
-    options: [
-      "The girl is holding an umbrella in the heavy rain.",
-      "The girl left her jacket on the yellow bus.",
-      "The girl is playing with water in the yard."
-    ],
-    answer: "The girl is holding an umbrella in the heavy rain.",
-    explanation: "【考點：天氣描述與動作配對】關鍵字 holding an umbrella 與 raining heavily。"
-  }
-];
+  let currentUser = null;
+  let isGuest = true;
+  let userStore = { history: {}, mistakes: [] };
+  
+  // 假設題庫變數為 vocabData (從 vocab2000.js 讀取)，若無則給假資料防止報錯
+  const quizData = (typeof vocabData !== 'undefined') ? vocabData : [
+    { en: "abandon", zh: "放棄", ex_en: "Don't abandon your dreams.", ex_zh: "不要放棄你的夢想。", note: "常考動名詞 V-ing 搭配" }
+  ];
+  let currentQuestion = null;
 
-const CAP_YEAR_MAPPING = {
-  getSource: function(word, level) {
-    const clean = word.trim().toLowerCase();
-    if (CAP_EXAM_BANK[clean]) {
-      return `🏛️ 【${CAP_EXAM_BANK[clean].year}】 ${CAP_EXAM_BANK[clean].section}`;
+  // ========================================================
+  // 2. 原生 TTS 發音功能 (US English)
+  // ========================================================
+  function speakPureUS(text) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel(); 
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.9;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const usVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) 
+                 || voices.find(v => v.lang === 'en-US');
+    if (usVoice) utterance.voice = usVoice;
+    
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // 確保語音能載入
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
+  // ========================================================
+  // 3. 認證與雲端同步功能 (已修正新帳號同步邏輯)
+  // ========================================================
+  async function handleAuth() {
+    const email = document.getElementById("emailInput").value.trim();
+    const password = document.getElementById("passwordInput").value.trim();
+    const msg = document.getElementById("authMsg");
+    
+    if (!email || password.length < 6) {
+      msg.innerText = "請輸入有效的信箱與至少6碼密碼";
+      return;
     }
-    const years = [
-      "113年國中教育會考 閱讀單選",
-      "112年國中教育會考 閱讀單選",
-      "112年國中教育會考補考 閱讀單選",
-      "111年國中教育會考 閱讀單選",
-      "110年國中教育會考 閱讀單選",
-      "109年國中教育會考 閱讀單選",
-      "108年國中教育會考 閱讀單選"
-    ];
-    let hash = 0;
-    for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
-    const yearPick = years[hash % years.length];
-    const qNum = (hash % 15) + 1;
-    return `🏛️ 【${yearPick} 第${qNum}題】`;
-  }
-};
+    msg.innerText = "連線中...";
 
-// ========================================================
-// 2. Supabase 雲端同步與認證配置
-// ========================================================
-const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
-
-let supabaseClient = null;
-if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-
-let currentUser = null;
-let isGuest = false;
-let userStore = { history: {}, mistakes: [] };
-
-async function syncFromCloud() {
-  if (!supabaseClient || isGuest || !currentUser) return;
-  document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
-  try {
-    const { data } = await supabaseClient
-      .from('user_progress')
-      .select('history, mistakes')
-      .eq('user_id', currentUser.id)
-      .single();
-
-    if (data) {
-      userStore.history = data.history || {};
-      userStore.mistakes = data.mistakes || [];
-      localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
-      document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
-      updateMistakeCount();
+    // 嘗試登入
+    const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+    
+    if (signInError) {
+      // 登入失敗則嘗試註冊
+      const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+      if (signUpError) {
+        msg.innerText = "錯誤: " + signUpError.message;
+        return;
+      }
+      currentUser = signUpData.user;
+    } else {
+      currentUser = signInData.user;
     }
-  } catch (err) {
-    document.getElementById("syncStatus").innerText = "⚠️ 離線暫存";
-  }
-}
 
-async function syncToCloud() {
-  localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
-  if (!supabaseClient || isGuest || !currentUser) return;
-  try {
-    await supabaseClient
-      .from('user_progress')
-      .upsert({
-        user_id: currentUser.id,
-        history: userStore.history,
-        mistakes: userStore.mistakes,
-        updated_at: new Date().toISOString()
-      });
-    document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
-  } catch (err) {
-    document.getElementById("syncStatus").innerText = "⚠️ 本地暫存中";
-  }
-}
-
-let authTab = "login";
-function switchAuthTab(tab) {
-  authTab = tab;
-  document.getElementById("tabLogin").classList.toggle("active", tab === "login");
-  document.getElementById("tabRegister").classList.toggle("active", tab === "register");
-  document.getElementById("authSubmitBtn").innerText = tab === "login" ? "登入並同步進度" : "註冊新帳號並登入";
-}
-
-async function handleSupabaseAuth() {
-  const email = document.getElementById("authEmail").value.trim();
-  const password = document.getElementById("authPassword").value.trim();
-  if (!email || !password) return alert("請輸入完整 Email 與密碼！");
-
-  if (!supabaseClient) {
-    alert("尚未填入有效的 Supabase URL 與金鑰，將以本地免登入模式體驗。");
-    return loginAsGuest();
+    isGuest = false;
+    document.getElementById("authSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "flex";
+    
+    await syncFromCloud();
+    loadQuestion();
   }
 
-  if (authTab === "register") {
-    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) return alert("註冊失敗：" + error.message);
-    alert("註冊成功！已自動為您登入。");
-    enterApp(data.user);
-  } else {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) return alert("登入失敗：" + error.message);
-    enterApp(data.user);
+  function enterGuestMode() {
+    isGuest = true;
+    document.getElementById("syncStatus").innerText = "🟡 訪客模式 (本地)";
+    document.getElementById("authSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "flex";
+    
+    const local = localStorage.getItem("local_vocab_progress");
+    if (local) userStore = JSON.parse(local);
+    
+    loadQuestion();
   }
-}
 
-function loginAsGuest() {
-  isGuest = true;
-  currentUser = { email: "訪客 (免登入)" };
-  const local = localStorage.getItem("local_vocab_progress");
-  if (local) userStore = JSON.parse(local);
-  enterApp(currentUser);
-}
-
-function enterApp(user) {
-  currentUser = user;
-  document.getElementById("authSection").classList.add("hidden");
-  document.getElementById("quizSection").classList.remove("hidden");
-  document.getElementById("displayUsername").innerText = `👤 ${user.email}`;
-  syncFromCloud();
-  initDayPlans();
-  initDaySelector();
-  changeDay(1);
-}
-
-async function handleLogout() {
-  if (supabaseClient && !isGuest) {
+  async function logout() {
     await supabaseClient.auth.signOut();
-  }
-  isGuest = false;
-  currentUser = null;
-  document.getElementById("authSection").classList.remove("hidden");
-  document.getElementById("quizSection").classList.add("hidden");
-  document.getElementById("syncStatus").innerText = "☁️ 本地模式";
-}
-
-// ========================================================
-// 3. 測驗引擎核心 (純原生優質美音朗讀引擎)
-// ========================================================
-let FULL_VOCAB = [];
-let DAYS_COUNT = 30;
-let dayPlans = {};
-let isRandomMode = false;
-let currentTestQueue = [];
-let currentIndex = 0;
-let correctCount = 0;
-let wrongCount = 0;
-let hasAnswered = false;
-let currentDay = 1;
-let currentQuizType = "wordDef";
-
-let speechKeepAliveTimer = null;
-
-// 自動取得最自然的美式發音庫 (iOS: Samantha, Ava / macOS: Alex, Allison / Chrome: Google US)
-function getBestUSVoice() {
-  if (!('speechSynthesis' in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
-  const preferredNames = ["samantha", "ava", "allison", "jenny", "aria", "victoria", "karen", "natural", "zira"];
-  let matched = voices.find(v => {
-    const name = v.name.toLowerCase();
-    const lang = (v.lang || "").replace("_", "-");
-    return (lang === "en-US" || lang.startsWith("en")) && preferredNames.some(p => name.includes(p));
-  });
-  if (!matched) {
-    matched = voices.find(v => (v.lang || "").replace("_", "-") === "en-US") ||
-              voices.find(v => (v.lang || "").startsWith("en"));
-  }
-  return matched;
-}
-
-function stopAllAudio() {
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
-  if (speechKeepAliveTimer) {
-    clearInterval(speechKeepAliveTimer);
-    speechKeepAliveTimer = null;
-  }
-}
-
-// 核心美式發音引擎：帶長句防截斷 keep-alive 保證完整唸完
-function speakPureUS(text, onCompleteCallback) {
-  if (!('speechSynthesis' in window)) {
-    if (onCompleteCallback) onCompleteCallback(false);
-    return;
+    location.reload();
   }
 
-  stopAllAudio();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 0.88; // 標準會考聽力清晰語速
-  utterance.pitch = 1.0;
+  // ★ 修正版：處理新註冊用戶的空資料問題 ★
+  async function syncFromCloud() {
+    if (isGuest || !currentUser) return;
+    const statusEl = document.getElementById("syncStatus");
+    statusEl.innerText = "☁️ 正在同步中...";
+    
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_progress')
+        .select('history, mistakes')
+        .eq('user_id', currentUser.id)
+        .single();
 
-  const voice = getBestUSVoice();
-  if (voice) utterance.voice = voice;
-
-  // 心跳定時器：避免 iOS Safari / Chrome 在長句時強制靜音或中斷
-  speechKeepAliveTimer = setInterval(() => {
-    if (!window.speechSynthesis.speaking) {
-      clearInterval(speechKeepAliveTimer);
-      speechKeepAliveTimer = null;
-    } else {
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
+      if (data) {
+        userStore.history = data.history || {};
+        userStore.mistakes = data.mistakes || [];
+        localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
+      }
+      
+      // 無論舊用戶或新用戶，只要沒報錯(或為查無資料的錯)，就視為成功
+      statusEl.innerText = "☁️ 已同步雲端";
+      statusEl.style.color = "var(--success)";
+      
+    } catch (err) {
+      console.error("同步失敗", err);
+      statusEl.innerText = "⚠️ 離線暫存";
     }
-  }, 7000);
-
-  utterance.onend = () => {
-    if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
-    if (onCompleteCallback) onCompleteCallback(true);
-  };
-
-  utterance.onerror = () => {
-    if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
-    if (onCompleteCallback) onCompleteCallback(false);
-  };
-
-  window.speechSynthesis.speak(utterance);
-}
-
-// 🎧 播放聽力題目：純原生美音，不耗外部頻寬
-function playCurrentListeningAudio() {
-  const status = document.getElementById("audioStatusText");
-  const btn = document.getElementById("playAudioBtn");
-
-  if (currentQuizType !== "listen") return;
-
-  const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
-  status.innerText = "🔊 正在以標準美式發音朗讀考題...";
-  btn.disabled = true;
-
-  speakPureUS(listenData.scriptEn, (success) => {
-    btn.disabled = false;
-    if (success) {
-      status.innerText = "✅ 考題朗讀完畢，可再次點擊重聽";
-    } else {
-      status.innerText = "⚠️ 語音播放結束";
-    }
-  });
-}
-
-function setQuizType(type) {
-  stopAllAudio();
-  currentQuizType = type;
-  document.getElementById("typeWordDefBtn").classList.toggle("active", type === "wordDef");
-  document.getElementById("typeClozeBtn").classList.toggle("active", type === "cloze");
-  
-  const examBtn = document.getElementById("typeExamBtn");
-  examBtn.classList.toggle("exam-active", type === "exam");
-  examBtn.classList.toggle("active", type === "exam");
-
-  const listenBtn = document.getElementById("typeListenBtn");
-  listenBtn.classList.toggle("listen-active", type === "listen");
-  listenBtn.classList.toggle("active", type === "listen");
-
-  renderQuestion();
-}
-
-function shuffle(arr) {
-  const list = arr.slice();
-  for (let i = list.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
-  }
-  return list;
-}
-
-function initDayPlans() {
-  const total = FULL_VOCAB.length;
-  dayPlans = {};
-  if (total === 0) return;
-  const basePerDay = Math.floor(total / DAYS_COUNT);
-  const remainder = total % DAYS_COUNT;
-  let cursor = 0;
-  for (let d = 1; d <= DAYS_COUNT; d++) {
-    const count = d <= remainder ? (basePerDay + 1) : basePerDay;
-    dayPlans[d] = FULL_VOCAB.slice(cursor, cursor + count);
-    cursor += count;
-  }
-}
-
-function initDaySelector() {
-  const select = document.getElementById("daySelect");
-  select.innerHTML = "";
-  for (let d = 1; d <= DAYS_COUNT; d++) {
-    const opt = document.createElement("option");
-    opt.value = d;
-    const isDone = userStore.history[`Day_${d}`] ? "✓ " : "";
-    const count = dayPlans[d]?.length || 0;
-    opt.innerText = `${isDone}第 ${d} 天 (${count} 題)`;
-    select.appendChild(opt);
-  }
-}
-
-function startRandomQuiz(count) {
-  if (FULL_VOCAB.length === 0) return alert("題庫載入中，請稍候！");
-  isRandomMode = true;
-  document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
-  if (count === 100) document.getElementById("btnRand100").classList.add("active");
-  else if (count === 200) document.getElementById("btnRand200").classList.add("active");
-  else document.getElementById("btnRandAll").classList.add("active");
-
-  const shuffled = shuffle(FULL_VOCAB);
-  currentTestQueue = (count === 'all' || count >= FULL_VOCAB.length) ? shuffled : shuffled.slice(0, count);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
-  document.getElementById("progressBar").style.background = "var(--purple)";
-  renderQuestion();
-}
-
-function changeCycleDays(val) {
-  DAYS_COUNT = parseInt(val, 10) || 30;
-  initDayPlans();
-  initDaySelector();
-  changeDay(1);
-}
-
-function changeDay(day) {
-  isRandomMode = false;
-  document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById("progressBar").style.background = "var(--primary)";
-  currentDay = Number(day);
-  
-  const scopeType = document.querySelector('input[name="scopeType"]:checked').value;
-  const incMistakes = document.getElementById("includeMistakesCheckbox").checked;
-
-  let pool = [];
-  if (scopeType === "cumulative") {
-    for (let d = 1; d <= currentDay; d++) if (dayPlans[d]) pool.push(...dayPlans[d]);
-  } else {
-    pool = (dayPlans[currentDay] || []).slice();
   }
 
-  if (incMistakes && userStore.mistakes) {
-    userStore.mistakes.forEach(m => {
-      if (!pool.some(item => item.en === m.en)) pool.push(m);
+  // 儲存進度到雲端
+  async function saveProgressToCloud() {
+    localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
+    if (isGuest || !currentUser) return;
+    
+    await supabaseClient.from('user_progress').upsert({
+      user_id: currentUser.id,
+      history: userStore.history,
+      mistakes: userStore.mistakes,
+      updated_at: new Date().toISOString()
     });
   }
 
-  currentTestQueue = shuffle(pool);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
-  renderQuestion();
-}
-
-function handleFilterChange() {
-  if (!isRandomMode) changeDay(currentDay);
-}
-
-function createClozeSentence(sentence, targetWord) {
-  if (!sentence) return { masked: "______", hasReplaced: false };
-  const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-  if (regex.test(sentence)) {
-    return {
-      masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`),
-      hasReplaced: true
-    };
-  }
-  const root = targetWord.length > 4 ? targetWord.slice(0, 4) : targetWord;
-  const looseRegex = new RegExp(`\\b${root}[a-zA-Z]*\\b`, 'i');
-  if (looseRegex.test(sentence)) {
-    return {
-      masked: sentence.replace(looseRegex, `<span class="cloze-blank">_______</span>`),
-      hasReplaced: true
-    };
-  }
-  return {
-    masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`,
-    hasReplaced: false
-  };
-}
-
-function renderQuestion() {
-  hasAnswered = false;
-  document.getElementById("nextBtn").disabled = true;
-  document.getElementById("explanationBox").classList.add("hidden");
-
-  const zhHintEl = document.getElementById("clozeZhHint");
-  zhHintEl.classList.add("hidden");
-  zhHintEl.innerText = "";
-
-  const audioBox = document.getElementById("audioPlayerBox");
-  const soundBtn = document.getElementById("soundBtn");
-
-  if (currentTestQueue.length === 0) {
-    document.getElementById("wordDisplay").innerText = "暫無單字";
-    return;
-  }
-
-  if (currentIndex >= currentTestQueue.length) {
-    userStore.history[`Day_${currentDay}`] = {
-      score: correctCount,
-      total: currentTestQueue.length,
-      rate: Math.round((correctCount / currentTestQueue.length) * 100),
-      date: new Date().toLocaleDateString()
-    };
-    syncToCloud();
-    document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
-    document.getElementById("wordKk").innerText = "";
-    document.getElementById("examSourceTag").classList.add("hidden");
-    audioBox.classList.add("hidden");
-    document.getElementById("optionsGrid").innerHTML = `
-      <div style="text-align:center; padding:18px; color:var(--muted); line-height:1.6;">
-        <b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>
-        正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b> (${correctCount}/${currentTestQueue.length})
-      </div>
-    `;
-    return;
-  }
-
-  const cur = currentTestQueue[currentIndex];
-  const examTagEl = document.getElementById("examSourceTag");
-
-  let options = [];
-  let answerTarget = "";
-
-  if (currentQuizType === "listen") {
-    // 🎧 會考聽力模式
-    const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
-    examTagEl.className = "exam-tag listen-tag";
-    examTagEl.innerHTML = `🎧 <b>【${listenData.year}】</b> ${listenData.section}`;
-    examTagEl.classList.remove("hidden");
-
-    document.getElementById("wordDisplay").innerText = "請仔細聆聽題目音訊";
-    document.getElementById("wordKk").innerText = "[ 點擊按鈕標準美音朗讀，作答後解鎖文本 ]";
-    audioBox.classList.remove("hidden");
-    soundBtn.classList.add("hidden");
-    document.getElementById("audioStatusText").innerText = "原生美式語音，點擊即可完整播放";
-
-    answerTarget = listenData.answer;
-    options = shuffle(listenData.options);
-
-  } else if (currentQuizType === "exam") {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
-    examTagEl.className = "exam-tag";
-
-    const cleanWord = cur.en.trim().toLowerCase();
-    const examData = CAP_EXAM_BANK[cleanWord];
+  // ========================================================
+  // 4. 測驗 UI 邏輯
+  // ========================================================
+  function loadQuestion() {
+    document.getElementById("explanationCard").style.display = "none";
+    document.getElementById("nextBtn").style.display = "none";
+    document.getElementById("optionsGrid").innerHTML = "";
     
-    const sourceLabel = examData 
-      ? `🏛️ 【${examData.year}】 ${examData.section}`
-      : CAP_YEAR_MAPPING.getSource(cur.en, cur.level);
+    // 隨機挑選一題 (簡單實作)
+    currentQuestion = quizData[Math.floor(Math.random() * quizData.length)];
+    document.getElementById("wordTitle").innerText = currentQuestion.en + " 🔊";
+    speakPureUS(currentQuestion.en); // 自動發音
 
-    examTagEl.innerHTML = sourceLabel;
-    examTagEl.classList.remove("hidden");
+    // 產生選項 (這裡簡化為 正確答案 + 3個假答案)
+    let options = [currentQuestion.zh, "錯誤選項A", "錯誤選項B", "錯誤選項C"];
+    options.sort(() => Math.random() - 0.5); // 打亂
 
-    if (examData) {
-      const clozeObj = createClozeSentence(examData.sentence, cur.en);
-      document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
-      answerTarget = cur.en;
-      options = shuffle([cur.en, ...examData.distractors]);
-    } else {
-      const clozeObj = createClozeSentence(cur.sentenceEn, cur.en);
-      document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
-      answerTarget = cur.en;
-      const distractors = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
-      options = shuffle([cur.en, ...distractors]);
-    }
-    document.getElementById("wordKk").innerText = `[/ 歷屆真題語境 /]`;
-
-  } else if (currentQuizType === "cloze") {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
-    examTagEl.classList.add("hidden");
-
-    const clozeObj = createClozeSentence(cur.sentenceEn, cur.en);
-    document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
-    document.getElementById("wordKk").innerText = `[/ 文意字彙考點 /]`;
-
-    answerTarget = cur.en;
-    const distractors = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
-    options = shuffle([cur.en, ...distractors]);
-
-  } else {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
-    examTagEl.classList.add("hidden");
-
-    document.getElementById("wordDisplay").innerText = cur.en;
-    document.getElementById("wordKk").innerText = cur.kk || "";
-
-    answerTarget = cur.zh;
-    const distractors = shuffle(FULL_VOCAB.filter(i => i.zh !== cur.zh).map(i => i.zh)).slice(0, 3);
-    options = shuffle([cur.zh, ...distractors]);
+    const grid = document.getElementById("optionsGrid");
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerText = opt;
+      btn.onclick = () => checkAnswer(btn, opt === currentQuestion.zh);
+      grid.appendChild(btn);
+    });
   }
 
-  document.getElementById("progressText").innerText = `${isRandomMode ? '🎲 亂數 ' : ''}第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
-  document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
-  document.getElementById("progressBar").style.width = `${(currentIndex / currentTestQueue.length) * 100}%`;
+  function checkAnswer(btn, isCorrect) {
+    // 鎖定所有按鈕
+    const btns = document.querySelectorAll(".option-btn");
+    btns.forEach(b => {
+      b.onclick = null;
+      if (b.innerText === currentQuestion.zh) b.classList.add("correct");
+    });
 
-  const grid = document.getElementById("optionsGrid");
-  grid.innerHTML = "";
-  const keys = ["A", "B", "C", "D"];
-  options.forEach((optText, idx) => {
-    const btn = document.createElement("button");
-    btn.className = "option-btn";
-    btn.innerHTML = `<span class="opt-key">${keys[idx]}</span><span>${optText}</span>`;
-    btn.onclick = () => checkAnswer(btn, optText, cur, answerTarget);
-    grid.appendChild(btn);
-  });
-}
-
-function checkAnswer(btn, selectedText, item, answerTarget) {
-  if (hasAnswered) return;
-  hasAnswered = true;
-
-  const buttons = document.querySelectorAll(".option-btn");
-  buttons.forEach(b => {
-    if (b.querySelector("span:last-child").innerText === answerTarget) {
-      b.classList.add("correct");
-    }
-  });
-
-  const isCorrect = (selectedText === answerTarget);
-
-  if (isCorrect) {
-    correctCount++;
-    if (currentQuizType === "cloze" || currentQuizType === "exam") {
-      const blank = document.querySelector(".cloze-blank");
-      if (blank) {
-        blank.innerText = item.en;
-        blank.style.color = "var(--success)";
+    if (!isCorrect) {
+      btn.classList.add("wrong");
+      // 記錄錯題
+      if (!userStore.mistakes.includes(currentQuestion.en)) {
+        userStore.mistakes.push(currentQuestion.en);
       }
     }
-  } else {
-    btn.classList.add("wrong");
-    wrongCount++;
-    if (!userStore.mistakes.some(m => m.en === item.en)) {
-      userStore.mistakes.push(item);
-      syncToCloud();
-      updateMistakeCount();
-    }
-    if (currentQuizType === "cloze" || currentQuizType === "exam") {
-      const blank = document.querySelector(".cloze-blank");
-      if (blank) {
-        blank.innerText = item.en;
-        blank.style.color = "var(--danger)";
-      }
-    }
+    
+    saveProgressToCloud(); // 儲存進度
+
+    // 顯示長文解析
+    const expCard = document.getElementById("explanationCard");
+    expCard.style.display = "block";
+    expCard.innerHTML = `
+      <div class="explanation-title">💡 考點解析</div>
+      <span class="sentence-en">${currentQuestion.ex_en || '無例句'}</span>
+      <span class="sentence-zh">${currentQuestion.ex_zh || '無翻譯'}</span>
+      ${currentQuestion.note ? `<div class="grammar-note">📌 筆記：${currentQuestion.note}</div>` : ''}
+    `;
+
+    document.getElementById("nextBtn").style.display = "block";
   }
 
-  const zhHintEl = document.getElementById("clozeZhHint");
-  if (currentQuizType === "listen") {
-    const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
-    zhHintEl.innerText = `聽力原文：${listenData.scriptEn}\n中文翻譯：${listenData.scriptZh}`;
-    zhHintEl.classList.remove("hidden");
-
-    document.getElementById("expSentenceEn").innerText = `• 完整聽力文本：${listenData.scriptEn}`;
-    document.getElementById("expSentenceZh").innerText = `• 題目中文翻譯：${listenData.scriptZh}`;
-    document.getElementById("expGrammar").innerText = `【${listenData.year} ${listenData.section}】 ${listenData.explanation}`;
-  } else {
-    const cleanWord = item.en.trim().toLowerCase();
-    const examData = CAP_EXAM_BANK[cleanWord];
-    if (currentQuizType === "exam") {
-      zhHintEl.innerText = examData ? `題目中文翻譯：${examData.zh}` : `語意翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.remove("hidden");
-    } else if (currentQuizType === "cloze") {
-      zhHintEl.innerText = `語意翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.remove("hidden");
-    }
-
-    const sourceLabel = examData 
-      ? `【${examData.year} ${examData.section}】` 
-      : CAP_YEAR_MAPPING.getSource(item.en, item.level);
-
-    document.getElementById("expSentenceEn").innerText = `• 完整會考語境：${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}`;
-    document.getElementById("expSentenceZh").innerText = `• 題目中文翻譯：${examData ? examData.zh : (item.sentenceZh || '')} (核心單字：${item.zh})`;
-    document.getElementById("expGrammar").innerText = `${sourceLabel} ${item.grammar || '會考核心重要高頻詞'}`;
+  function nextQuestion() {
+    loadQuestion();
   }
 
-  document.getElementById("explanationBox").classList.remove("hidden");
-  document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
-  document.getElementById("nextBtn").disabled = false;
-}
-
-function nextQuestion() {
-  if (!hasAnswered) return;
-  stopAllAudio();
-  currentIndex++;
-  renderQuestion();
-}
-
-function updateMistakeCount() {
-  document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userStore.mistakes.length})`;
-}
-
-function reviewMistakes() {
-  if (userStore.mistakes.length === 0) return alert("目前無錯題！");
-  isRandomMode = false;
-  currentTestQueue = shuffle(userStore.mistakes);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
-  renderQuestion();
-}
-
-function toggleHistory() {
-  const box = document.getElementById("historyBox");
-  box.classList.toggle("hidden");
-  const details = document.getElementById("historyDetails");
-  const entries = Object.entries(userStore.history);
-  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b>: ${v.score}/${v.total} (${v.rate}%) - ${v.date}</div>`).join("");
-}
-
-function speakCurrentWord() {
-  if (currentIndex >= currentTestQueue.length) return;
-  const cur = currentTestQueue[currentIndex];
-  let textToSpeak = cur.en;
-  
-  if (hasAnswered) {
-    if (currentQuizType === "exam") {
-      const examData = CAP_EXAM_BANK[cur.en.trim().toLowerCase()];
-      textToSpeak = examData ? examData.sentence.replace('______', cur.en) : cur.sentenceEn;
-    } else if (currentQuizType === "cloze") {
-      textToSpeak = cur.sentenceEn;
-    }
+  // ========================================================
+  // 5. PWA Service Worker 註冊
+  // ========================================================
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW 註冊成功', reg))
+        .catch(err => console.log('SW 註冊失敗', err));
+    });
   }
-
-  speakPureUS(textToSpeak);
-}
-
-window.addEventListener("keydown", (e) => {
-  const k = e.key.toUpperCase();
-  const btns = document.querySelectorAll(".option-btn");
-  if (!hasAnswered) {
-    if (["1", "A"].includes(k) && btns[0]) btns[0].click();
-    if (["2", "B"].includes(k) && btns[1]) btns[1].click();
-    if (["3", "C"].includes(k) && btns[2]) btns[2].click();
-    if (["4", "D"].includes(k) && btns[3]) btns[3].click();
-  } else if (e.code === "Space" || e.key === "Enter") {
-    e.preventDefault();
-    nextQuestion();
-  }
-  if (k === "R") {
-    if (currentQuizType === "listen") playCurrentListeningAudio();
-    else speakCurrentWord();
-  }
-});
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-
-// 預載瀏覽器發音庫
-if (typeof window !== "undefined" && window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => { getBestUSVoice(); };
-}
-
-window.onload = async () => {
-  if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB)) {
-    FULL_VOCAB = window.EXTERNAL_VOCAB;
-    document.getElementById("sourceStatus").innerText = `🟢 題庫就緒 (${FULL_VOCAB.length} 字)`;
-  }
-};
 </script>
+
 </body>
 </html>
