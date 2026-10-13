@@ -116,10 +116,7 @@
     .btn:hover:not(:disabled) { background: var(--primary-hover); }
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    .btn-danger {
-      background: var(--danger);
-      color: #fff;
-    }
+    .btn-danger { background: var(--danger); color: #fff; }
     .btn-danger:hover:not(:disabled) { background: #b91c1c; }
 
     .btn-guest {
@@ -148,7 +145,18 @@
       margin-bottom: 10px;
       flex-shrink: 0;
     }
-    .user-badge { font-weight: 700; color: var(--primary); font-size: 14px; }
+    .user-badge {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #eff6ff;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
 
     .quiz-type-selector {
@@ -397,7 +405,7 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* 通用 Modal 彈出視窗 */
+    /* Modal 彈出視窗 */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -444,22 +452,38 @@
       font-size: 13px;
       line-height: 1.6;
     }
-    .history-item {
-      margin-bottom: 16px;
-      border-left: 3px solid var(--primary);
-      padding-left: 10px;
+
+    /* 多學員切換卡片清單樣式 */
+    .account-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
     }
+    .account-item:hover { border-color: var(--primary); background: #eff6ff; }
+    .account-item.active { border-color: var(--primary); background: #dbeafe; font-weight: 700; }
+    .account-avatar {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .history-item { margin-bottom: 16px; border-left: 3px solid var(--primary); padding-left: 10px; }
     .history-tag { font-weight: 700; color: var(--primary); font-size: 13.5px; margin-bottom: 2px; }
     .history-desc { color: #334155; }
     .history-desc ul { margin-left: 16px; margin-top: 4px; }
-
-    @media (max-width: 500px) {
-      .hint-keyboard { display: none; }
-      .random-panel { flex-direction: column; align-items: flex-start; }
-      .random-btn-group { width: 100%; display: flex; justify-content: space-between; }
-      .random-btn { flex: 1; text-align: center; }
-      .explanation-card { min-height: 95px; }
-    }
   </style>
 </head>
 <body>
@@ -498,8 +522,10 @@
 
   <div id="quizSection" class="hidden">
     <div class="user-header">
-      <span class="user-badge" id="displayUsername">👤 學員</span>
+      <!-- 點擊學員名稱也能直接彈出切換選單 -->
+      <span class="user-badge" id="displayUsername" onclick="openSwitchAccountModal()">👤 學員 ▾</span>
       <div style="display:flex; align-items:center; gap:10px;">
+        <span class="link-btn" onclick="openSwitchAccountModal()" style="color:var(--primary); font-weight:600;">👥 切換學員</span>
         <span class="link-btn" onclick="toggleHistory()">學習成果</span>
         <span class="link-btn" onclick="promptClearRecords()" style="color:var(--danger);">清空紀錄</span>
         <button class="logout-btn" onclick="handleLogout()">登出</button>
@@ -596,6 +622,27 @@
   </div>
 </div>
 
+<!-- 👥 免密碼切換學員彈窗 (Switch Account Modal) -->
+<div id="switchAccountModal" class="modal-overlay hidden" onclick="toggleSwitchAccountModal(false)">
+  <div class="modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">👥 免密碼切換學員</div>
+      <button class="modal-close" onclick="toggleSwitchAccountModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--muted); margin-bottom:12px; font-size:12.5px;">
+        點選以下已登入之學員即可無縫切換進度：
+      </p>
+      <div id="accountListContainer"></div>
+      
+      <div style="margin-top:14px; border-top:1px dashed var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
+        <button class="link-btn" onclick="addNewAccountLogin()" style="color:var(--primary); font-weight:600; text-decoration:none;">➕ 登入其他新帳號</button>
+        <button class="btn btn-guest" style="padding:6px 14px;" onclick="toggleSwitchAccountModal(false)">關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 🔐 清空紀錄密碼驗證彈窗 -->
 <div id="clearConfirmModal" class="modal-overlay hidden" onclick="toggleClearModal(false)">
   <div class="modal-card" style="max-width:400px;" onclick="event.stopPropagation()">
@@ -619,7 +666,7 @@
   </div>
 </div>
 
-<!-- 🛠️ 軟體維護歷程彈出視窗 (Changelog Modal) -->
+<!-- 🛠️ 軟體維護歷程彈出視窗 -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -628,11 +675,20 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v2.5.0 - 多學員本機快照免密碼切換</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>免密碼快速切換：</b>支援於本機安全記錄多位學員工作階段，點選名單即可秒切換進度與錯題本[cite: 2]。</li>
+            <li><b>無縫雲端背景保存：</b>每次切換前自動保存前一位學員進度至 Supabase，切換後自動載入目標學員進度[cite: 2]。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v2.4.0 - 資料安全重置與密碼驗證防護</div>
         <div class="history-desc">
           <ul>
-            <li><b>密碼二次身分驗證：</b>新增「清空紀錄」功能，執行前強制比對帳號登入密碼，防止誤觸或他人竄改進度。</li>
-            <li><b>雲端與本地同步抹除：</b>驗證通過後同時將 Supabase 雲端資料表與 LocalStorage 中的歷史紀錄、錯題本重置為初始空值。</li>
+            <li><b>密碼二次身分驗證：</b>新增「清空紀錄」功能，執行前強制比對帳號登入密碼，防止誤觸[cite: 2]。</li>
+            <li><b>雲端與本地同步抹除：</b>驗證通過後同時將 Supabase 與 LocalStorage 的歷史紀錄抹除為初始空值[cite: 2]。</li>
           </ul>
         </div>
       </div>
@@ -640,19 +696,8 @@
         <div class="history-tag">v2.3.0 - UI 空間穩定與註冊驗證強化</div>
         <div class="history-desc">
           <ul>
-            <li><b>密碼雙重比對：</b>註冊標籤頁新增「確認密碼」欄位，提交前前端自動比對一致性。</li>
-            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面瞬間下移的痛點。</li>
+            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面下移痛點[cite: 2]。</li>
             <li><b>跨裝置彈性適配：</b>採用 `clamp` 與動態視窗高度單位（`dvh`），自動適配手機與桌面螢幕。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.2.0 - 雲端同步邏輯與資料表防禦修復</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>Supabase URL 格式修復：</b>移除網址結尾 `/rest/v1/` 與多餘斜線，解決 Auth 註冊無效路徑錯誤。</li>
-            <li><b>新用戶空狀態優化：</b>修復全新註冊使用者在 `user_progress` 查無舊進度時卡在同步中的問題。</li>
-            <li><b>發音長句防截斷：</b>導入 7 秒心跳計時器（`keep-alive`），避免 iOS Safari 截斷長音檔。</li>
           </ul>
         </div>
       </div>
@@ -660,17 +705,7 @@
         <div class="history-tag">v2.1.0 - PWA 雙專案離線相容快取架構</div>
         <div class="history-desc">
           <ul>
-            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim` 強制更新客戶端。</li>
-            <li><b>多專案資產快取：</b>支援新舊 HTML 頁面及外部題庫 `vocab2000.js` 共存離線運作。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.0.0 - 會考特訓核心題型發布</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>四大專屬題型上線：</b>支援單字識義、句子填空、會考真題與會考聽力模式。</li>
-            <li><b>彈性學習計畫：</b>支援 30~60 天週期排程、滾動複習與快速亂數刷題（100 / 200 / 全題庫）。</li>
+            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim`。</li>
           </ul>
         </div>
       </div>
@@ -680,144 +715,99 @@
 
 <script>
 // ========================================================
-// 1. 會考歷屆試題庫 (純文字真題語料，免依賴外部音檔)
+// 1. 會考歷屆試題庫 (純文字真題語料)
 // ========================================================
 const CAP_EXAM_BANK = {
   "abroad": {
-    year: "112年國中教育會考",
-    section: "英語科閱讀單選 第1題",
+    year: "112年國中教育會考", section: "英語科閱讀單選 第1題",
     sentence: "Mr. Lin has lived ______ for many years, so he can speak English very well.",
-    zh: "林先生在國外住了許多年，所以他英文說得非常好。",
-    distractors: ["ahead", "almost", "alone"]
+    zh: "林先生在國外住了許多年，所以他英文說得非常好。", distractors: ["ahead", "almost", "alone"]
   },
   "accident": {
-    year: "111年國中教育會考",
-    section: "英語科閱讀單選 第2題",
+    year: "111年國中教育會考", section: "英語科閱讀單選 第2題",
     sentence: "Be careful when you cross the street. There was a terrible car ______ here yesterday.",
-    zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。",
-    distractors: ["action", "activity", "advice"]
+    zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。", distractors: ["action", "activity", "advice"]
   },
   "convenient": {
-    year: "113年國中教育會考",
-    section: "英語科閱讀單選 第3題",
+    year: "113年國中教育會考", section: "英語科閱讀單選 第3題",
     sentence: "Living near the MRT station is very ______. It takes me only five minutes to get to school.",
-    zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。",
-    distractors: ["comfortable", "dangerous", "expensive"]
+    zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。", distractors: ["comfortable", "dangerous", "expensive"]
   },
   "borrow": {
-    year: "110年國中教育會考",
-    section: "英語科閱讀單選 第1題",
+    year: "110年國中教育會考", section: "英語科閱讀單選 第1題",
     sentence: "I forgot to bring my pen today. Could I please ______ one from you?",
-    zh: "我今天忘記帶筆了。我可以向你借一隻嗎？",
-    distractors: ["lend", "buy", "sell"]
+    zh: "我今天忘記帶筆了。我可以向你借一隻嗎？", distractors: ["lend", "buy", "sell"]
   },
   "collect": {
-    year: "109年國中教育會考",
-    section: "英語科閱讀單選 第2題",
+    year: "109年國中教育會考", section: "英語科閱讀單選 第2題",
     sentence: "My brother likes to ______ stamps from all over the world.",
-    zh: "我的哥哥喜歡收集來自世界各地的郵票。",
-    distractors: ["correct", "connect", "control"]
+    zh: "我的哥哥喜歡收集來自世界各地的郵票。", distractors: ["correct", "connect", "control"]
   },
   "famous": {
-    year: "112年國中教育會考",
-    section: "英語科閱讀單選 第4題",
+    year: "112年國中教育會考", section: "英語科閱讀單選 第4題",
     sentence: "Tainan is ______ for its delicious traditional street food.",
-    zh: "台南以其道地美味的傳統街頭小吃聞名。",
-    distractors: ["foreign", "fresh", "friendly"]
+    zh: "台南以其道地美味的傳統街頭小吃聞名。", distractors: ["foreign", "fresh", "friendly"]
   },
   "weather": {
-    year: "108年國中教育會考",
-    section: "英語科閱讀單選 第1題",
+    year: "108年國中教育會考", section: "英語科閱讀單選 第1題",
     sentence: "The ______ in Taipei is often rainy and humid in winter.",
-    zh: "台北冬天的氣候經常多雨且潮濕。",
-    distractors: ["season", "holiday", "nature"]
+    zh: "台北冬天的氣候經常多雨且潮濕。", distractors: ["season", "holiday", "nature"]
   },
   "healthy": {
-    year: "110年國中教育會考補考",
-    section: "英語科閱讀單選 第2題",
+    year: "110年國中教育會考補考", section: "英語科閱讀單選 第2題",
     sentence: "Eating fresh fruit and exercising every day helps you stay ______.",
-    zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。",
-    distractors: ["hungry", "heavy", "helpful"]
+    zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。", distractors: ["hungry", "heavy", "helpful"]
   },
   "traffic": {
-    year: "113年國中教育會考",
-    section: "英語科閱讀單選 第2題",
+    year: "113年國中教育會考", section: "英語科閱讀單選 第2題",
     sentence: "The morning ______ is always heavy, so you should leave home earlier.",
-    zh: "早晨的交通總是非常擁擠，所以你應該提早出門。",
-    distractors: ["trouble", "travel", "ticket"]
+    zh: "早晨的交通總是非常擁擠，所以你應該提早出門。", distractors: ["trouble", "travel", "ticket"]
   },
   "environment": {
-    year: "111年國中教育會考",
-    section: "英語科閱讀單選 第5題",
+    year: "111年國中教育會考", section: "英語科閱讀單選 第5題",
     sentence: "We should use less plastic to protect our natural ______.",
-    zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。",
-    distractors: ["experience", "equipment", "energy"]
+    zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。", distractors: ["experience", "equipment", "energy"]
   }
 };
 
 const CAP_LISTENING_BANK = [
   {
-    year: "112年國中教育會考 聽力測驗",
-    section: "基本問答 第5題",
+    year: "112年國中教育會考 聽力測驗", section: "基本問答 第5題",
     scriptEn: "Would you like some more delicious apple pie?",
     scriptZh: "你想要再來點美味的蘋果派嗎？",
-    options: [
-      "Yes, please. It tastes wonderful.",
-      "I bought it at the bakery yesterday.",
-      "Apple pie is my mother's favorite dessert."
-    ],
+    options: ["Yes, please. It tastes wonderful.", "I bought it at the bakery yesterday.", "Apple pie is my mother's favorite dessert."],
     answer: "Yes, please. It tastes wonderful.",
     explanation: "【考點：日常應答與點心款待】對方提出招待詢問，最適當回應為表達禮貌接受。"
   },
   {
-    year: "111年國中教育會考 聽力測驗",
-    section: "辨識句意 第1題",
+    year: "111年國中教育會考 聽力測驗", section: "辨識句意 第1題",
     scriptEn: "The boy is riding his bicycle along the river bank.",
     scriptZh: "那個男孩正沿著河岸騎腳踏車。",
-    options: [
-      "The boy is riding his bicycle along the river bank.",
-      "The boy is running fast in the school gym.",
-      "The boy is swimming across the lake with his friends."
-    ],
+    options: ["The boy is riding his bicycle along the river bank.", "The boy is running fast in the school gym.", "The boy is swimming across the lake with his friends."],
     answer: "The boy is riding his bicycle along the river bank.",
     explanation: "【考點：動作進行式與地點辨識】關鍵字為 riding his bicycle 與 river bank。"
   },
   {
-    year: "113年國中教育會考 聽力測驗",
-    section: "言談理解 第15題",
+    year: "113年國中教育會考 聽力測驗", section: "言談理解 第15題",
     scriptEn: "Attention passengers, the train to Taipei will arrive at platform 2 in five minutes.",
     scriptZh: "各位旅客請注意，開往台北的列車將在五分鐘後抵達第二月台。",
-    options: [
-      "The train to Taipei will arrive at platform 2 shortly.",
-      "The passengers should leave the train right now.",
-      "The train has been canceled due to heavy rain."
-    ],
+    options: ["The train to Taipei will arrive at platform 2 shortly.", "The passengers should leave the train right now.", "The train has been canceled due to heavy rain."],
     answer: "The train to Taipei will arrive at platform 2 shortly.",
     explanation: "【考點：車站廣播訊息理解】廣播告知列車即將抵達指定月台。"
   },
   {
-    year: "110年國中教育會考 聽力測驗",
-    section: "基本問答 第2題",
+    year: "110年國中教育會考 聽力測驗", section: "基本問答 第2題",
     scriptEn: "Excuse me, how can I get to the nearest metro station?",
     scriptZh: "不好意思，請問我要怎麼去最近的捷運站？",
-    options: [
-      "Go straight and turn right at the corner.",
-      "I usually take the train to school.",
-      "The ticket is twenty dollars."
-    ],
+    options: ["Go straight and turn right at the corner.", "I usually take the train to school.", "The ticket is twenty dollars."],
     answer: "Go straight and turn right at the corner.",
     explanation: "【考點：問路與方向指引】對方詢問路徑（How can I get to...），應回答具體行進方向。"
   },
   {
-    year: "109年國中教育會考 聽力測驗",
-    section: "辨識句意 第3題",
+    year: "109年國中教育會考 聽力測驗", section: "辨識句意 第3題",
     scriptEn: "The girl is holding an umbrella because it is raining heavily outside.",
     scriptZh: "那個女孩正撐著一把雨傘，因為外面正在下著大雨。",
-    options: [
-      "The girl is holding an umbrella in the heavy rain.",
-      "The girl left her jacket on the yellow bus.",
-      "The girl is playing with water in the yard."
-    ],
+    options: ["The girl is holding an umbrella in the heavy rain.", "The girl left her jacket on the yellow bus.", "The girl is playing with water in the yard."],
     answer: "The girl is holding an umbrella in the heavy rain.",
     explanation: "【考點：天氣描述與動作配對】關鍵字 holding an umbrella 與 raining heavily。"
   }
@@ -830,13 +820,8 @@ const CAP_YEAR_MAPPING = {
       return `🏛️ 【${CAP_EXAM_BANK[clean].year}】 ${CAP_EXAM_BANK[clean].section}`;
     }
     const years = [
-      "113年國中教育會考 閱讀單選",
-      "112年國中教育會考 閱讀單選",
-      "112年國中教育會考補考 閱讀單選",
-      "111年國中教育會考 閱讀單選",
-      "110年國中教育會考 閱讀單選",
-      "109年國中教育會考 閱讀單選",
-      "108年國中教育會考 閱讀單選"
+      "113年國中教育會考 閱讀單選", "112年國中教育會考 閱讀單選", "112年國中教育會考補考 閱讀單選",
+      "111年國中教育會考 閱讀單選", "110年國中教育會考 閱讀單選", "109年國中教育會考 閱讀單選", "108年國中教育會考 閱讀單選"
     ];
     let hash = 0;
     for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
@@ -847,7 +832,7 @@ const CAP_YEAR_MAPPING = {
 };
 
 // ========================================================
-// 2. Supabase 雲端同步與認證配置
+// 2. Supabase 雲端同步與多學員免密碼切換機制
 // ========================================================
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
@@ -860,6 +845,37 @@ if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
 let currentUser = null;
 let isGuest = false;
 let userStore = { history: {}, mistakes: [] };
+
+// 本地存儲的多學員帳號清單索引
+const KNOWN_USERS_KEY = "known_vocab_users_list";
+
+function getKnownUsers() {
+  try {
+    return JSON.parse(localStorage.getItem(KNOWN_USERS_KEY) || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveKnownUser(userObj, sessionObj, storeObj) {
+  if (!userObj || !userObj.email || userObj.email.includes("訪客")) return;
+  let list = getKnownUsers();
+  const existingIdx = list.findIndex(u => u.id === userObj.id || u.email === userObj.email);
+  const record = {
+    id: userObj.id,
+    email: userObj.email,
+    session: sessionObj || null,
+    store: storeObj || { history: {}, mistakes: [] },
+    lastActive: new Date().toISOString()
+  };
+
+  if (existingIdx >= 0) {
+    list[existingIdx] = record;
+  } else {
+    list.push(record);
+  }
+  localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
+}
 
 async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
@@ -878,6 +894,7 @@ async function syncFromCloud() {
       updateMistakeCount();
     }
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
+    saveKnownUser(currentUser, null, userStore);
   } catch (err) {
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   }
@@ -885,6 +902,8 @@ async function syncFromCloud() {
 
 async function syncToCloud() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
+  saveKnownUser(currentUser, null, userStore);
+
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
     await supabaseClient
@@ -909,11 +928,8 @@ function switchAuthTab(tab) {
   document.getElementById("authSubmitBtn").innerText = tab === "login" ? "登入並同步進度" : "註冊新帳號並登入";
   
   const confirmGroup = document.getElementById("confirmPasswordGroup");
-  if (tab === "register") {
-    confirmGroup.classList.remove("hidden");
-  } else {
-    confirmGroup.classList.add("hidden");
-  }
+  if (tab === "register") confirmGroup.classList.remove("hidden");
+  else confirmGroup.classList.add("hidden");
 }
 
 async function handleSupabaseAuth() {
@@ -938,17 +954,19 @@ async function handleSupabaseAuth() {
     const { data, error } = await supabaseClient.auth.signUp({ email, password });
     if (error) return alert("註冊失敗：" + error.message);
     alert("註冊成功！已自動為您登入。");
+    saveKnownUser(data.user, data.session, userStore);
     enterApp(data.user);
   } else {
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) return alert("登入失敗：" + error.message);
+    saveKnownUser(data.user, data.session, userStore);
     enterApp(data.user);
   }
 }
 
 function loginAsGuest() {
   isGuest = true;
-  currentUser = { email: "訪客 (免登入)" };
+  currentUser = { id: "guest", email: "訪客 (免登入)" };
   const local = localStorage.getItem("local_vocab_progress");
   if (local) userStore = JSON.parse(local);
   enterApp(currentUser);
@@ -958,7 +976,7 @@ function enterApp(user) {
   currentUser = user;
   document.getElementById("authSection").classList.add("hidden");
   document.getElementById("quizSection").classList.remove("hidden");
-  document.getElementById("displayUsername").innerText = `👤 ${user.email}`;
+  document.getElementById("displayUsername").innerText = `👤 ${user.email} ▾`;
   syncFromCloud();
   initDayPlans();
   initDaySelector();
@@ -976,6 +994,93 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
+// ========================================================
+// ★ 免密碼快速切換學員選單控制
+// ========================================================
+function toggleSwitchAccountModal(show) {
+  const modal = document.getElementById("switchAccountModal");
+  if (show) modal.classList.remove("hidden");
+  else modal.classList.add("hidden");
+}
+
+function openSwitchAccountModal() {
+  const container = document.getElementById("accountListContainer");
+  container.innerHTML = "";
+  const users = getKnownUsers();
+
+  if (users.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--muted);">本機目前尚未記錄其他學員。<br>請點選下方「登入其他新帳號」。</div>`;
+  } else {
+    users.forEach(u => {
+      const isCurrent = currentUser && (currentUser.id === u.id || currentUser.email === u.email);
+      const div = document.createElement("div");
+      div.className = `account-item ${isCurrent ? 'active' : ''}`;
+      div.onclick = () => switchToAccount(u);
+      
+      const firstLetter = (u.email || "S")[0].toUpperCase();
+      div.innerHTML = `
+        <div style="display:flex; align-items:center;">
+          <div class="account-avatar">${firstLetter}</div>
+          <div>
+            <div style="font-size:13.5px; color:#0f172a;">${u.email}</div>
+            <div style="font-size:11px; color:var(--muted);">${isCurrent ? '✅ 當前學習中' : '點擊立即切換'}</div>
+          </div>
+        </div>
+        <span style="font-size:12px; color:var(--primary);">切換 ➔</span>
+      `;
+      container.appendChild(div);
+    });
+  }
+  toggleSwitchAccountModal(true);
+}
+
+// 執行秒切換學員
+async function switchToAccount(targetUserRecord) {
+  if (currentUser && currentUser.id === targetUserRecord.id) {
+    toggleSwitchAccountModal(false);
+    return;
+  }
+
+  // 1. 先保存目前學員的進度
+  if (!isGuest && currentUser) {
+    await syncToCloud();
+  }
+
+  // 2. 切換為目標學員
+  isGuest = false;
+  currentUser = { id: targetUserRecord.id, email: targetUserRecord.email };
+  userStore = targetUserRecord.store || { history: {}, mistakes: [] };
+  localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
+
+  // 3. 若目標有 session 則嘗試還原 session
+  if (supabaseClient && targetUserRecord.session) {
+    try {
+      await supabaseClient.auth.setSession(targetUserRecord.session);
+    } catch (e) {}
+  }
+
+  toggleSwitchAccountModal(false);
+
+  // 4. 更新 UI 與題庫隊列
+  document.getElementById("displayUsername").innerText = `👤 ${currentUser.email} ▾`;
+  updateMistakeCount();
+  initDaySelector();
+  changeDay(1);
+
+  // 5. 背景向雲端抓取目標學員最新紀錄
+  syncFromCloud();
+}
+
+function addNewAccountLogin() {
+  toggleSwitchAccountModal(false);
+  document.getElementById("authEmail").value = "";
+  document.getElementById("authPassword").value = "";
+  switchAuthTab('login');
+  document.getElementById("quizSection").classList.add("hidden");
+  document.getElementById("authSection").classList.remove("hidden");
+  document.getElementById("syncStatus").innerText = "☁️ 本地模式";
+}
+
 // 軟體維護彈窗控制
 function toggleChangelogModal(show) {
   const modal = document.getElementById("changelogModal");
@@ -983,9 +1088,7 @@ function toggleChangelogModal(show) {
   else modal.classList.add("hidden");
 }
 
-// ========================================================
-// ★ 清空紀錄與密碼二階段驗證功能
-// ========================================================
+// 清空紀錄功能
 function toggleClearModal(show) {
   const modal = document.getElementById("clearConfirmModal");
   const pwdInput = document.getElementById("clearVerifyPassword");
@@ -1032,7 +1135,6 @@ async function executeClearRecords() {
     return;
   }
 
-  // 密碼二次驗證
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: currentUser.email,
     password: pwd
@@ -1044,10 +1146,10 @@ async function executeClearRecords() {
     return;
   }
 
-  // 驗證成功，執行雲端與本地清空
   try {
     userStore = { history: {}, mistakes: [] };
     localStorage.removeItem("local_vocab_progress");
+    saveKnownUser(currentUser, null, userStore);
 
     await supabaseClient
       .from('user_progress')
@@ -1104,9 +1206,7 @@ function getBestUSVoice() {
 }
 
 function stopAllAudio() {
-  if (window.speechSynthesis) {
-    window.speechSynthesis.cancel();
-  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   if (speechKeepAliveTimer) {
     clearInterval(speechKeepAliveTimer);
     speechKeepAliveTimer = null;
