@@ -89,7 +89,6 @@
       font-weight: 600;
     }
 
-    /* 首頁 App 安裝引導橫幅 */
     .app-install-banner {
       background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
       border: 1.5px solid #bfdbfe;
@@ -124,9 +123,7 @@
       font-weight: 700;
       cursor: pointer;
       flex-shrink: 0;
-      transition: background 0.15s;
     }
-    .install-guide-btn:hover { background: var(--primary-hover); }
 
     .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
     .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
@@ -156,8 +153,6 @@
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
     .btn-danger { background: var(--danger); color: #fff; }
-    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
-
     .btn-guest {
       background: #f1f5f9;
       color: var(--text);
@@ -195,6 +190,16 @@
       background: #eff6ff;
       padding: 4px 10px;
       border-radius: 8px;
+    }
+    .admin-badge-btn {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
     }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
 
@@ -444,109 +449,63 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* Modal 彈出視窗 */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(15, 23, 42, 0.45);
       backdrop-filter: blur(3px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 16px;
+      display: flex; justify-content: center; align-items: center;
+      z-index: 999; padding: 16px;
     }
     .modal-card {
-      width: 100%;
-      max-width: 520px;
+      width: 100%; max-width: 520px;
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       padding: 20px 18px;
       max-height: 85vh;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
     }
     .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
     }
     .modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: var(--muted);
-      cursor: pointer;
-    }
-    .modal-body {
-      overflow-y: auto;
-      padding-top: 14px;
-      font-size: 13px;
-      line-height: 1.6;
-    }
+    .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
+    .modal-body { overflow-y: auto; padding-top: 14px; font-size: 13px; line-height: 1.6; }
 
-    /* 安裝指南卡片樣式 */
-    .install-step-card {
-      background: #f8fafc;
+    /* 後台學員進度監控表格 */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .admin-table th, .admin-table td {
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
+      padding: 8px 6px;
+      text-align: center;
     }
-    .install-step-title {
-      font-weight: 700;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 8px;
-      color: #0f172a;
-    }
-    .install-step-card ol {
-      margin-left: 20px;
-      color: #334155;
-    }
-    .install-step-card li {
-      margin-bottom: 6px;
-    }
+    .admin-table th { background: #f8fafc; color: #334155; font-weight: 700; }
+    .admin-table tr:nth-child(even) { background: #fbfcfe; }
 
     .account-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      transition: all 0.15s;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; border: 1.5px solid var(--border);
+      border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
     }
     .account-item:hover { border-color: var(--primary); background: #eff6ff; }
     .account-item.active { border-color: var(--primary); background: #dbeafe; font-weight: 700; }
     .account-avatar {
-      width: 32px;
-      height: 32px;
-      background: var(--primary);
-      color: #fff;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      margin-right: 10px;
+      width: 32px; height: 32px; background: var(--primary); color: #fff;
+      border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; margin-right: 10px;
     }
 
-    .history-item { margin-bottom: 16px; border-left: 3px solid var(--primary); padding-left: 10px; }
-    .history-tag { font-weight: 700; color: var(--primary); font-size: 13.5px; margin-bottom: 2px; }
-    .history-desc { color: #334155; }
-    .history-desc ul { margin-left: 16px; margin-top: 4px; }
+    .install-step-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .install-step-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #0f172a; }
+    .install-step-card ol { margin-left: 20px; color: #334155; }
+    .install-step-card li { margin-bottom: 6px; }
   </style>
 </head>
 <body>
@@ -562,13 +521,12 @@
 
   <!-- 首頁 / 登入區塊 -->
   <div id="authSection" class="auth-box">
-    <!-- 📲 App 安裝教學與下載橫幅 -->
     <div class="app-install-banner">
       <div class="install-banner-text">
         📲 安裝為桌面 App (支援離線)
         <span>一鍵加入手機主畫面，全螢幕無干擾背單字</span>
       </div>
-      <button class="install-guide-btn" id="installGuideTriggerBtn" onclick="toggleInstallModal(true)">安裝指引</button>
+      <button class="install-guide-btn" onclick="toggleInstallModal(true)">安裝指引</button>
     </div>
 
     <div class="auth-tabs">
@@ -596,11 +554,14 @@
   <!-- 測驗進行區塊 -->
   <div id="quizSection" class="hidden">
     <div class="user-header">
-      <span class="user-badge" id="displayUsername" onclick="openSwitchAccountModal()">👤 學員 ▾</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="user-badge" id="displayUsername" onclick="openSwitchAccountModal()">👤 學員 ▾</span>
+        <button id="adminPanelBtn" class="admin-badge-btn hidden" onclick="openAdminDashboardModal()">👑 後台監控</button>
+      </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <span class="link-btn" onclick="openSwitchAccountModal()" style="color:var(--primary); font-weight:600;">👥 切換學員</span>
-        <span class="link-btn" onclick="toggleHistory()">學習成果</span>
-        <span class="link-btn" onclick="promptClearRecords()" style="color:var(--danger);">清空紀錄</span>
+        <span class="link-btn" onclick="openSwitchAccountModal()" style="color:var(--primary); font-weight:600;">👥 切換</span>
+        <span class="link-btn" onclick="toggleHistory()">成果</span>
+        <span class="link-btn" onclick="promptClearRecords()" style="color:var(--danger);">清空</span>
         <button class="logout-btn" onclick="handleLogout()">登出</button>
       </div>
     </div>
@@ -648,7 +609,7 @@
     <div id="historyBox" class="explanation-card hidden" style="border:1px solid #bfdbfe; background:#eff6ff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
-        <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空所有進度與錯題</button>
+        <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空進度</button>
       </div>
       <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
     </div>
@@ -695,7 +656,40 @@
   </div>
 </div>
 
-<!-- 📲 App 安裝與下載指引彈窗 (Install Guide Modal) -->
+<!-- 👑 管理者後台監控彈窗 (Admin Dashboard Modal) -->
+<div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
+  <div class="modal-card" style="max-width:620px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">👑 全體學員學習進度監控後台</div>
+      <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; color:var(--muted);" id="adminTotalStudents">載入中...</span>
+        <button class="link-btn" onclick="fetchAdminAllProgress()">🔄 重新整理資料</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>學員 ID</th>
+              <th>完成天數</th>
+              <th>總作答題數</th>
+              <th>平均正確率</th>
+              <th>錯題數</th>
+              <th>最後更新</th>
+            </tr>
+          </thead>
+          <tbody id="adminProgressTableBody">
+            <tr><td colspan="6" style="text-align:center; padding:15px;">讀取中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 📲 App 安裝教學彈窗 -->
 <div id="installGuideModal" class="modal-overlay hidden" onclick="toggleInstallModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -703,49 +697,33 @@
       <button class="modal-close" onclick="toggleInstallModal(false)">&times;</button>
     </div>
     <div class="modal-body">
-      <!-- 瀏覽器支援一鍵安裝觸發按鈕 -->
       <div id="pwaNativeInstallArea" class="hidden" style="margin-bottom:12px; text-align:center;">
         <button class="btn" style="width:100%; background:var(--success);" onclick="triggerPwaPrompt()">
           ⬇️ 點此立即安裝 App 到本裝置
         </button>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">偵測到系統支援快速安裝</div>
       </div>
-
-      <!-- iPhone / iPad 指引 -->
       <div class="install-step-card">
         <div class="install-step-title">🍎 iPhone / iPad (iOS Safari)</div>
         <ol>
           <li>使用 <b>Safari 瀏覽器</b> 開啟此特訓網頁。</li>
-          <li>點擊螢幕下方底欄正中間的 <b>「分享」按鈕</b>（帶箭頭的方塊圖示）。</li>
-          <li>在選單中往下滾動，點選 <b>「加入主畫面」</b>。</li>
-          <li>點擊右上角 <b>「新增」</b>，桌面即會生成專屬 App 圖示。</li>
+          <li>點擊螢幕下方底欄的 <b>「分享」按鈕</b>（箭頭方塊圖示）。</li>
+          <li>在選單中點選 <b>「加入主畫面」</b>。</li>
+          <li>點擊右上角 <b>「新增」</b> 即可生成 App 圖示。</li>
         </ol>
       </div>
-
-      <!-- Android 指引 -->
       <div class="install-step-card">
         <div class="install-step-title">🤖 Android 手機 (Chrome 瀏覽器)</div>
         <ol>
           <li>使用 <b>Chrome 瀏覽器</b> 開啟此特訓網頁。</li>
           <li>點擊右上角 <b>三個點選單圖示 (⋮)</b>。</li>
-          <li>點選 <b>「安裝應用程式」</b> 或 <b>「新增至主畫面」</b>。</li>
-          <li>點擊確認，手機桌面與應用程式抽屜即會完成安裝。</li>
-        </ol>
-      </div>
-
-      <!-- 電腦端指引 -->
-      <div class="install-step-card" style="margin-bottom:0;">
-        <div class="install-step-title">💻 電腦版 (Chrome / Edge)</div>
-        <ol>
-          <li>在瀏覽器網址列右側，點擊 <b>「安裝圖示 🖥️」</b>。</li>
-          <li>確認安裝後，可作為獨立桌面應用程式全螢幕運行。</li>
+          <li>點選 <b>「安裝應用程式」</b> 或 <b>「新增至主畫面」</b> 即可。</li>
         </ol>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 👥 免密碼切換學員彈窗 (Switch Account Modal) -->
+<!-- 👥 免密碼切換學員彈窗 -->
 <div id="switchAccountModal" class="modal-overlay hidden" onclick="toggleSwitchAccountModal(false)">
   <div class="modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -753,11 +731,8 @@
       <button class="modal-close" onclick="toggleSwitchAccountModal(false)">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="color:var(--muted); margin-bottom:12px; font-size:12.5px;">
-        點選以下已登入之學員即可無縫切換進度：
-      </p>
+      <p style="color:var(--muted); margin-bottom:12px; font-size:12.5px;">點選以下學員即可無縫切換進度：</p>
       <div id="accountListContainer"></div>
-      
       <div style="margin-top:14px; border-top:1px dashed var(--border); padding-top:12px; display:flex; justify-content:space-between; align-items:center;">
         <button class="link-btn" onclick="addNewAccountLogin()" style="color:var(--primary); font-weight:600; text-decoration:none;">➕ 登入其他新帳號</button>
         <button class="btn btn-guest" style="padding:6px 14px;" onclick="toggleSwitchAccountModal(false)">關閉</button>
@@ -774,12 +749,10 @@
       <button class="modal-close" onclick="toggleClearModal(false)">&times;</button>
     </div>
     <div class="modal-body">
-      <p style="margin-bottom:12px; color:#475569;" id="clearModalNotice">
-        清空後將永久刪除「所有天數作答紀錄」與「所有錯題本」，無法復原。為確保安全，請輸入您的使用者密碼：
-      </p>
+      <p style="margin-bottom:12px; color:#475569;" id="clearModalNotice"></p>
       <div class="input-group" id="clearPasswordInputGroup">
         <label>使用者密碼</label>
-        <input type="password" id="clearVerifyPassword" placeholder="請輸入目前的登入密碼" autocomplete="current-password">
+        <input type="password" id="clearVerifyPassword" placeholder="請輸入密碼" autocomplete="current-password">
       </div>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
         <button class="btn btn-guest" onclick="toggleClearModal(false)">取消</button>
@@ -789,55 +762,29 @@
   </div>
 </div>
 
-<!-- 🛠️ 軟體維護歷程彈出視窗 -->
+<!-- 🛠️ 軟體維護歷程彈窗 -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">🛠️ 軟體維護與版本紀錄 (Version History)</div>
+      <div class="modal-title">🛠️ 軟體維護與版本紀錄</div>
       <button class="modal-close" onclick="toggleChangelogModal(false)">&times;</button>
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v2.7.0 - 管理者後台學習進度總覽面板</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>管理者權限識別：</b>登入時識別指定管理者信箱，展示專屬監控入口。</li>
+            <li><b>全體學員進度儀表板：</b>整合 Supabase 跨學員進度讀取，以表格列出完成天數、累計作答題數、平均正確率與錯題量。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v2.6.0 - 首頁 App 下載與安裝指引全面升級</div>
         <div class="history-desc">
           <ul>
-            <li><b>首頁醒目安裝導引：</b>新增免進商店的一鍵 PWA 安裝橫幅，支援自動監聽 `beforeinstallprompt` 快捷安裝。</li>
+            <li><b>首頁醒目安裝導引：</b>新增免進商店的一鍵 PWA 安裝橫幅，支援自動監聽快捷安裝。</li>
             <li><b>跨平台圖文指引：</b>詳列 iPhone Safari、Android Chrome 及電腦 Edge/Chrome 桌面化步驟。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.5.0 - 多學員本機快照免密碼切換</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>免密碼快速切換：</b>支援於本機安全記錄多位學員工作階段，點選名單即可秒切換進度與錯題本[cite: 2]。</li>
-            <li><b>無縫雲端背景保存：</b>每次切換前自動保存前一位學員進度至 Supabase，切換後自動載入目標學員進度[cite: 2]。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.4.0 - 資料安全重置與密碼驗證防護</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>密碼二次身分驗證：</b>新增「清空紀錄」功能，執行前強制比對帳號登入密碼，防止誤觸[cite: 2]。</li>
-            <li><b>雲端與本地同步抹除：</b>驗證通過後同時將 Supabase 與 LocalStorage 的歷史紀錄抹除為初始空值[cite: 2]。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.3.0 - UI 空間穩定與註冊驗證強化</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>解析區空間預留：</b>答題前預先保留解析卡片高度，解決長篇解析跳出時版面下移痛點[cite: 2]。</li>
-            <li><b>跨裝置彈性適配：</b>採用 `clamp` 與動態視窗高度單位（`dvh`），自動適配手機與桌面螢幕。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.1.0 - PWA 雙專案離線相容快取架構</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>快取版本推進：</b>Service Worker 升級至 `wb2000-v2`，加入 `skipWaiting` 與 `clients.claim`。</li>
           </ul>
         </div>
       </div>
@@ -964,10 +911,13 @@ const CAP_YEAR_MAPPING = {
 };
 
 // ========================================================
-// 2. Supabase 雲端同步與多學員免密碼切換機制
+// 2. Supabase 雲端同步、多學員切換與管理者後台
 // ========================================================
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
+
+// ★ 在此指定管理者信箱（請替換為你的註冊信箱）
+const ADMIN_EMAIL = "admin@example.com";
 
 let supabaseClient = null;
 if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
@@ -1000,11 +950,8 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
     lastActive: new Date().toISOString()
   };
 
-  if (existingIdx >= 0) {
-    list[existingIdx] = record;
-  } else {
-    list.push(record);
-  }
+  if (existingIdx >= 0) list[existingIdx] = record;
+  else list.push(record);
   localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
 }
 
@@ -1108,6 +1055,15 @@ function enterApp(user) {
   document.getElementById("authSection").classList.add("hidden");
   document.getElementById("quizSection").classList.remove("hidden");
   document.getElementById("displayUsername").innerText = `👤 ${user.email} ▾`;
+
+  // 檢查是否為管理者，顯示專屬後台入口按鈕
+  const adminBtn = document.getElementById("adminPanelBtn");
+  if (!isGuest && user.email === ADMIN_EMAIL) {
+    adminBtn.classList.remove("hidden");
+  } else {
+    adminBtn.classList.add("hidden");
+  }
+
   syncFromCloud();
   initDayPlans();
   initDaySelector();
@@ -1126,14 +1082,78 @@ async function handleLogout() {
 }
 
 // ========================================================
-// ★ App 安裝教學與 PWA 提示控制
+// ★ 管理者後台學習進度總覽邏輯
 // ========================================================
-let deferredPwaPrompt = null;
+function toggleAdminModal(show) {
+  const modal = document.getElementById("adminDashboardModal");
+  if (show) modal.classList.remove("hidden");
+  else modal.classList.add("hidden");
+}
 
+function openAdminDashboardModal() {
+  toggleAdminModal(true);
+  fetchAdminAllProgress();
+}
+
+async function fetchAdminAllProgress() {
+  const tbody = document.getElementById("adminProgressTableBody");
+  const countText = document.getElementById("adminTotalStudents");
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px;">讀取雲端學員進度中...</td></tr>`;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('user_progress')
+      .select('user_id, history, mistakes, updated_at')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
+      countText.innerText = `共 0 位學員`;
+      return;
+    }
+
+    countText.innerText = `共 ${data.length} 位註冊學員`;
+    tbody.innerHTML = "";
+
+    data.forEach(row => {
+      const history = row.history || {};
+      const mistakes = row.mistakes || [];
+      const daysCount = Object.keys(history).length;
+
+      let totalQ = 0;
+      let totalCorrect = 0;
+      Object.values(history).forEach(item => {
+        totalQ += item.total || 0;
+        totalCorrect += item.score || 0;
+      });
+
+      const avgRate = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
+      const dateStr = row.updated_at ? new Date(row.updated_at).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family:monospace; color:var(--muted);">${row.user_id.slice(0, 8)}...</td>
+        <td><b>${daysCount}</b> 天</td>
+        <td>${totalQ} 題</td>
+        <td style="color:${avgRate >= 80 ? 'var(--success)' : avgRate >= 60 ? 'var(--amber)' : 'var(--danger)'}; font-weight:700;">${avgRate}%</td>
+        <td style="color:var(--danger); font-weight:700;">${mistakes.length}</td>
+        <td style="font-size:11px; color:var(--muted);">${dateStr}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}<br><small>請確認是否已在 Supabase 執行管理者的 SELECT 權限 SQL</small></td></tr>`;
+  }
+}
+
+// App 安裝控制
+let deferredPwaPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPwaPrompt = e;
-  // 若瀏覽器支援原生安裝，彈出視窗上方顯示一鍵安裝按鈕
   const installArea = document.getElementById("pwaNativeInstallArea");
   if (installArea) installArea.classList.remove("hidden");
 });
@@ -1156,7 +1176,7 @@ function triggerPwaPrompt() {
   }
 }
 
-// 免密碼切換學員選單控制
+// 切換學員控制
 function toggleSwitchAccountModal(show) {
   const modal = document.getElementById("switchAccountModal");
   if (show) modal.classList.remove("hidden");
@@ -1169,7 +1189,7 @@ function openSwitchAccountModal() {
   const users = getKnownUsers();
 
   if (users.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--muted);">本機目前尚未記錄其他學員。<br>請點選下方「登入其他新帳號」。</div>`;
+    container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--muted);">本機尚未記錄其他學員。<br>請點選下方「登入其他新帳號」。</div>`;
   } else {
     users.forEach(u => {
       const isCurrent = currentUser && (currentUser.id === u.id || currentUser.email === u.email);
@@ -1200,9 +1220,7 @@ async function switchToAccount(targetUserRecord) {
     return;
   }
 
-  if (!isGuest && currentUser) {
-    await syncToCloud();
-  }
+  if (!isGuest && currentUser) await syncToCloud();
 
   isGuest = false;
   currentUser = { id: targetUserRecord.id, email: targetUserRecord.email };
@@ -1210,19 +1228,11 @@ async function switchToAccount(targetUserRecord) {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
 
   if (supabaseClient && targetUserRecord.session) {
-    try {
-      await supabaseClient.auth.setSession(targetUserRecord.session);
-    } catch (e) {}
+    try { await supabaseClient.auth.setSession(targetUserRecord.session); } catch (e) {}
   }
 
   toggleSwitchAccountModal(false);
-
-  document.getElementById("displayUsername").innerText = `👤 ${currentUser.email} ▾`;
-  updateMistakeCount();
-  initDaySelector();
-  changeDay(1);
-
-  syncFromCloud();
+  enterApp(currentUser);
 }
 
 function addNewAccountLogin() {
@@ -1415,11 +1425,8 @@ function playCurrentListeningAudio() {
 
   speakPureUS(listenData.scriptEn, (success) => {
     btn.disabled = false;
-    if (success) {
-      status.innerText = "✅ 考題朗讀完畢，可再次點擊重聽";
-    } else {
-      status.innerText = "⚠️ 語音播放結束";
-    }
+    if (success) status.innerText = "✅ 考題朗讀完畢，可再次點擊重聽";
+    else status.innerText = "⚠️ 語音播放結束";
   });
 }
 
@@ -1538,23 +1545,14 @@ function createClozeSentence(sentence, targetWord) {
   const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`\\b${escaped}\\b`, 'i');
   if (regex.test(sentence)) {
-    return {
-      masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`),
-      hasReplaced: true
-    };
+    return { masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
   }
   const root = targetWord.length > 4 ? targetWord.slice(0, 4) : targetWord;
   const looseRegex = new RegExp(`\\b${root}[a-zA-Z]*\\b`, 'i');
   if (looseRegex.test(sentence)) {
-    return {
-      masked: sentence.replace(looseRegex, `<span class="cloze-blank">_______</span>`),
-      hasReplaced: true
-    };
+    return { masked: sentence.replace(looseRegex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
   }
-  return {
-    masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`,
-    hasReplaced: false
-  };
+  return { masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`, hasReplaced: false };
 }
 
 function renderQuestion() {
@@ -1697,9 +1695,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
 
   const buttons = document.querySelectorAll(".option-btn");
   buttons.forEach(b => {
-    if (b.querySelector("span:last-child").innerText === answerTarget) {
-      b.classList.add("correct");
-    }
+    if (b.querySelector("span:last-child").innerText === answerTarget) b.classList.add("correct");
   });
 
   const isCorrect = (selectedText === answerTarget);
@@ -1708,10 +1704,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     correctCount++;
     if (currentQuizType === "cloze" || currentQuizType === "exam") {
       const blank = document.querySelector(".cloze-blank");
-      if (blank) {
-        blank.innerText = item.en;
-        blank.style.color = "var(--success)";
-      }
+      if (blank) { blank.innerText = item.en; blank.style.color = "var(--success)"; }
     }
   } else {
     btn.classList.add("wrong");
@@ -1723,10 +1716,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     }
     if (currentQuizType === "cloze" || currentQuizType === "exam") {
       const blank = document.querySelector(".cloze-blank");
-      if (blank) {
-        blank.innerText = item.en;
-        blank.style.color = "var(--danger)";
-      }
+      if (blank) { blank.innerText = item.en; blank.style.color = "var(--danger)"; }
     }
   }
 
