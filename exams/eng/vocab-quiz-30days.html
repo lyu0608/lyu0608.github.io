@@ -89,8 +89,47 @@
       font-weight: 600;
     }
 
-    .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 8px; }
+    /* 首頁 App 安裝引導橫幅 */
+    .app-install-banner {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .install-banner-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e40af;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .install-banner-text span {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #3b82f6;
+    }
+    .install-guide-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .install-guide-btn:hover { background: var(--primary-hover); }
+
+    .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
     .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: 600; color: var(--muted); }
     .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
     .input-group { display: flex; flex-direction: column; gap: 6px; }
@@ -131,7 +170,7 @@
       text-align: center;
     }
 
-    .divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 4px 0; }
+    .divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 2px 0; }
     .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
     .divider::before { margin-right: 10px; }
     .divider::after { margin-left: 10px; }
@@ -427,7 +466,7 @@
       border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       padding: 20px 18px;
-      max-height: 80vh;
+      max-height: 85vh;
       display: flex;
       flex-direction: column;
     }
@@ -453,7 +492,31 @@
       line-height: 1.6;
     }
 
-    /* 多學員切換卡片清單樣式 */
+    /* 安裝指南卡片樣式 */
+    .install-step-card {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .install-step-title {
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      color: #0f172a;
+    }
+    .install-step-card ol {
+      margin-left: 20px;
+      color: #334155;
+    }
+    .install-step-card li {
+      margin-bottom: 6px;
+    }
+
     .account-item {
       display: flex;
       justify-content: space-between;
@@ -497,7 +560,17 @@
     </div>
   </div>
 
+  <!-- 首頁 / 登入區塊 -->
   <div id="authSection" class="auth-box">
+    <!-- 📲 App 安裝教學與下載橫幅 -->
+    <div class="app-install-banner">
+      <div class="install-banner-text">
+        📲 安裝為桌面 App (支援離線)
+        <span>一鍵加入手機主畫面，全螢幕無干擾背單字</span>
+      </div>
+      <button class="install-guide-btn" id="installGuideTriggerBtn" onclick="toggleInstallModal(true)">安裝指引</button>
+    </div>
+
     <div class="auth-tabs">
       <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">學員登入</div>
       <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">註冊帳號</div>
@@ -520,9 +593,9 @@
     <button class="btn-guest" onclick="loginAsGuest()">以訪客免登入模式體驗</button>
   </div>
 
+  <!-- 測驗進行區塊 -->
   <div id="quizSection" class="hidden">
     <div class="user-header">
-      <!-- 點擊學員名稱也能直接彈出切換選單 -->
       <span class="user-badge" id="displayUsername" onclick="openSwitchAccountModal()">👤 學員 ▾</span>
       <div style="display:flex; align-items:center; gap:10px;">
         <span class="link-btn" onclick="openSwitchAccountModal()" style="color:var(--primary); font-weight:600;">👥 切換學員</span>
@@ -622,6 +695,56 @@
   </div>
 </div>
 
+<!-- 📲 App 安裝與下載指引彈窗 (Install Guide Modal) -->
+<div id="installGuideModal" class="modal-overlay hidden" onclick="toggleInstallModal(false)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">📲 如何將單字特訓安裝為 App</div>
+      <button class="modal-close" onclick="toggleInstallModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <!-- 瀏覽器支援一鍵安裝觸發按鈕 -->
+      <div id="pwaNativeInstallArea" class="hidden" style="margin-bottom:12px; text-align:center;">
+        <button class="btn" style="width:100%; background:var(--success);" onclick="triggerPwaPrompt()">
+          ⬇️ 點此立即安裝 App 到本裝置
+        </button>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">偵測到系統支援快速安裝</div>
+      </div>
+
+      <!-- iPhone / iPad 指引 -->
+      <div class="install-step-card">
+        <div class="install-step-title">🍎 iPhone / iPad (iOS Safari)</div>
+        <ol>
+          <li>使用 <b>Safari 瀏覽器</b> 開啟此特訓網頁。</li>
+          <li>點擊螢幕下方底欄正中間的 <b>「分享」按鈕</b>（帶箭頭的方塊圖示）。</li>
+          <li>在選單中往下滾動，點選 <b>「加入主畫面」</b>。</li>
+          <li>點擊右上角 <b>「新增」</b>，桌面即會生成專屬 App 圖示。</li>
+        </ol>
+      </div>
+
+      <!-- Android 指引 -->
+      <div class="install-step-card">
+        <div class="install-step-title">🤖 Android 手機 (Chrome 瀏覽器)</div>
+        <ol>
+          <li>使用 <b>Chrome 瀏覽器</b> 開啟此特訓網頁。</li>
+          <li>點擊右上角 <b>三個點選單圖示 (⋮)</b>。</li>
+          <li>點選 <b>「安裝應用程式」</b> 或 <b>「新增至主畫面」</b>。</li>
+          <li>點擊確認，手機桌面與應用程式抽屜即會完成安裝。</li>
+        </ol>
+      </div>
+
+      <!-- 電腦端指引 -->
+      <div class="install-step-card" style="margin-bottom:0;">
+        <div class="install-step-title">💻 電腦版 (Chrome / Edge)</div>
+        <ol>
+          <li>在瀏覽器網址列右側，點擊 <b>「安裝圖示 🖥️」</b>。</li>
+          <li>確認安裝後，可作為獨立桌面應用程式全螢幕運行。</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 👥 免密碼切換學員彈窗 (Switch Account Modal) -->
 <div id="switchAccountModal" class="modal-overlay hidden" onclick="toggleSwitchAccountModal(false)">
   <div class="modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
@@ -674,6 +797,15 @@
       <button class="modal-close" onclick="toggleChangelogModal(false)">&times;</button>
     </div>
     <div class="modal-body">
+      <div class="history-item">
+        <div class="history-tag">v2.6.0 - 首頁 App 下載與安裝指引全面升級</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>首頁醒目安裝導引：</b>新增免進商店的一鍵 PWA 安裝橫幅，支援自動監聽 `beforeinstallprompt` 快捷安裝。</li>
+            <li><b>跨平台圖文指引：</b>詳列 iPhone Safari、Android Chrome 及電腦 Edge/Chrome 桌面化步驟。</li>
+          </ul>
+        </div>
+      </div>
       <div class="history-item">
         <div class="history-tag">v2.5.0 - 多學員本機快照免密碼切換</div>
         <div class="history-desc">
@@ -846,7 +978,6 @@ let currentUser = null;
 let isGuest = false;
 let userStore = { history: {}, mistakes: [] };
 
-// 本地存儲的多學員帳號清單索引
 const KNOWN_USERS_KEY = "known_vocab_users_list";
 
 function getKnownUsers() {
@@ -995,8 +1126,37 @@ async function handleLogout() {
 }
 
 // ========================================================
-// ★ 免密碼快速切換學員選單控制
+// ★ App 安裝教學與 PWA 提示控制
 // ========================================================
+let deferredPwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPwaPrompt = e;
+  // 若瀏覽器支援原生安裝，彈出視窗上方顯示一鍵安裝按鈕
+  const installArea = document.getElementById("pwaNativeInstallArea");
+  if (installArea) installArea.classList.remove("hidden");
+});
+
+function toggleInstallModal(show) {
+  const modal = document.getElementById("installGuideModal");
+  if (show) modal.classList.remove("hidden");
+  else modal.classList.add("hidden");
+}
+
+function triggerPwaPrompt() {
+  if (deferredPwaPrompt) {
+    deferredPwaPrompt.prompt();
+    deferredPwaPrompt.userChoice.then(() => {
+      deferredPwaPrompt = null;
+      toggleInstallModal(false);
+    });
+  } else {
+    alert("請依照下方各裝置步驟手動新增至主畫面即可！");
+  }
+}
+
+// 免密碼切換學員選單控制
 function toggleSwitchAccountModal(show) {
   const modal = document.getElementById("switchAccountModal");
   if (show) modal.classList.remove("hidden");
@@ -1034,25 +1194,21 @@ function openSwitchAccountModal() {
   toggleSwitchAccountModal(true);
 }
 
-// 執行秒切換學員
 async function switchToAccount(targetUserRecord) {
   if (currentUser && currentUser.id === targetUserRecord.id) {
     toggleSwitchAccountModal(false);
     return;
   }
 
-  // 1. 先保存目前學員的進度
   if (!isGuest && currentUser) {
     await syncToCloud();
   }
 
-  // 2. 切換為目標學員
   isGuest = false;
   currentUser = { id: targetUserRecord.id, email: targetUserRecord.email };
   userStore = targetUserRecord.store || { history: {}, mistakes: [] };
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
 
-  // 3. 若目標有 session 則嘗試還原 session
   if (supabaseClient && targetUserRecord.session) {
     try {
       await supabaseClient.auth.setSession(targetUserRecord.session);
@@ -1061,13 +1217,11 @@ async function switchToAccount(targetUserRecord) {
 
   toggleSwitchAccountModal(false);
 
-  // 4. 更新 UI 與題庫隊列
   document.getElementById("displayUsername").innerText = `👤 ${currentUser.email} ▾`;
   updateMistakeCount();
   initDaySelector();
   changeDay(1);
 
-  // 5. 背景向雲端抓取目標學員最新紀錄
   syncFromCloud();
 }
 
@@ -1081,14 +1235,12 @@ function addNewAccountLogin() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 軟體維護彈窗控制
 function toggleChangelogModal(show) {
   const modal = document.getElementById("changelogModal");
   if (show) modal.classList.remove("hidden");
   else modal.classList.add("hidden");
 }
 
-// 清空紀錄功能
 function toggleClearModal(show) {
   const modal = document.getElementById("clearConfirmModal");
   const pwdInput = document.getElementById("clearVerifyPassword");
