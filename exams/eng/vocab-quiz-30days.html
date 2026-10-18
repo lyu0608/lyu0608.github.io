@@ -474,12 +474,13 @@
     .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
     .modal-body { overflow-y: auto; padding-top: 14px; font-size: 13px; line-height: 1.6; }
 
+    /* 後台學員進度監控表格 (多題型與天數分母) */
     .admin-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
       margin-top: 8px;
-      min-width: 480px;
+      min-width: 620px;
     }
     .admin-table th, .admin-table td {
       border: 1px solid var(--border);
@@ -488,6 +489,18 @@
     }
     .admin-table th { background: #f8fafc; color: #334155; font-weight: 700; }
     .admin-table tr:nth-child(even) { background: #fbfcfe; }
+    .mode-badge {
+      display: inline-block;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin: 1px 0;
+    }
+    .badge-word { background: #eff6ff; color: #1d4ed8; }
+    .badge-cloze { background: #f0fdf4; color: #15803d; }
+    .badge-exam { background: #fef3c7; color: #b45309; }
+    .badge-listen { background: #ecfeff; color: #0e7490; }
 
     .account-item {
       display: flex; justify-content: space-between; align-items: center;
@@ -658,11 +671,11 @@
   </div>
 </div>
 
-<!-- 👑 管理者後台監控彈窗 (包含學員 Email) -->
+<!-- 👑 管理者後台監控彈窗 (四大題型明細與完成天數以分母表示) -->
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
-  <div class="modal-card" style="max-width:660px;" onclick="event.stopPropagation()">
+  <div class="modal-card" style="max-width:780px;" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (四大題型詳情)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -675,15 +688,16 @@
           <thead>
             <tr>
               <th style="text-align:left; padding-left:10px;">學員 Email</th>
-              <th>完成天數</th>
-              <th>作答題數</th>
-              <th>平均正確率</th>
+              <th>完成天數進度</th>
+              <th>總作答題數</th>
+              <th>綜合正確率</th>
+              <th>四大題型作答明細 (題數 / 正確率)</th>
               <th>錯題量</th>
-              <th>最後活動時間</th>
+              <th>最後更新</th>
             </tr>
           </thead>
           <tbody id="adminProgressTableBody">
-            <tr><td colspan="6" style="text-align:center; padding:15px;">讀取中...</td></tr>
+            <tr><td colspan="7" style="text-align:center; padding:15px;">讀取中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -773,11 +787,19 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v2.9.0 - 四大題型全方位監控與天數分母化</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>四大題型獨立統計：</b>後台完整呈現單字識義、句子填空、會考真題與會考聽力的作答題數與正確率[cite: 2]。</li>
+            <li><b>天數分母化格式：</b>完成天數以 `X/30` 格式呈現，直觀掌握學員在設定計畫週期中的實際推進比例。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v2.8.0 - 後台學員 Email 識別與整合</div>
         <div class="history-desc">
           <ul>
             <li><b>學員 Email 監控：</b>管理者後台總覽直接呈現學員信箱，快速掌握個別學生進度。</li>
-            <li><b>雙向 Email 關聯：</b>自動綁定 Auth 信箱至進度表，解決 UUID 辨識不易問題。</li>
           </ul>
         </div>
       </div>
@@ -909,7 +931,6 @@ const CAP_YEAR_MAPPING = {
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
 
-// ★ 管理者信箱已正式綁定
 const ADMIN_EMAIL = "lyu0608@gmail.com";
 
 let supabaseClient = null;
@@ -919,7 +940,7 @@ if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
 
 let currentUser = null;
 let isGuest = false;
-let userStore = { history: {}, mistakes: [] };
+let userStore = { history: {}, mistakes: [], cycleDays: 30 };
 
 const KNOWN_USERS_KEY = "known_vocab_users_list";
 
@@ -939,7 +960,7 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
     id: userObj.id,
     email: userObj.email,
     session: sessionObj || null,
-    store: storeObj || { history: {}, mistakes: [] },
+    store: storeObj || { history: {}, mistakes: [], cycleDays: 30 },
     lastActive: new Date().toISOString()
   };
 
@@ -1075,7 +1096,7 @@ async function handleLogout() {
 }
 
 // ========================================================
-// 管理者後台學習進度總覽 (顯示真實學員 Email)
+// 管理者後台學習進度總覽 (四大題型統計與天數 X/30 表示)
 // ========================================================
 function toggleAdminModal(show) {
   const modal = document.getElementById("adminDashboardModal");
@@ -1091,7 +1112,7 @@ function openAdminDashboardModal() {
 async function fetchAdminAllProgress() {
   const tbody = document.getElementById("adminProgressTableBody");
   const countText = document.getElementById("adminTotalStudents");
-  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px;">讀取雲端學員進度中...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;">讀取雲端學員進度中...</td></tr>`;
 
   try {
     const { data, error } = await supabaseClient
@@ -1102,7 +1123,7 @@ async function fetchAdminAllProgress() {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
       countText.innerText = `共 0 位學員`;
       return;
     }
@@ -1115,16 +1136,47 @@ async function fetchAdminAllProgress() {
     data.forEach(row => {
       const history = row.history || {};
       const mistakes = row.mistakes || [];
-      const daysCount = Object.keys(history).length;
 
-      let totalQ = 0;
-      let totalCorrect = 0;
-      Object.values(history).forEach(item => {
-        totalQ += item.total || 0;
-        totalCorrect += item.score || 0;
+      // 計算完成天數 (排除隨機模式)，並換算為 X/總天數 (例如 3/30)
+      let completedDaysSet = new Set();
+      let maxCycleDays = 30; // 預設 30 天週期
+
+      // 各題型獨立累加統計器
+      const typeStats = {
+        wordDef: { total: 0, correct: 0 },
+        cloze: { total: 0, correct: 0 },
+        exam: { total: 0, correct: 0 },
+        listen: { total: 0, correct: 0 }
+      };
+
+      let overallTotal = 0;
+      let overallCorrect = 0;
+
+      Object.entries(history).forEach(([key, item]) => {
+        const total = item.total || 0;
+        const score = item.score || 0;
+        overallTotal += total;
+        overallCorrect += score;
+
+        if (item.cycleDays) maxCycleDays = item.cycleDays;
+
+        if (key.startsWith("Day_")) {
+          completedDaysSet.add(key);
+        }
+
+        // 分類統計四大題型
+        const t = item.quizType || "wordDef";
+        if (typeStats[t]) {
+          typeStats[t].total += total;
+          typeStats[t].correct += score;
+        } else {
+          typeStats.wordDef.total += total;
+          typeStats.wordDef.correct += score;
+        }
       });
 
-      const avgRate = totalQ > 0 ? Math.round((totalCorrect / totalQ) * 100) : 0;
+      const dayProgressText = `${completedDaysSet.size}/${maxCycleDays} 天`;
+      const avgRate = overallTotal > 0 ? Math.round((overallCorrect / overallTotal) * 100) : 0;
       const dateStr = row.updated_at ? new Date(row.updated_at).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
 
       let displayEmail = row.email;
@@ -1133,12 +1185,25 @@ async function fetchAdminAllProgress() {
         displayEmail = matched ? matched.email : `${row.user_id.slice(0, 8)}...`;
       }
 
+      // 四大題型渲染標籤輔助函式
+      const renderTypeBadge = (label, stat, badgeClass) => {
+        if (stat.total === 0) return `<span class="mode-badge" style="background:#f1f5f9; color:#94a3b8;">${label}: -</span>`;
+        const rate = Math.round((stat.correct / stat.total) * 100);
+        return `<span class="mode-badge ${badgeClass}">${label}: ${stat.total}題 (${rate}%)</span>`;
+      };
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:10px;">${displayEmail}</td>
-        <td><b>${daysCount}</b> 天</td>
-        <td>${totalQ} 題</td>
+        <td><b style="color:var(--primary); font-size:13px;">${dayProgressText}</b></td>
+        <td>${overallTotal} 題</td>
         <td style="color:${avgRate >= 80 ? 'var(--success)' : avgRate >= 60 ? 'var(--amber)' : 'var(--danger)'}; font-weight:700;">${avgRate}%</td>
+        <td style="text-align:left; padding:6px 8px; line-height:1.7;">
+          ${renderTypeBadge("🔤識義", typeStats.wordDef, "badge-word")}<br>
+          ${renderTypeBadge("📝填空", typeStats.cloze, "badge-cloze")}<br>
+          ${renderTypeBadge("🏛️真題", typeStats.exam, "badge-exam")}<br>
+          ${renderTypeBadge("🎧聽力", typeStats.listen, "badge-listen")}
+        </td>
         <td style="color:var(--danger); font-weight:700;">${mistakes.length}</td>
         <td style="font-size:11px; color:var(--muted);">${dateStr}</td>
       `;
@@ -1146,7 +1211,7 @@ async function fetchAdminAllProgress() {
     });
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}<br><small>請確認是否已在 Supabase 執行管理者開放 SQL</small></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}<br><small>請確認是否已在 Supabase 執行開放 SQL</small></td></tr>`;
   }
 }
 
@@ -1225,7 +1290,7 @@ async function switchToAccount(targetUserRecord) {
 
   isGuest = false;
   currentUser = { id: targetUserRecord.id, email: targetUserRecord.email };
-  userStore = targetUserRecord.store || { history: {}, mistakes: [] };
+  userStore = targetUserRecord.store || { history: {}, mistakes: [], cycleDays: 30 };
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
 
   if (supabaseClient && targetUserRecord.session) {
@@ -1280,7 +1345,7 @@ async function executeClearRecords() {
   btn.disabled = true;
 
   if (isGuest) {
-    userStore = { history: {}, mistakes: [] };
+    userStore = { history: {}, mistakes: [], cycleDays: DAYS_COUNT };
     localStorage.removeItem("local_vocab_progress");
     updateMistakeCount();
     initDaySelector();
@@ -1310,7 +1375,7 @@ async function executeClearRecords() {
   }
 
   try {
-    userStore = { history: {}, mistakes: [] };
+    userStore = { history: {}, mistakes: [], cycleDays: DAYS_COUNT };
     localStorage.removeItem("local_vocab_progress");
     saveKnownUser(currentUser, null, userStore);
 
@@ -1504,6 +1569,7 @@ function startRandomQuiz(count) {
 
 function changeCycleDays(val) {
   DAYS_COUNT = parseInt(val, 10) || 30;
+  userStore.cycleDays = DAYS_COUNT;
   initDayPlans();
   initDaySelector();
   changeDay(1);
@@ -1578,13 +1644,18 @@ function renderQuestion() {
   }
 
   if (currentIndex >= currentTestQueue.length) {
-    userStore.history[`Day_${currentDay}`] = {
+    // ★ 記錄時帶入 quizType 與設定的週期總天數 cycleDays
+    const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
+    userStore.history[recordKey] = {
       score: correctCount,
       total: currentTestQueue.length,
       rate: Math.round((correctCount / currentTestQueue.length) * 100),
+      quizType: currentQuizType,
+      cycleDays: DAYS_COUNT,
       date: new Date().toLocaleDateString()
     };
     syncToCloud();
+
     document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("examSourceTag").classList.add("hidden");
@@ -1790,7 +1861,8 @@ function toggleHistory() {
   box.classList.toggle("hidden");
   const details = document.getElementById("historyDetails");
   const entries = Object.entries(userStore.history);
-  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b>: ${v.score}/${v.total} (${v.rate}%) - ${v.date}</div>`).join("");
+  const typeNames = { wordDef: "單字識義", cloze: "句子填空", exam: "會考真題", listen: "會考聽力" };
+  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date}</div>`).join("");
 }
 
 function speakCurrentWord() {
