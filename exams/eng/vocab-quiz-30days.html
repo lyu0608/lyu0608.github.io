@@ -474,13 +474,12 @@
     .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
     .modal-body { overflow-y: auto; padding-top: 14px; font-size: 13px; line-height: 1.6; }
 
-    /* 後台學員進度監控表格 (多題型與天數分母) */
     .admin-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
       margin-top: 8px;
-      min-width: 620px;
+      min-width: 660px;
     }
     .admin-table th, .admin-table td {
       border: 1px solid var(--border);
@@ -671,11 +670,11 @@
   </div>
 </div>
 
-<!-- 👑 管理者後台監控彈窗 (四大題型明細與完成天數以分母表示) -->
+<!-- 👑 管理者後台監控彈窗 (包含題型細分與錯題量細分) -->
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
-  <div class="modal-card" style="max-width:780px;" onclick="event.stopPropagation()">
+  <div class="modal-card" style="max-width:820px;" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (四大題型詳情)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (題型與錯題量細分)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -688,11 +687,11 @@
           <thead>
             <tr>
               <th style="text-align:left; padding-left:10px;">學員 Email</th>
-              <th>完成天數進度</th>
+              <th>完成進度</th>
               <th>總作答題數</th>
               <th>綜合正確率</th>
               <th>四大題型作答明細 (題數 / 正確率)</th>
-              <th>錯題量</th>
+              <th>錯題量 (分題型統計)</th>
               <th>最後更新</th>
             </tr>
           </thead>
@@ -787,19 +786,20 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v3.0.0 - 錯題量多題型維度深度分析</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>錯題題型標籤化：</b>學員作答錯誤時，系統自動將題目型態（識義/填空/真題/聽力）寫入錯題本中。</li>
+            <li><b>後台錯題量細分呈現：</b>管理者後台支援查看各題型獨立錯題數量，精準掌握弱點分布。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v2.9.0 - 四大題型全方位監控與天數分母化</div>
         <div class="history-desc">
           <ul>
             <li><b>四大題型獨立統計：</b>後台完整呈現單字識義、句子填空、會考真題與會考聽力的作答題數與正確率[cite: 2]。</li>
             <li><b>天數分母化格式：</b>完成天數以 `X/30` 格式呈現，直觀掌握學員在設定計畫週期中的實際推進比例。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v2.8.0 - 後台學員 Email 識別與整合</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>學員 Email 監控：</b>管理者後台總覽直接呈現學員信箱，快速掌握個別學生進度。</li>
           </ul>
         </div>
       </div>
@@ -1096,7 +1096,7 @@ async function handleLogout() {
 }
 
 // ========================================================
-// 管理者後台學習進度總覽 (四大題型統計與天數 X/30 表示)
+// 管理者後台：題型獨立統計與錯題量細分呈現
 // ========================================================
 function toggleAdminModal(show) {
   const modal = document.getElementById("adminDashboardModal");
@@ -1137,11 +1137,9 @@ async function fetchAdminAllProgress() {
       const history = row.history || {};
       const mistakes = row.mistakes || [];
 
-      // 計算完成天數 (排除隨機模式)，並換算為 X/總天數 (例如 3/30)
       let completedDaysSet = new Set();
-      let maxCycleDays = 30; // 預設 30 天週期
+      let maxCycleDays = 30;
 
-      // 各題型獨立累加統計器
       const typeStats = {
         wordDef: { total: 0, correct: 0 },
         cloze: { total: 0, correct: 0 },
@@ -1159,12 +1157,8 @@ async function fetchAdminAllProgress() {
         overallCorrect += score;
 
         if (item.cycleDays) maxCycleDays = item.cycleDays;
+        if (key.startsWith("Day_")) completedDaysSet.add(key);
 
-        if (key.startsWith("Day_")) {
-          completedDaysSet.add(key);
-        }
-
-        // 分類統計四大題型
         const t = item.quizType || "wordDef";
         if (typeStats[t]) {
           typeStats[t].total += total;
@@ -1172,6 +1166,17 @@ async function fetchAdminAllProgress() {
         } else {
           typeStats.wordDef.total += total;
           typeStats.wordDef.correct += score;
+        }
+      });
+
+      // ★ 錯題量依題型細分統計
+      const mistakeTypeCount = { wordDef: 0, cloze: 0, exam: 0, listen: 0 };
+      mistakes.forEach(m => {
+        const mt = m.quizType || "wordDef";
+        if (mistakeTypeCount[mt] !== undefined) {
+          mistakeTypeCount[mt]++;
+        } else {
+          mistakeTypeCount.wordDef++;
         }
       });
 
@@ -1185,7 +1190,6 @@ async function fetchAdminAllProgress() {
         displayEmail = matched ? matched.email : `${row.user_id.slice(0, 8)}...`;
       }
 
-      // 四大題型渲染標籤輔助函式
       const renderTypeBadge = (label, stat, badgeClass) => {
         if (stat.total === 0) return `<span class="mode-badge" style="background:#f1f5f9; color:#94a3b8;">${label}: -</span>`;
         const rate = Math.round((stat.correct / stat.total) * 100);
@@ -1204,7 +1208,17 @@ async function fetchAdminAllProgress() {
           ${renderTypeBadge("🏛️真題", typeStats.exam, "badge-exam")}<br>
           ${renderTypeBadge("🎧聽力", typeStats.listen, "badge-listen")}
         </td>
-        <td style="color:var(--danger); font-weight:700;">${mistakes.length}</td>
+        <td style="text-align:left; padding:6px 8px; line-height:1.5;">
+          <b style="color:var(--danger); font-size:13px;">總計: ${mistakes.length} 題</b>
+          ${mistakes.length > 0 ? `
+            <div style="font-size:11px; color:#475569; margin-top:3px;">
+              • 🔤識義: ${mistakeTypeCount.wordDef} 題<br>
+              • 📝填空: ${mistakeTypeCount.cloze} 題<br>
+              • 🏛️真題: ${mistakeTypeCount.exam} 題<br>
+              • 🎧聽力: ${mistakeTypeCount.listen} 題
+            </div>
+          ` : ''}
+        </td>
         <td style="font-size:11px; color:var(--muted);">${dateStr}</td>
       `;
       tbody.appendChild(tr);
@@ -1593,7 +1607,8 @@ function changeDay(day) {
 
   if (incMistakes && userStore.mistakes) {
     userStore.mistakes.forEach(m => {
-      if (!pool.some(item => item.en === m.en)) pool.push(m);
+      const targetWord = m.en || (m.scriptEn ? m.scriptEn.slice(0, 15) : "");
+      if (!pool.some(item => (item.en || "") === targetWord)) pool.push(m);
     });
   }
 
@@ -1644,7 +1659,6 @@ function renderQuestion() {
   }
 
   if (currentIndex >= currentTestQueue.length) {
-    // ★ 記錄時帶入 quizType 與設定的週期總天數 cycleDays
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
     userStore.history[recordKey] = {
       score: correctCount,
@@ -1782,11 +1796,19 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   } else {
     btn.classList.add("wrong");
     wrongCount++;
-    if (!userStore.mistakes.some(m => m.en === item.en)) {
-      userStore.mistakes.push(item);
+    
+    // ★ 錯題本記錄：封裝題型屬性 quizType，方便後台分類統計
+    const mistakeRecord = currentQuizType === "listen" 
+      ? { ...item, quizType: "listen", id: item.scriptEn }
+      : { ...item, quizType: currentQuizType };
+
+    const itemIdentifier = mistakeRecord.en || mistakeRecord.scriptEn;
+    if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === itemIdentifier)) {
+      userStore.mistakes.push(mistakeRecord);
       syncToCloud();
       updateMistakeCount();
     }
+
     if (currentQuizType === "cloze" || currentQuizType === "exam") {
       const blank = document.querySelector(".cloze-blank");
       if (blank) { blank.innerText = item.en; blank.style.color = "var(--danger)"; }
@@ -1868,11 +1890,11 @@ function toggleHistory() {
 function speakCurrentWord() {
   if (currentIndex >= currentTestQueue.length) return;
   const cur = currentTestQueue[currentIndex];
-  let textToSpeak = cur.en;
+  let textToSpeak = cur.en || cur.scriptEn || "";
   
   if (hasAnswered) {
     if (currentQuizType === "exam") {
-      const examData = CAP_EXAM_BANK[cur.en.trim().toLowerCase()];
+      const examData = CAP_EXAM_BANK[(cur.en || "").trim().toLowerCase()];
       textToSpeak = examData ? examData.sentence.replace('______', cur.en) : cur.sentenceEn;
     } else if (currentQuizType === "cloze") {
       textToSpeak = cur.sentenceEn;
