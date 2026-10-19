@@ -340,31 +340,129 @@ function simulate(code) {
     };
 }
 
+// 證交所日線資料：www.twse.com.tw 的 rwd API 允許跨網域讀取，GitHub Pages 等靜態網站也能直接抓。
+// 只有加權指數與上市股票 / ETF；以月為單位查詢，當日資料要盤後才會出現。
+const TWSE_BASE = "https://www.twse.com.tw/rwd/zh";
+const TWSE_GAP_MS = 1200;                       // 證交所會暫時封鎖連續請求的 IP，請求之間至少間隔
+const TWSE_CURRENT_MONTH_TTL = 10 * 60 * 1000;  // 當月資料快取 10 分鐘；過去月份永久快取
+const TWSE_REFRESH_MS = 10 * 60 * 1000;
+const TWSE_MONTHS = { index: 5, stock: 4 };     // 約 100 / 80 個交易日，足夠計算 KD 與 MA20
+
+let twseLastRequest = 0, twseChain = Promise.resolve();
+
+function twseThrottled(url) {
+    const run = async () => {
+        const wait = twseLastRequest + TWSE_GAP_MS - Date.now();
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        twseLastRequest = Date.now();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`TWSE HTTP ${res.status}`);
+        return res.json();
+    };
+    const p = twseChain.then(run, run);
+    twseChain = p.catch(() => {});
+    return p;
+}
+
+function cacheGet(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } }
+function cacheSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* 無痕模式等情況略過 */ } }
+
+const yyyymm = d => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+const parseNum = s => parseFloat(String(s).replace(/,/g, ""));
+const rocToIso = s => { const [y, m, d] = s.split("/"); return `${+y + 1911}-${m}-${d}`; };
+
+async function twseMonth(code, ym) {
+    const key = `twse:${code}:${ym}`;
+    const cached = cacheGet(key);
+    const isCurrent = ym === yyyymm(new Date());
+    if (cached && (!isCurrent || Date.now() - cached.at < TWSE_CURRENT_MONTH_TTL)) return cached.json;
+
+    setStatusNote(`載入證交所資料：${code === INDEX_SYMBOL ? "加權指數" : code} ${ym.slice(0, 4)}/${ym.slice(4)}…`);
+    const url = code === INDEX_SYMBOL
+        ? `${TWSE_BASE}/TAIEX/MI_5MINS_HIST?date=${ym}01&response=json`
+        : `${TWSE_BASE}/afterTrading/STOCK_DAY?date=${ym}01&stockNo=${encodeURIComponent(code)}&response=json`;
+    const json = await twseThrottled(url);
+    cacheSet(key, { at: Date.now(), json });
+    return json;
+}
+
+function parseTwse(json, isIndex) {
+    if (!json || json.stat !== "OK" || !Array.isArray(json.data)) return [];
+    const fields = json.fields || [];
+    const col = (name, fallback) => { const i = fields.findIndex(f => f.includes(name)); return i >= 0 ? i : fallback; };
+    const iOpen = col("開盤", isIndex ? 1 : 3), iHigh = col("最高", isIndex ? 2 : 4);
+    const iLow = col("最低", isIndex ? 3 : 5), iClose = col("收盤", isIndex ? 4 : 6);
+    const iVol = isIndex ? -1 : col("成交股數", 1);
+    return json.data.map(r => ({
+        time: rocToIso(r[0]),
+        open: parseNum(r[iOpen]), high: parseNum(r[iHigh]), low: parseNum(r[iLow]), close: parseNum(r[iClose]),
+        volume: iVol >= 0 ? parseNum(r[iVol]) : 0,
+    })).filter(c => [c.open, c.high, c.low, c.close].every(Number.isFinite));  // 排除停牌 ("--")
+}
+
+async function fetchTwse(code) {
+    const isIndex = code === INDEX_SYMBOL;
+    const now = new Date();
+    const count = isIndex ? TWSE_MONTHS.index : TWSE_MONTHS.stock;
+    let name = isIndex ? "加權指數" : code;
+    const candles = [];
+    for (let i = count - 1; i >= 0; i--) {
+        const json = await twseMonth(code, yyyymm(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+        candles.push(...parseTwse(json, isIndex));
+        const m = !isIndex && json && json.title && json.title.match(new RegExp(code + "\\s+(\\S+)"));
+        if (m) name = m[1];
+    }
+    if (candles.length < 2) return null;
+    const kd = calcKD(candles);
+    const last = candles[candles.length - 1], prev = candles[candles.length - 2];
+    const change = +(last.close - prev.close).toFixed(2);
+    return {
+        name, price: last.close, change, change_pct: +(change / prev.close * 100).toFixed(2),
+        candles: candles.slice(-80), k: kd.k.slice(-80), d: kd.d.slice(-80), quoteTime: null, dataDate: last.time,
+    };
+}
+
 let refreshTimer = null, refreshSeq = 0;
 
+function applyData(data, source) {
+    state.source = source;
+    if (data[INDEX_SYMBOL]) state.index = data[INDEX_SYMBOL];
+    Object.entries(data).forEach(([code, item]) => { if (code !== INDEX_SYMBOL) state.stocks[code] = item; });
+    renderAll();
+}
+
+// 資料來源優先順序：本機後端 (即時) → 證交所日線 → 模擬資料
 async function refresh() {
     const seq = ++refreshSeq;
     clearTimeout(refreshTimer);
     const codes = [...new Set([INDEX_SYMBOL, "0050", state.selected])];
-    let data = null;
+
+    let live = null;
     if (apiAvailable) {
-        try { data = await fetchLive(codes); } catch (e) { data = null; }
+        try { live = await fetchLive(codes); } catch (e) { live = null; }
+        if (seq !== refreshSeq) return;
     }
-    if (seq !== refreshSeq) return;
 
-    if (data && data[INDEX_SYMBOL]) {
-        state.source = "live";
+    let source = "live";
+    if (live && live[INDEX_SYMBOL]) {
+        codes.forEach(c => { if (!live[c]) live[c] = null; });  // 查無此代號
+        applyData(live, "live");
     } else {
-        state.source = "sim";
-        data = Object.fromEntries(codes.map(c => [c, simulate(c)]));
+        source = "twse";
+        const data = {};
+        for (const code of codes) {  // 依序抓取，大盤先到就先顯示決策
+            try { data[code] = await fetchTwse(code); } catch (e) { data[code] = null; }
+            if (seq !== refreshSeq) return;
+            if (!data[INDEX_SYMBOL]) break;
+            applyData({ [code]: data[code] }, "twse");
+        }
+        if (!data[INDEX_SYMBOL]) {
+            source = "sim";
+            applyData(Object.fromEntries(codes.map(c => [c, simulate(c)])), "sim");
+        }
     }
-    state.index = data[INDEX_SYMBOL];
-    codes.filter(c => c !== INDEX_SYMBOL).forEach(c => { if (data[c]) state.stocks[c] = data[c]; });
-    if (!data[state.selected]) state.stocks[state.selected] = null;  // 查無此代號
-
-    renderAll();
-    // 沒有後端時資料固定，不必刷新；有後端時持續刷新 (後端暫時斷線也會在恢復後接回即時資料)
-    if (apiAvailable) refreshTimer = setTimeout(refresh, REFRESH_MS);
+    setStatusNote(null);
+    refreshTimer = setTimeout(refresh, source === "live" ? REFRESH_MS : TWSE_REFRESH_MS);
 }
 
 // ===================== 畫面 =====================
@@ -383,7 +481,14 @@ function renderHeader() {
     const badge = document.getElementById("sourceBadge");
     if (state.sandbox) { badge.className = "source sandbox"; badge.textContent = "🧪 沙盒模式"; }
     else if (state.source === "live") { badge.className = "source live"; badge.textContent = "● 即時資料 (Yahoo 約延遲 20 分鐘)"; }
-    else { badge.className = "source sim"; badge.textContent = "◐ 模擬資料 (未連接後端；本機執行 run.bat 後開 http://127.0.0.1:5000/dashboard 可看即時資料)"; }
+    else if (state.source === "twse") {
+        const dd = state.index && state.index.dataDate;
+        badge.className = "source live";
+        badge.textContent = `● 證交所日線資料${dd ? `（資料日 ${dd.slice(5).replace("-", "/")}）` : ""}`;
+    }
+    else { badge.className = "source sim"; badge.textContent = "◐ 模擬資料 (無法連線證交所；稍後會自動重試)"; }
+
+    if (statusNote) { document.getElementById("updatedAt").textContent = statusNote; return renderIndexQuote(); }
 
     let txt = `更新 ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
     const qt = state.index && state.index.quoteTime;
@@ -392,8 +497,20 @@ function renderHeader() {
         txt += ` ｜ 報價時間 ${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`;
     }
     if (state.source === "live" && apiAvailable) txt += " ｜ 每 10 秒自動更新";
+    if (state.source === "twse") txt += " ｜ 當日資料約 14:30 盤後公布，每 10 分鐘檢查";
     document.getElementById("updatedAt").textContent = txt;
+    renderIndexQuote();
+}
 
+// 載入中的進度文字；null 表示載入完成
+let statusNote = null;
+function setStatusNote(text) {
+    statusNote = text;
+    if (text) document.getElementById("updatedAt").textContent = text;
+    else renderHeader();
+}
+
+function renderIndexQuote() {
     const idx = state.index;
     document.getElementById("indexQuote").innerHTML = idx
         ? `${idx.name} <span class="${colorOf(idx.change)}">${fmt(idx.price)} (${signed(idx.change)} / ${signed(idx.change_pct)}%)</span>`
@@ -495,8 +612,14 @@ function renderStock() {
     document.querySelectorAll("#stockBar .chip").forEach(b => b.classList.toggle("active", b.dataset.code === state.selected));
     const s = state.stocks[state.selected];
     const quote = document.getElementById("stockQuote");
+    if (s === undefined) {
+        quote.innerHTML = `<span class="flat">載入 ${state.selected} 中…</span>`;
+        drawCandles(null);
+        return;
+    }
     if (!s) {
-        quote.innerHTML = `<span class="flat">查無 ${state.selected} 的資料，請確認代號</span>`;
+        const hint = state.source === "twse" ? "（網頁版只有上市股票與 ETF，上櫃股請用本機版）" : "，請確認代號";
+        quote.innerHTML = `<span class="flat">查無 ${state.selected} 的資料${hint}</span>`;
         drawCandles(null);
         return;
     }
@@ -619,8 +742,7 @@ document.getElementById("candleCanvas").addEventListener("mouseleave", e => {
 function selectStock(code) {
     state.selected = code;
     state.hoverIndex = null;
-    if (state.stocks[code]) renderStock();
-    else document.getElementById("stockQuote").textContent = `載入 ${code} 中…`;
+    renderStock();
     refresh();
 }
 
