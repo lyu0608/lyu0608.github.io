@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0050 KD 決策儀表板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+    :root {
+        --bg: #0b1120;
+        --card: #151e32;
+        --card-2: #1c2740;
+        --border: #2a3654;
+        --text: #f1f5f9;
+        --sub: #94a3b8;
+        --up: #ef4444;      /* 台股紅漲 */
+        --down: #22c55e;    /* 台股綠跌 */
+        --gold: #fbbf24;
+        --accent: #60a5fa;
+        --k: #a78bfa;
+        --d: #f472b6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif; padding: 16px; line-height: 1.5; }
+    button, input { font: inherit; }
+
+    header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 20px; }
+    .meta { font-size: 12px; color: var(--sub); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .source { padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .source.live { background: rgba(34, 197, 94, 0.15); color: #86efac; }
+    .source.sim { background: rgba(251, 191, 36, 0.15); color: var(--gold); }
+    .source.sandbox { background: rgba(96, 165, 250, 0.18); color: var(--accent); }
+
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 1000px) { .grid { grid-template-columns: 380px 1fr; } .span-2 { grid-column: 1 / -1; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+    .card h2 { font-size: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card h2 small { font-size: 12px; color: var(--sub); font-weight: normal; }
+
+    /* ===== 預警橫幅 ===== */
+    .warning { display: none; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; margin-bottom: 14px; font-weight: 700; font-size: 16px; }
+    .warning .icon { font-size: 22px; }
+    .warning .detail { font-size: 13px; font-weight: normal; opacity: 0.9; }
+    .warning.buy-prep { display: flex; color: #fef3c7; background: linear-gradient(90deg, rgba(34, 197, 94, 0.35), rgba(251, 191, 36, 0.35)); border: 1px solid var(--gold); animation: breatheGold 1.6s ease-in-out infinite; }
+    .warning.sell-prep { display: flex; color: #fff1f2; background: rgba(220, 38, 38, 0.45); border: 1px solid #f87171; animation: breatheRed 1.2s ease-in-out infinite; }
+    .warning .text { animation: textBreathe 1.6s ease-in-out infinite; }
+    @keyframes breatheGold {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.0); filter: brightness(0.9); }
+        50%      { box-shadow: 0 0 22px 4px rgba(251, 191, 36, 0.55); filter: brightness(1.25); }
+    }
+    @keyframes breatheRed {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.0); filter: brightness(0.85); }
+        50%      { box-shadow: 0 0 26px 6px rgba(239, 68, 68, 0.7); filter: brightness(1.3); }
+    }
+    @keyframes textBreathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+    /* ===== 決策卡片 ===== */
+    .decision { text-align: center; padding: 18px 12px; border-radius: 10px; background: var(--card-2); border: 2px solid var(--border); transition: border-color 0.3s, background 0.3s; }
+    .decision .label { font-size: 13px; color: var(--sub); }
+    .decision .signal { font-size: 30px; font-weight: 800; margin: 4px 0; letter-spacing: 1px; }
+    .decision .why { font-size: 13px; color: var(--sub); }
+    .decision.strong-buy { border-color: var(--up); background: rgba(239, 68, 68, 0.18); }
+    .decision.strong-buy .signal, .decision.buy .signal { color: #fca5a5; }
+    .decision.buy { border-color: rgba(239, 68, 68, 0.6); background: rgba(239, 68, 68, 0.08); }
+    .decision.strong-sell { border-color: var(--down); background: rgba(34, 197, 94, 0.18); }
+    .decision.strong-sell .signal, .decision.sell .signal { color: #86efac; }
+    .decision.sell { border-color: rgba(34, 197, 94, 0.6); background: rgba(34, 197, 94, 0.08); }
+    .decision.hold .signal { color: var(--text); }
+    .decision.strong-buy, .decision.strong-sell { animation: cardPulse 1.4s ease-in-out infinite; }
+    @keyframes cardPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015); } }
+
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+    .stat { background: var(--card-2); border-radius: 8px; padding: 8px 10px; }
+    .stat .name { font-size: 12px; color: var(--sub); }
+    .stat .value { font-size: 18px; font-weight: 700; }
+    .rules { margin-top: 12px; font-size: 12px; color: var(--sub); }
+    .rules li { margin-left: 18px; }
+    .rules li.active { color: var(--text); font-weight: 700; }
+
+    .kd-chart-box { position: relative; height: 300px; }
+
+    /* ===== 個股 K 線 ===== */
+    .stock-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+    .chip { background: var(--card-2); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: 13px; }
+    .chip.active { background: var(--accent); border-color: var(--accent); color: #0b1120; font-weight: 700; }
+    .custom { display: flex; gap: 6px; }
+    .custom input { width: 110px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; }
+    .custom button { background: var(--accent); color: #0b1120; border: none; border-radius: 8px; padding: 4px 12px; font-weight: 700; cursor: pointer; }
+    .quote { font-size: 14px; margin-bottom: 6px; }
+    .quote .px { font-size: 22px; font-weight: 800; margin: 0 8px; }
+    .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--sub); }
+    #candleCanvas { width: 100%; height: 380px; display: block; cursor: crosshair; }
+
+    /* ===== 沙盒 ===== */
+    .sandbox-row { display: grid; grid-template-columns: 70px 1fr 56px; gap: 10px; align-items: center; margin: 10px 0; }
+    .sandbox-row input[type=range] { width: 100%; accent-color: var(--accent); }
+    .sandbox-row output { font-weight: 700; text-align: right; }
+    .toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; }
+    .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .note { font-size: 12px; color: var(--sub); margin-top: 10px; }
+    .disabled { opacity: 0.45; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>📈 台股看盤 · 0050 KD 決策儀表板</h1>
+    <div class="meta">
+        <span id="sourceBadge" class="source sim">載入中…</span>
+        <span id="updatedAt"></span>
+    </div>
+</header>
+
+<div id="warning" class="warning" role="alert">
+    <span class="icon" id="warnIcon"></span>
+    <div>
+        <div class="text" id="warnText"></div>
+        <div class="detail" id="warnDetail"></div>
+    </div>
+</div>
+
+<div class="grid">
+    <!-- 決策卡片 -->
+    <section class="card">
+        <h2>🎯 0050 決策引擎 <small>依大盤日線 KD(9,3,3)</small></h2>
+        <div id="decision" class="decision hold">
+            <div class="label">今日建議</div>
+            <div class="signal" id="signalText">—</div>
+            <div class="why" id="signalWhy"></div>
+        </div>
+        <div class="stats">
+            <div class="stat"><div class="name">大盤 K 值</div><div class="value" id="statK" style="color:var(--k)">—</div></div>
+            <div class="stat"><div class="name">大盤 D 值</div><div class="value" id="statD" style="color:var(--d)">—</div></div>
+            <div class="stat"><div class="name">KD 交叉</div><div class="value" id="statCross">—</div></div>
+            <div class="stat"><div class="name">0050 現價</div><div class="value" id="stat0050">—</div></div>
+        </div>
+        <ul class="rules" id="rules">
+            <li data-rule="strong-buy">K &lt; 20 且黃金交叉 → 強烈買進</li>
+            <li data-rule="buy">K &lt; 20 → 買進</li>
+            <li data-rule="strong-sell">K &gt; 80 且死亡交叉 → 強烈賣出</li>
+            <li data-rule="sell">K &gt; 80 → 賣出</li>
+            <li data-rule="hold">其他 → 觀望</li>
+        </ul>
+    </section>
+
+    <!-- 大盤 KD 圖 -->
+    <section class="card">
+        <h2>📊 加權指數 KD <small id="indexQuote"></small></h2>
+        <div class="kd-chart-box"><canvas id="kdChart"></canvas></div>
+    </section>
+
+    <!-- 個股 K 線 -->
+    <section class="card span-2">
+        <h2>🕯️ 個股看盤 <small>日 K 線 · 紅漲綠跌 · 成交量 (張)</small></h2>
+        <div class="stock-bar" id="stockBar">
+            <button class="chip" data-code="0050">0050 元大台灣50</button>
+            <button class="chip" data-code="2330">2330 台積電</button>
+            <button class="chip" data-code="2454">2454 聯發科</button>
+            <button class="chip" data-code="2317">2317 鴻海</button>
+            <form class="custom" id="customForm">
+                <input id="customCode" placeholder="自訂代號" maxlength="6" autocomplete="off">
+                <button type="submit">看盤</button>
+            </form>
+        </div>
+        <div class="quote" id="stockQuote">—</div>
+        <canvas id="candleCanvas"></canvas>
+    </section>
+
+    <!-- 沙盒 -->
+    <section class="card span-2">
+        <h2>🧪 即時微調與模擬沙盒 <small>拖曳 K / D 檢驗閃爍預警與決策卡片</small></h2>
+        <label class="toggle"><input type="checkbox" id="sandboxOn"> 啟用沙盒（以滑桿數值覆蓋大盤最新 K / D）</label>
+        <div id="sandboxControls" class="disabled">
+            <div class="sandbox-row">
+                <span>K 值</span><input type="range" id="sliderK" min="0" max="100" step="0.1" value="50"><output id="outK">50.0</output>
+            </div>
+            <div class="sandbox-row">
+                <span>D 值</span><input type="range" id="sliderD" min="0" max="100" step="0.1" value="50"><output id="outD">50.0</output>
+            </div>
+            <div class="sandbox-row">
+                <span>前日 K</span><input type="range" id="sliderPK" min="0" max="100" step="0.1" value="50"><output id="outPK">50.0</output>
+            </div>
+            <div class="sandbox-row">
+                <span>前日 D</span><input type="range" id="sliderPD" min="0" max="100" step="0.1" value="50"><output id="outPD">50.0</output>
+            </div>
+            <div class="presets">
+                <button class="chip" data-k="15" data-d="18" data-pk="17" data-pd="20">K15（買進）</button>
+                <button class="chip" data-k="19" data-d="16" data-pk="14" data-pd="17">K19 黃金交叉（強烈買進）</button>
+                <button class="chip" data-k="21" data-d="30" data-pk="23" data-pd="32">K21（準備買進）</button>
+                <button class="chip" data-k="50" data-d="48" data-pk="49" data-pd="47">K50（觀望）</button>
+                <button class="chip" data-k="79" data-d="70" data-pk="77" data-pd="68">K79（停利警示）</button>
+                <button class="chip" data-k="85" data-d="80" data-pk="83" data-pd="78">K85（賣出）</button>
+                <button class="chip" data-k="82" data-d="86" data-pk="88" data-pd="85">K82 死亡交叉（強烈賣出）</button>
+            </div>
+        </div>
+        <p class="note">交叉判斷以「前一交易日 K、D」對照目前數值：前日 K ≤ D 且今日 K &gt; D 為黃金交叉，前日 K ≥ D 且今日 K &lt; D 為死亡交叉；沙盒中可用「前日 K / D」滑桿模擬。沙盒只影響畫面，不會送出任何交易。本頁訊號僅為技術指標條件，不構成投資建議。</p>
+    </section>
+</div>
+
+<script>
+// ===================== 參數 =====================
+const KD_BUY = 20, KD_SELL = 80;          // 買賣門檻
+const KD_WARN_LOW = 22, KD_WARN_HIGH = 78; // 預警閃爍
+const REFRESH_MS = 10000;
+const INDEX_SYMBOL = "TAIEX";
+const CANDLE_DAYS = 60;
+// 由 Flask 提供 (http://127.0.0.1:5000/dashboard) 時用即時資料；直接開檔 (file://) 或放在
+// GitHub Pages 等靜態網站 (API 回 404/405) 時改用模擬資料
+const API_URL = location.protocol.startsWith("http") ? "/api/analyze" : null;
+let apiAvailable = !!API_URL;
+
+const state = {
+    source: "sim",      // live | sim
+    index: null,        // { name, price, change, change_pct, candles, k:[], d:[] }
+    stocks: {},         // code -> { name, price, change, change_pct, candles }
+    selected: "0050",
+    sandbox: false,
+    sandboxK: 50,
+    sandboxD: 50,
+    sandboxPrevK: 50,
+    sandboxPrevD: 50,
+    hoverIndex: null,
+};
+
+// ===================== 指標 =====================
+// 台股慣用 KD(9,3,3)：RSV 取 9 日高低區間，K、D 以 1/3 權重平滑，初始值 50
+function calcKD(candles, n = 9) {
+    let k = 50, d = 50;
+    const ks = [], ds = [];
+    candles.forEach((c, i) => {
+        const win = candles.slice(Math.max(0, i - n + 1), i + 1);
+        const hi = Math.max(...win.map(x => x.high));
+        const lo = Math.min(...win.map(x => x.low));
+        const rsv = hi > lo ? (c.close - lo) / (hi - lo) * 100 : 50;
+        k = k * 2 / 3 + rsv / 3;
+        d = d * 2 / 3 + k / 3;
+        ks.push(+k.toFixed(2));
+        ds.push(+d.toFixed(2));
+    });
+    return { k: ks, d: ds };
+}
+
+function movingAverage(candles, n) {
+    return candles.map((_, i) => {
+        if (i < n - 1) return null;
+        const win = candles.slice(i - n + 1, i + 1);
+        return win.reduce((s, c) => s + c.close, 0) / n;
+    });
+}
+
+// ===================== 決策引擎 =====================
+function decide(k, d, prevK, prevD) {
+    const golden = prevK <= prevD && k > d;
+    const death = prevK >= prevD && k < d;
+    let level = "hold", text = "觀望", why = `K ${k.toFixed(1)} 位於 ${KD_BUY} ~ ${KD_SELL} 之間`;
+    if (k < KD_BUY && golden)      { level = "strong-buy";  text = "強烈買進 0050"; why = `K ${k.toFixed(1)} < ${KD_BUY}，且 K 向上穿越 D（黃金交叉）`; }
+    else if (k < KD_BUY)           { level = "buy";         text = "買進 0050";     why = `K ${k.toFixed(1)} < ${KD_BUY}，進入超賣區`; }
+    else if (k > KD_SELL && death) { level = "strong-sell"; text = "強烈賣出 0050"; why = `K ${k.toFixed(1)} > ${KD_SELL}，且 K 向下跌破 D（死亡交叉）`; }
+    else if (k > KD_SELL)          { level = "sell";        text = "賣出 0050";     why = `K ${k.toFixed(1)} > ${KD_SELL}，進入過熱區`; }
+
+    let warning = null;
+    if (k < KD_WARN_LOW)       warning = "buy-prep";
+    else if (k > KD_WARN_HIGH) warning = "sell-prep";
+
+    return { level, text, why, golden, death, warning };
+}
+
+// 目前用於決策的 K/D：沙盒開啟時以滑桿覆蓋最新兩天
+function currentKD() {
+    const idx = state.index;
+    if (!idx || idx.k.length < 2) return null;
+    const n = idx.k.length;
+    if (state.sandbox) {
+        return { k: state.sandboxK, d: state.sandboxD, prevK: state.sandboxPrevK, prevD: state.sandboxPrevD };
+    }
+    return { k: idx.k[n - 1], d: idx.d[n - 1], prevK: idx.k[n - 2], prevD: idx.d[n - 2] };
+}
+
+// ===================== 資料 =====================
+async function fetchLive(codes) {
+    const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stocks: codes, period: "1y" }),
+    });
+    if (res.status === 404 || res.status === 405) apiAvailable = false;  // 靜態網站：沒有後端，不再重試
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const items = await res.json();
+    const out = {};
+    items.forEach(it => {
+        out[it.symbol] = {
+            name: it.name, price: it.price, change: it.change, change_pct: it.change_pct,
+            candles: it.chart_data.candles,
+            k: (it.chart_data.k || []).map(p => p.value),
+            d: (it.chart_data.d || []).map(p => p.value),
+            quoteTime: it.intraday && it.intraday.length ? it.intraday[it.intraday.length - 1].time : null,
+        };
+    });
+    return out;
+}
+
+// 模擬資料：以代號為種子的隨機漫步，同一代號每次產生相同走勢
+const SIM_BASE = { TAIEX: 46000, "0050": 107, "2330": 2400, "2454": 4200, "2317": 210 };
+const SIM_NAMES = { TAIEX: "加權指數", "0050": "元大台灣50", "2330": "台積電", "2454": "聯發科", "2317": "鴻海" };
+
+function seededRandom(seed) {
+    let s = 0;
+    for (const ch of String(seed)) s = (s * 31 + ch.charCodeAt(0)) >>> 0;
+    return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+function simulate(code) {
+    const rand = seededRandom(code);
+    let price = SIM_BASE[code] || 50 + rand() * 150;
+    const candles = [];
+    const day = new Date();
+    day.setDate(day.getDate() - 130);
+    while (candles.length < 90) {
+        day.setDate(day.getDate() + 1);
+        if (day.getDay() === 0 || day.getDay() === 6) continue;
+        const open = price * (1 + (rand() - 0.5) * 0.012);
+        const close = open * (1 + (rand() - 0.48) * 0.035);
+        const high = Math.max(open, close) * (1 + rand() * 0.012);
+        const low = Math.min(open, close) * (1 - rand() * 0.012);
+        candles.push({
+            time: day.toISOString().slice(0, 10),
+            open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2),
+            volume: Math.round((5000 + rand() * 30000) * 1000),
+        });
+        price = close;
+    }
+    const kd = calcKD(candles);
+    const last = candles[candles.length - 1], prev = candles[candles.length - 2];
+    const change = +(last.close - prev.close).toFixed(2);
+    return {
+        name: SIM_NAMES[code] || `模擬 ${code}`, price: last.close, change,
+        change_pct: +(change / prev.close * 100).toFixed(2),
+        candles: candles.slice(-80), k: kd.k.slice(-80), d: kd.d.slice(-80), quoteTime: null,
+    };
+}
+
+let refreshTimer = null, refreshSeq = 0;
+
+async function refresh() {
+    const seq = ++refreshSeq;
+    clearTimeout(refreshTimer);
+    const codes = [...new Set([INDEX_SYMBOL, "0050", state.selected])];
+    let data = null;
+    if (apiAvailable) {
+        try { data = await fetchLive(codes); } catch (e) { data = null; }
+    }
+    if (seq !== refreshSeq) return;
+
+    if (data && data[INDEX_SYMBOL]) {
+        state.source = "live";
+    } else {
+        state.source = "sim";
+        data = Object.fromEntries(codes.map(c => [c, simulate(c)]));
+    }
+    state.index = data[INDEX_SYMBOL];
+    codes.filter(c => c !== INDEX_SYMBOL).forEach(c => { if (data[c]) state.stocks[c] = data[c]; });
+    if (!data[state.selected]) state.stocks[state.selected] = null;  // 查無此代號
+
+    renderAll();
+    // 沒有後端時資料固定，不必刷新；有後端時持續刷新 (後端暫時斷線也會在恢復後接回即時資料)
+    if (apiAvailable) refreshTimer = setTimeout(refresh, REFRESH_MS);
+}
+
+// ===================== 畫面 =====================
+const fmt = (v, digits = 2) => (typeof v === "number" ? v.toLocaleString("zh-TW", { minimumFractionDigits: digits, maximumFractionDigits: digits }) : "—");
+const colorOf = v => (v > 0 ? "up" : v < 0 ? "down" : "flat");
+const signed = v => (v > 0 ? "+" : "") + fmt(v);
+
+function renderAll() {
+    renderHeader();
+    renderDecision();
+    renderKdChart();
+    renderStock();
+}
+
+function renderHeader() {
+    const badge = document.getElementById("sourceBadge");
+    if (state.sandbox) { badge.className = "source sandbox"; badge.textContent = "🧪 沙盒模式"; }
+    else if (state.source === "live") { badge.className = "source live"; badge.textContent = "● 即時資料 (Yahoo 約延遲 20 分鐘)"; }
+    else { badge.className = "source sim"; badge.textContent = "◐ 模擬資料 (未連接後端；本機執行 run.bat 後開 http://127.0.0.1:5000/dashboard 可看即時資料)"; }
+
+    let txt = `更新 ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
+    const qt = state.index && state.index.quoteTime;
+    if (qt) {
+        const t = new Date(qt * 1000);  // 後端已 +8 小時，以 UTC 讀出即為台北時間
+        txt += ` ｜ 報價時間 ${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`;
+    }
+    if (state.source === "live" && apiAvailable) txt += " ｜ 每 10 秒自動更新";
+    document.getElementById("updatedAt").textContent = txt;
+
+    const idx = state.index;
+    document.getElementById("indexQuote").innerHTML = idx
+        ? `${idx.name} <span class="${colorOf(idx.change)}">${fmt(idx.price)} (${signed(idx.change)} / ${signed(idx.change_pct)}%)</span>`
+        : "";
+}
+
+function renderDecision() {
+    const kd = currentKD();
+    if (!kd) return;
+    const r = decide(kd.k, kd.d, kd.prevK, kd.prevD);
+
+    const box = document.getElementById("decision");
+    box.className = `decision ${r.level}`;
+    document.getElementById("signalText").textContent = r.text;
+    document.getElementById("signalWhy").textContent = r.why;
+    document.getElementById("statK").textContent = kd.k.toFixed(2);
+    document.getElementById("statD").textContent = kd.d.toFixed(2);
+
+    const cross = document.getElementById("statCross");
+    if (r.golden)      { cross.textContent = "黃金交叉"; cross.className = "value up"; }
+    else if (r.death)  { cross.textContent = "死亡交叉"; cross.className = "value down"; }
+    else               { cross.textContent = kd.k > kd.d ? "K 在 D 上" : "K 在 D 下"; cross.className = "value"; }
+
+    const etf = state.stocks["0050"];
+    document.getElementById("stat0050").innerHTML = etf
+        ? `<span class="${colorOf(etf.change)}">${fmt(etf.price)}</span>` : "—";
+
+    document.querySelectorAll("#rules li").forEach(li => li.classList.toggle("active", li.dataset.rule === r.level));
+
+    const warn = document.getElementById("warning");
+    warn.className = `warning ${r.warning || ""}`;
+    if (r.warning === "buy-prep") {
+        document.getElementById("warnIcon").textContent = "🟡";
+        document.getElementById("warnText").textContent = `超跌預警：大盤 K 值 ${kd.k.toFixed(1)} < ${KD_WARN_LOW}，準備買進 0050`;
+        document.getElementById("warnDetail").textContent = `K < ${KD_BUY} 觸發買進；若同時出現黃金交叉為強烈買進`;
+    } else if (r.warning === "sell-prep") {
+        document.getElementById("warnIcon").textContent = "🔥";
+        document.getElementById("warnText").textContent = `過熱警示：大盤 K 值 ${kd.k.toFixed(1)} > ${KD_WARN_HIGH}，留意 0050 停利`;
+        document.getElementById("warnDetail").textContent = `K > ${KD_SELL} 觸發賣出；若同時出現死亡交叉為強烈賣出`;
+    }
+}
+
+// ----- 大盤 KD 圖 (Chart.js) -----
+let kdChart = null;
+
+function renderKdChart() {
+    const idx = state.index;
+    if (!idx || typeof Chart === "undefined") return;
+    const labels = idx.candles.map(c => c.time.slice(5));
+    const k = idx.k.slice(), d = idx.d.slice();
+    if (state.sandbox) {
+        k[k.length - 2] = state.sandboxPrevK; d[d.length - 2] = state.sandboxPrevD;
+        k[k.length - 1] = state.sandboxK; d[d.length - 1] = state.sandboxD;
+    }
+    const flat = v => labels.map(() => v);
+    const line = (label, data, color, dash = [], width = 1) => ({
+        label, data, borderColor: color, borderWidth: width, borderDash: dash,
+        pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0,
+    });
+
+    const datasets = [
+        { label: "K", data: k, borderColor: "#a78bfa", borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25 },
+        { label: "D", data: d, borderColor: "#f472b6", borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: 0.25 },
+        line("80 賣出門檻", flat(KD_SELL), "#ef4444", [], 1.5),
+        line("78 過熱預警", flat(KD_WARN_HIGH), "rgba(248, 113, 113, 0.75)", [6, 4]),
+        line("22 超跌預警", flat(KD_WARN_LOW), "rgba(251, 191, 36, 0.85)", [6, 4]),
+        line("20 買進門檻", flat(KD_BUY), "#22c55e", [], 1.5),
+    ];
+    // 最新一點以大圓點標示
+    datasets[0].pointRadius = k.map((_, i) => (i === k.length - 1 ? 5 : 0));
+    datasets[0].pointBackgroundColor = "#a78bfa";
+
+    if (kdChart) {
+        kdChart.data.labels = labels;
+        kdChart.data.datasets.forEach((ds, i) => Object.assign(ds, datasets[i]));
+        kdChart.update("none");
+        return;
+    }
+    kdChart = new Chart(document.getElementById("kdChart"), {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+                y: { min: 0, max: 100, ticks: { color: "#94a3b8", stepSize: 20 }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
+                x: { ticks: { color: "#94a3b8", maxTicksLimit: 10 }, grid: { display: false } },
+            },
+            plugins: {
+                legend: { labels: { color: "#cbd5e1", boxWidth: 14, font: { size: 11 } } },
+                tooltip: { filter: item => item.datasetIndex < 2 },
+            },
+        },
+    });
+}
+
+// ----- 個股 K 線 (Canvas) -----
+function renderStock() {
+    document.querySelectorAll("#stockBar .chip").forEach(b => b.classList.toggle("active", b.dataset.code === state.selected));
+    const s = state.stocks[state.selected];
+    const quote = document.getElementById("stockQuote");
+    if (!s) {
+        quote.innerHTML = `<span class="flat">查無 ${state.selected} 的資料，請確認代號</span>`;
+        drawCandles(null);
+        return;
+    }
+    quote.innerHTML = `${s.name} (${state.selected})<span class="px ${colorOf(s.change)}">${fmt(s.price)}</span>
+        <span class="${colorOf(s.change)}">${signed(s.change)} (${signed(s.change_pct)}%)</span>`;
+    drawCandles(s.candles.slice(-CANDLE_DAYS));
+}
+
+function drawCandles(candles) {
+    const canvas = document.getElementById("candleCanvas");
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+    canvas._candles = candles;
+    if (!candles || candles.length === 0) return;
+
+    const css = getComputedStyle(document.documentElement);
+    const UP = css.getPropertyValue("--up").trim(), DOWN = css.getPropertyValue("--down").trim();
+    const pad = { l: 8, r: 64, t: 10, b: 24 };
+    const plotW = W - pad.l - pad.r;
+    const priceH = (H - pad.t - pad.b) * 0.72;
+    const volTop = pad.t + priceH + 10;
+    const volH = H - pad.b - volTop;
+    const slot = plotW / candles.length;
+    const bodyW = Math.max(1, slot * 0.62);
+
+    const ma5 = movingAverage(candles, 5), ma20 = movingAverage(candles, 20);
+    let hi = Math.max(...candles.map(c => c.high)), lo = Math.min(...candles.map(c => c.low));
+    const span = (hi - lo) || hi * 0.01;
+    hi += span * 0.06; lo -= span * 0.06;
+    const maxVol = Math.max(...candles.map(c => c.volume || 0)) || 1;
+    const y = p => pad.t + (hi - p) / (hi - lo) * priceH;
+    const x = i => pad.l + slot * i + slot / 2;
+
+    // 價格格線與座標
+    ctx.font = "11px sans-serif";
+    ctx.textBaseline = "middle";
+    for (let i = 0; i <= 4; i++) {
+        const p = lo + (hi - lo) * i / 4, yy = y(p);
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W - pad.r, yy); ctx.stroke();
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText(fmt(p), W - pad.r + 6, yy);
+    }
+    ctx.fillText(`量 ${fmt(maxVol / 1000, 0)}`, W - pad.r + 6, volTop + 6);
+
+    // K 棒與成交量：收 ≥ 開為紅，收 < 開為綠
+    candles.forEach((c, i) => {
+        const color = c.close >= c.open ? UP : DOWN;
+        const cx = x(i);
+        ctx.strokeStyle = color;
+        ctx.beginPath(); ctx.moveTo(cx, y(c.high)); ctx.lineTo(cx, y(c.low)); ctx.stroke();
+        const top = y(Math.max(c.open, c.close));
+        const h = Math.max(1, Math.abs(y(c.open) - y(c.close)));
+        ctx.fillStyle = color;
+        ctx.fillRect(cx - bodyW / 2, top, bodyW, h);
+        const vh = (c.volume || 0) / maxVol * volH;
+        ctx.globalAlpha = 0.55;
+        ctx.fillRect(cx - bodyW / 2, volTop + volH - vh, bodyW, vh);
+        ctx.globalAlpha = 1;
+    });
+
+    // 均線
+    [[ma5, "#f59e0b"], [ma20, "#38bdf8"]].forEach(([ma, color]) => {
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+        let started = false;
+        ma.forEach((v, i) => {
+            if (v === null) return;
+            started ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v));
+            started = true;
+        });
+        ctx.stroke(); ctx.lineWidth = 1;
+    });
+    ctx.fillStyle = "#f59e0b"; ctx.fillText("MA5", pad.l + 4, pad.t + 6);
+    ctx.fillStyle = "#38bdf8"; ctx.fillText("MA20", pad.l + 40, pad.t + 6);
+
+    // 日期
+    ctx.fillStyle = "#94a3b8";
+    ctx.textBaseline = "alphabetic";
+    const step = Math.ceil(candles.length / 6);
+    candles.forEach((c, i) => { if (i % step === 0) ctx.fillText(c.time.slice(5), x(i) - 14, H - 6); });
+
+    // 十字線與資訊框
+    const hIdx = state.hoverIndex;
+    if (hIdx !== null && candles[hIdx]) {
+        const c = candles[hIdx], cx = x(hIdx);
+        ctx.strokeStyle = "rgba(226, 232, 240, 0.4)";
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(cx, pad.t); ctx.lineTo(cx, H - pad.b); ctx.stroke();
+        ctx.setLineDash([]);
+        const lines = [c.time, `開 ${fmt(c.open)}`, `高 ${fmt(c.high)}`, `低 ${fmt(c.low)}`, `收 ${fmt(c.close)}`, `量 ${fmt((c.volume || 0) / 1000, 0)} 張`];
+        const bw = 118, bh = lines.length * 16 + 10;
+        const bx = cx + bw + 12 > W - pad.r ? cx - bw - 10 : cx + 10;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.fillRect(bx, pad.t + 4, bw, bh);
+        ctx.strokeStyle = "#2a3654"; ctx.strokeRect(bx, pad.t + 4, bw, bh);
+        ctx.fillStyle = "#e2e8f0";
+        lines.forEach((t, i) => ctx.fillText(t, bx + 8, pad.t + 22 + i * 16));
+    }
+}
+
+// ===================== 互動 =====================
+document.getElementById("candleCanvas").addEventListener("mousemove", e => {
+    const canvas = e.currentTarget, candles = canvas._candles;
+    if (!candles) return;
+    const rect = canvas.getBoundingClientRect();
+    const plotW = rect.width - 8 - 64;
+    const i = Math.floor((e.clientX - rect.left - 8) / (plotW / candles.length));
+    const next = i >= 0 && i < candles.length ? i : null;
+    if (next !== state.hoverIndex) { state.hoverIndex = next; drawCandles(candles); }
+});
+document.getElementById("candleCanvas").addEventListener("mouseleave", e => {
+    state.hoverIndex = null; drawCandles(e.currentTarget._candles);
+});
+
+function selectStock(code) {
+    state.selected = code;
+    state.hoverIndex = null;
+    if (state.stocks[code]) renderStock();
+    else document.getElementById("stockQuote").textContent = `載入 ${code} 中…`;
+    refresh();
+}
+
+document.querySelectorAll("#stockBar .chip").forEach(b => b.addEventListener("click", () => selectStock(b.dataset.code)));
+document.getElementById("customForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const code = document.getElementById("customCode").value.trim().toUpperCase();
+    if (!/^[0-9A-Z]{4,6}$/.test(code)) { alert("請輸入 4~6 碼台股代號，例如 2603 或 00878"); return; }
+    selectStock(code);
+});
+
+// 沙盒
+const SANDBOX_SLIDERS = [  // [state 欄位, 滑桿 id, 顯示 id]
+    ["sandboxK", "sliderK", "outK"],
+    ["sandboxD", "sliderD", "outD"],
+    ["sandboxPrevK", "sliderPK", "outPK"],
+    ["sandboxPrevD", "sliderPD", "outPD"],
+];
+
+function setSandbox(values) {  // values: [K, D, 前日K, 前日D]
+    SANDBOX_SLIDERS.forEach(([key, sliderId, outId], i) => {
+        state[key] = +values[i];
+        document.getElementById(sliderId).value = values[i];
+        document.getElementById(outId).textContent = (+values[i]).toFixed(1);
+    });
+    if (state.sandbox) { renderHeader(); renderDecision(); renderKdChart(); }
+}
+
+const sliderValues = () => SANDBOX_SLIDERS.map(([, sliderId]) => document.getElementById(sliderId).value);
+
+document.getElementById("sandboxOn").addEventListener("change", e => {
+    state.sandbox = e.target.checked;
+    document.getElementById("sandboxControls").classList.toggle("disabled", !state.sandbox);
+    const idx = state.index;
+    // 開啟時以目前實際的最新兩天 K / D 作為起點
+    if (state.sandbox && idx && idx.k.length >= 2) {
+        const n = idx.k.length;
+        setSandbox([idx.k[n - 1], idx.d[n - 1], idx.k[n - 2], idx.d[n - 2]]);
+    }
+    renderHeader(); renderDecision(); renderKdChart();
+});
+SANDBOX_SLIDERS.forEach(([, sliderId]) => document.getElementById(sliderId).addEventListener("input", () => setSandbox(sliderValues())));
+document.querySelectorAll(".presets .chip").forEach(b => b.addEventListener("click", () => {
+    setSandbox([b.dataset.k, b.dataset.d, b.dataset.pk, b.dataset.pd]);
+}));
+
+window.addEventListener("resize", () => {
+    const s = state.stocks[state.selected];
+    if (s) drawCandles(s.candles.slice(-CANDLE_DAYS));
+});
+
+refresh();
+</script>
+</body>
+</html>
