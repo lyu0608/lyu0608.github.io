@@ -34,7 +34,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-    /* 關鍵修復：強制讓 hidden 最高優先權隱藏，避免 Modal 預設平鋪露出 */
+    /* 最高優先權隱藏，避免 Modal 預設平鋪露出 */
     .hidden { display: none !important; }
 
     body {
@@ -154,8 +154,6 @@
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
     .btn-danger { background: var(--danger); color: #fff; }
-    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
-
     .btn-guest {
       background: #f1f5f9;
       color: var(--text);
@@ -372,6 +370,7 @@
       gap: 5px;
     }
 
+    /* 選項列表與英中對照樣式 */
     .options-grid { display: grid; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
     .option-btn {
       display: flex;
@@ -412,6 +411,16 @@
       font-size: 12px;
       font-weight: 600;
       color: #2563eb;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .opt-sub-kk {
+      font-size: 11px;
+      font-weight: normal;
+      color: #64748b;
+      font-family: inherit;
     }
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.correct .opt-sub-text { color: #15803d; }
@@ -466,7 +475,7 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* ★ 關鍵樣式：彈窗遮罩與卡片樣式 */
+    /* 彈窗遮罩與卡片樣式 */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -692,7 +701,7 @@
 </div>
 
 <!-- ========================================== -->
-<!-- ★ 彈窗集中放置區 (預設全數包覆 hidden 類別) -->
+<!-- 彈窗集中放置區 (預設全數包覆 hidden 類別) -->
 <!-- ========================================== -->
 
 <!-- 1. 👥 免密碼切換學員彈窗 -->
@@ -743,10 +752,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
+        <div class="history-tag">v3.3.0 - 選項英中對照強化與 KK 音標全面整合</div>
         <div class="history-desc">
           <ul>
-            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照，方便同時複習其他干擾項的字義。</li>
+            <li><b>作答後 KK 音標呈現：</b>作答後所有選項展開英中雙語，並附帶對應單字的 KK 音標。</li>
+            <li><b>彈窗 CSS 優先權修復：</b>加強 `.hidden` 與 `.modal-overlay` 樣式層級，解決頁面載入時彈窗錯誤展開問題。</li>
           </ul>
         </div>
       </div>
@@ -1520,7 +1530,7 @@ let currentQuizType = "wordDef";
 
 let speechKeepAliveTimer = null;
 
-// 快速字典緩存表
+// 快速字典緩存表 (英文轉項目、中文轉項目)
 let VOCAB_MAP_EN = {};
 let VOCAB_MAP_ZH = {};
 
@@ -1739,14 +1749,17 @@ function createClozeSentence(sentence, targetWord) {
   return { masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`, hasReplaced: false };
 }
 
-function lookupTranslation(text, fromType) {
-  if (!text) return "";
+// 輔助函式：根據英文或中文查詢項目資訊 (包含 KK 音標)
+function lookupWordDetail(text, fromType) {
+  if (!text) return { zh: "", en: "", kk: "" };
   if (fromType === "en") {
     const clean = text.trim().toLowerCase();
-    return VOCAB_MAP_EN[clean] ? VOCAB_MAP_EN[clean].zh : "";
+    const item = VOCAB_MAP_EN[clean];
+    return item ? { zh: item.zh || "", en: item.en || "", kk: item.kk || "" } : { zh: "", en: text, kk: "" };
   } else {
     const clean = text.trim();
-    return VOCAB_MAP_ZH[clean] ? VOCAB_MAP_ZH[clean].en : "";
+    const item = VOCAB_MAP_ZH[clean];
+    return item ? { zh: item.zh || "", en: item.en || "", kk: item.kk || "" } : { zh: text, en: "", kk: "" };
   }
 }
 
@@ -1799,6 +1812,7 @@ function renderQuestion() {
   const cur = currentTestQueue[currentIndex];
   const examTagEl = document.getElementById("examSourceTag");
 
+  // 統一選項結構：{ primaryText, subText, subKk, targetValue }
   let options = [];
   let answerTarget = "";
 
@@ -1818,6 +1832,7 @@ function renderQuestion() {
     options = shuffle(listenData.options.map(opt => ({
       primaryText: opt.en,
       subText: opt.zh,
+      subKk: "",
       targetValue: opt.en
     })));
 
@@ -1850,11 +1865,15 @@ function renderQuestion() {
     }
 
     const fullRawOpts = [cur.en, ...distStrs];
-    options = shuffle(fullRawOpts.map(wordEn => ({
-      primaryText: wordEn,
-      subText: lookupTranslation(wordEn, "en"),
-      targetValue: wordEn
-    })));
+    options = shuffle(fullRawOpts.map(wordEn => {
+      const detail = lookupWordDetail(wordEn, "en");
+      return {
+        primaryText: wordEn,
+        subText: detail.zh,
+        subKk: detail.kk, // KK 音標
+        targetValue: wordEn
+      };
+    }));
 
     document.getElementById("wordKk").innerText = `[/ 歷屆真題語境 /]`;
 
@@ -1871,13 +1890,18 @@ function renderQuestion() {
     const distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
     const fullRawOpts = [cur.en, ...distStrs];
     
-    options = shuffle(fullRawOpts.map(wordEn => ({
-      primaryText: wordEn,
-      subText: lookupTranslation(wordEn, "en"),
-      targetValue: wordEn
-    })));
+    options = shuffle(fullRawOpts.map(wordEn => {
+      const detail = lookupWordDetail(wordEn, "en");
+      return {
+        primaryText: wordEn,
+        subText: detail.zh,
+        subKk: detail.kk, // KK 音標
+        targetValue: wordEn
+      };
+    }));
 
   } else {
+    // 🔤 單字識義題 (題目為英文，選項初始為中文，作答後顯示英文與 KK 音標)
     audioBox.classList.add("hidden");
     soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
@@ -1892,6 +1916,7 @@ function renderQuestion() {
     options = shuffle(fullItems.map(item => ({
       primaryText: item.zh,
       subText: item.en,
+      subKk: item.kk || "", // KK 音標
       targetValue: item.zh
     })));
   }
@@ -1908,6 +1933,7 @@ function renderQuestion() {
     btn.className = "option-btn";
     btn.dataset.target = optObj.targetValue;
     btn.dataset.sub = optObj.subText || "";
+    btn.dataset.kk = optObj.subKk || "";
 
     btn.innerHTML = `
       <span class="opt-key">${keys[idx]}</span>
@@ -1927,11 +1953,23 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
 
   const buttons = document.querySelectorAll(".option-btn");
   
+  // ★ 答題後：展開所有選項的英中對照文本與 KK 音標
   buttons.forEach(b => {
     const subEl = b.querySelector(".opt-sub-text");
-    if (subEl && b.dataset.sub) {
+    if (subEl && (b.dataset.sub || b.dataset.kk)) {
       const isWordDef = (currentQuizType === "wordDef");
-      subEl.innerText = isWordDef ? `[ ${b.dataset.sub} ]` : `(${b.dataset.sub})`;
+      const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
+
+      if (isWordDef) {
+        // 單字識義題：[ 英文 ] + KK音標
+        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted}`;
+      } else if (currentQuizType === "listen") {
+        // 聽力題：( 中文語意 )
+        subEl.innerHTML = `<span>( ${b.dataset.sub} )</span>`;
+      } else {
+        // 填空/真題：KK音標 + ( 中文 )
+        subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span>`;
+      }
       subEl.classList.remove("hidden");
     }
 
