@@ -941,7 +941,6 @@ if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
 let currentUser = null;
 let isGuest = false;
 
-// 預設完整的資料結構 (包含 stats 即時累計計數器)
 function getDefaultStore() {
   return {
     history: {},
@@ -1007,7 +1006,6 @@ async function syncFromCloud() {
   }
 }
 
-// 雲端同步節流計時器
 let syncDebounceTimer = null;
 function triggerAutoSync() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
@@ -1026,16 +1024,18 @@ async function syncToCloud() {
 
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
+    const payload = {
+      user_id: currentUser.id,
+      email: currentUser.email,
+      history: userStore.history,
+      mistakes: userStore.mistakes,
+      updated_at: new Date().toISOString()
+    };
+    if (userStore.stats) payload.stats = userStore.stats;
+
     await supabaseClient
       .from('user_progress')
-      .upsert({
-        user_id: currentUser.id,
-        email: currentUser.email,
-        history: userStore.history,
-        mistakes: userStore.mistakes,
-        stats: userStore.stats, // 將即時題型統計一併寫入
-        updated_at: new Date().toISOString()
-      });
+      .upsert(payload);
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   } catch (err) {
     document.getElementById("syncStatus").innerText = "⚠️ 本地暫存中";
@@ -1128,7 +1128,7 @@ async function handleLogout() {
 }
 
 // ========================================================
-// 管理者後台學習進度總覽 (修復：即時累計答題數呈現)
+// 管理者後台學習進度總覽 (以 select('*') 容錯讀取)
 // ========================================================
 function toggleAdminModal(show) {
   const modal = document.getElementById("adminDashboardModal");
@@ -1149,7 +1149,7 @@ async function fetchAdminAllProgress() {
   try {
     const { data, error } = await supabaseClient
       .from('user_progress')
-      .select('user_id, email, history, mistakes, stats, updated_at')
+      .select('*')
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -1173,7 +1173,6 @@ async function fetchAdminAllProgress() {
       let completedDaysSet = new Set();
       let maxCycleDays = 30;
 
-      // 題型統計載體
       const typeStats = {
         wordDef: { total: 0, correct: 0 },
         cloze: { total: 0, correct: 0 },
@@ -1184,13 +1183,11 @@ async function fetchAdminAllProgress() {
       let overallTotal = 0;
       let overallCorrect = 0;
 
-      // 計算天數分母
       Object.entries(history).forEach(([key, item]) => {
         if (item.cycleDays) maxCycleDays = item.cycleDays;
         if (key.startsWith("Day_")) completedDaysSet.add(key);
       });
 
-      // ★ 優先讀取即時累加器 stats；若為舊紀錄則回退從 history 計算
       if (stats && stats.totalQ !== undefined) {
         overallTotal = stats.totalQ || 0;
         overallCorrect = stats.totalCorrect || 0;
@@ -1217,7 +1214,6 @@ async function fetchAdminAllProgress() {
         });
       }
 
-      // 錯題量依題型細分統計
       const mistakeTypeCount = { wordDef: 0, cloze: 0, exam: 0, listen: 0 };
       mistakes.forEach(m => {
         const mt = m.quizType || "wordDef";
@@ -1439,16 +1435,18 @@ async function executeClearRecords() {
     localStorage.removeItem("local_vocab_progress");
     saveKnownUser(currentUser, null, userStore);
 
+    const payload = {
+      user_id: currentUser.id,
+      email: currentUser.email,
+      history: {},
+      mistakes: [],
+      updated_at: new Date().toISOString()
+    };
+    if (userStore.stats) payload.stats = userStore.stats;
+
     await supabaseClient
       .from('user_progress')
-      .upsert({
-        user_id: currentUser.id,
-        email: currentUser.email,
-        history: {},
-        mistakes: [],
-        stats: userStore.stats,
-        updated_at: new Date().toISOString()
-      });
+      .upsert(payload);
 
     updateMistakeCount();
     initDaySelector();
@@ -1834,7 +1832,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
 
   const isCorrect = (selectedText === answerTarget);
 
-  // ★ 即時累積答題計數器 (每答一題立即計入 stats)
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   userStore.stats.totalQ = (userStore.stats.totalQ || 0) + 1;
   if (!userStore.stats[currentQuizType]) {
@@ -1855,7 +1852,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     btn.classList.add("wrong");
     wrongCount++;
     
-    // 錯題本記錄題型
     const mistakeRecord = currentQuizType === "listen" 
       ? { ...item, quizType: "listen", id: item.scriptEn }
       : { ...item, quizType: currentQuizType };
@@ -1872,7 +1868,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     }
   }
 
-  // 每答一題即刻觸發自動背景儲存 (有防抖節流)，確保作答題數隨時最新！
   triggerAutoSync();
 
   const zhHintEl = document.getElementById("clozeZhHint");
