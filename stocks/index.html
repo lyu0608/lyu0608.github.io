@@ -99,6 +99,20 @@
     .fav-btn { background: var(--card-2); color: var(--gold); border: 1px solid var(--border); border-radius: 8px; padding: 4px 12px; cursor: pointer; font-size: 13px; }
     .fav-btn.on { border-color: var(--gold); }
 
+    /* 自選單同步 */
+    .sync-btn { background: var(--card-2); color: var(--sub); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+    .sync-btn.on { color: #86efac; border-color: rgba(34, 197, 94, 0.5); }
+    .sync-btn.err { color: var(--gold); border-color: var(--gold); }
+    .sync-panel { background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; font-size: 13px; }
+    .sync-panel p { margin-bottom: 8px; color: var(--sub); }
+    .sync-panel .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+    .sync-panel code { font-size: 15px; font-weight: 700; color: var(--text); background: var(--bg); padding: 2px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+    .sync-panel input { flex: 1; min-width: 200px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; }
+    .sync-panel button { background: var(--accent); color: #0b1120; border: none; border-radius: 8px; padding: 5px 12px; font-weight: 700; cursor: pointer; }
+    .sync-panel button.secondary { background: none; color: var(--sub); border: 1px solid var(--border); font-weight: normal; }
+    .sync-panel .status { margin-top: 8px; font-size: 12px; color: var(--sub); }
+    .sync-panel .status.err { color: var(--gold); }
+
     /* 版本紀錄 */
     .ver { font-size: 12px; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: 1px 8px; vertical-align: middle; }
     .release { border-left: 3px solid var(--border); padding: 4px 0 10px 14px; margin-left: 4px; }
@@ -114,7 +128,7 @@
     .service { background: rgba(96, 165, 250, 0.12); color: #bfdbfe; border-radius: 6px; padding: 1px 8px; }
     .service.none { background: none; color: var(--sub); padding: 0; }
     .custom { display: flex; gap: 6px; }
-    .custom input { width: 110px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; }
+    .custom input { width: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; }
     .custom button { background: var(--accent); color: #0b1120; border: none; border-radius: 8px; padding: 4px 12px; font-weight: 700; cursor: pointer; }
     .quote { font-size: 14px; margin-bottom: 6px; }
     .quote .px { font-size: 22px; font-weight: 800; margin: 0 8px; }
@@ -190,7 +204,9 @@
                 <datalist id="stockNames"></datalist>
                 <button type="submit">看盤</button>
             </form>
+            <button type="button" class="sync-btn" id="syncBtn" title="自選單跨裝置同步">☁ 同步</button>
         </div>
+        <div class="sync-panel" id="syncPanel" hidden></div>
         <div class="quote-row">
             <div class="quote" id="stockQuote">—</div>
             <button class="fav-btn" id="favBtn" type="button" hidden></button>
@@ -256,6 +272,11 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.6.0", date: "2026-10-19", scope: "儀表板",
+      changes: ["自選單跨裝置同步：按「☁ 同步」建立同步碼，其他裝置輸入同一組碼即共用自選單",
+                "修改時立即上傳，載入或切回頁面時下載；離線修改會在恢復連線後補上傳",
+                "雲端只存同步碼的雜湊值，不存同步碼本身"],
+      services: ["Cloudflare Workers KV (自選單儲存，經 tw-quote Worker 讀寫)"] },
     { ver: "v2.5.0", date: "2026-10-19", scope: "儀表板",
       changes: ["個股看盤可用公司名稱查詢：輸入時出現下拉選單 (例如輸入「台積」出現「2330 台積電」)，也可輸入完整或部分名稱",
                 "部分名稱符合多檔時列出候選；名稱清單快取在瀏覽器一天",
@@ -975,21 +996,188 @@ function selectStock(code) {
 const saveWatchlist = () => cacheSet(WATCHLIST_KEY, watchlist);
 const inWatchlist = code => watchlist.some(w => w.code === code);
 
+// 使用者修改自選單：存本機並上傳雲端 (有設定同步時)
+function watchlistChanged() {
+    saveWatchlist();
+    pushWatchlist();
+}
+
 function addToWatchlist(code, name) {
     if (inWatchlist(code)) return;
     if (watchlist.length >= WATCHLIST_MAX) { alert(`自選最多 ${WATCHLIST_MAX} 檔，請先移除部分股票`); return; }
     watchlist.push({ code, name: name || "" });
-    saveWatchlist();
+    watchlistChanged();
     renderWatchlist();
     renderStock();
 }
 
 function removeFromWatchlist(code) {
     watchlist = watchlist.filter(w => w.code !== code);
-    saveWatchlist();
+    watchlistChanged();
     renderWatchlist();
     renderStock();
 }
+
+// ----- 自選單跨裝置同步 (Cloudflare Worker + Workers KV) -----
+// 各裝置輸入同一組同步碼即共用一份自選單；修改時立即上傳，載入頁面或切回頁面時下載。
+// 本機有未上傳的修改 (dirty) 時以本機為準，否則以雲端為準。
+const SYNC_URL = REALTIME_WORKER_URL ? `${REALTIME_WORKER_URL}/watchlist` : null;
+const SYNC_STATE_KEY = "kd_dashboard_sync";
+const SYNC_KEY_PATTERN = /^[A-Za-z0-9-]{16,64}$/;
+
+function loadSyncState() {
+    const saved = cacheGet(SYNC_STATE_KEY);
+    return saved && SYNC_KEY_PATTERN.test(saved.key || "")
+        ? saved : { key: null, dirty: false, lastSync: 0 };
+}
+
+let sync = loadSyncState();
+let syncError = null;
+const saveSyncState = () => cacheSet(SYNC_STATE_KEY, sync);
+
+function generateSyncKey() {  // 20 個隨機字元 (排除易混淆的 0/O/1/l/I)，每 4 碼一段
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(20));
+    return [...bytes].map(b => chars[b % chars.length]).join("").match(/.{4}/g).join("-");
+}
+
+async function syncRequest(method, body) {
+    const headers = { "X-Sync-Key": sync.key };
+    if (body) headers["Content-Type"] = "application/json";
+    const res = await fetch(SYNC_URL, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+}
+
+async function pushWatchlist() {
+    if (!sync.key || !SYNC_URL) return;
+    sync.dirty = true;
+    saveSyncState();
+    try {
+        const r = await syncRequest("PUT", { watchlist });
+        sync.dirty = false;
+        sync.lastSync = r.updatedAt;
+        syncError = null;
+    } catch (e) {
+        syncError = `上傳失敗：${e.message}（下次開啟頁面會再試）`;
+    }
+    saveSyncState();
+    renderSyncPanel();
+}
+
+async function pullWatchlist() {
+    if (!sync.key || !SYNC_URL) return;
+    if (sync.dirty) return pushWatchlist();
+    try {
+        const r = await syncRequest("GET");
+        if (!Array.isArray(r.watchlist)) return pushWatchlist();  // 雲端還沒有資料：上傳本機
+        if (r.updatedAt !== sync.lastSync) {
+            watchlist = r.watchlist;
+            saveWatchlist();
+            renderWatchlist();
+            renderStock();
+        }
+        sync.lastSync = r.updatedAt;
+        syncError = null;
+    } catch (e) {
+        syncError = `下載失敗：${e.message}`;
+    }
+    saveSyncState();
+    renderSyncPanel();
+}
+
+async function createSyncKey() {
+    sync = { key: generateSyncKey(), dirty: true, lastSync: 0 };
+    await pushWatchlist();
+}
+
+async function linkSyncKey(key) {
+    if (!SYNC_KEY_PATTERN.test(key)) { alert("同步碼格式不正確，請確認是否完整複製"); return; }
+    const previous = sync;
+    sync = { key, dirty: false, lastSync: 0 };
+    let cloud;
+    try { cloud = await syncRequest("GET"); }
+    catch (e) { sync = previous; alert(`無法連線同步服務：${e.message}`); renderSyncPanel(); return; }
+
+    if (Array.isArray(cloud.watchlist)) {
+        if (!confirm(`雲端自選單有 ${cloud.watchlist.length} 檔，將取代此裝置目前的自選單 (${watchlist.length} 檔)，確定連結？`)) {
+            sync = previous; renderSyncPanel(); return;
+        }
+        watchlist = cloud.watchlist;
+        sync.lastSync = cloud.updatedAt;
+        saveWatchlist();
+        saveSyncState();
+        renderWatchlist();
+        renderStock();
+        syncError = null;
+        renderSyncPanel();
+    } else {
+        if (!confirm("雲端沒有這組同步碼的資料（可能輸入錯誤）。要用此裝置的自選單建立嗎？")) {
+            sync = previous; renderSyncPanel(); return;
+        }
+        await pushWatchlist();
+    }
+}
+
+function unlinkSync() {
+    if (!confirm("此裝置將停止同步（自選單保留在此裝置，雲端資料不會刪除）。確定？")) return;
+    sync = { key: null, dirty: false, lastSync: 0 };
+    syncError = null;
+    saveSyncState();
+    renderSyncPanel();
+}
+
+function renderSyncPanel() {
+    const btn = document.getElementById("syncBtn");
+    btn.textContent = !sync.key ? "☁ 同步" : syncError ? "☁ 同步異常" : "☁ 已同步";
+    btn.classList.toggle("on", !!sync.key && !syncError);
+    btn.classList.toggle("err", !!sync.key && !!syncError);
+
+    const panel = document.getElementById("syncPanel");
+    if (panel.hidden) return;
+    if (!SYNC_URL) { panel.textContent = "未設定同步服務網址 (REALTIME_WORKER_URL)，無法同步。"; return; }
+
+    if (!sync.key) {
+        panel.innerHTML = `
+            <p>在每台裝置使用同一組「同步碼」，自選單就會自動同步。第一台裝置建立同步碼，其他裝置輸入同一組碼即可。</p>
+            <div class="row"><button type="button" id="syncCreate">建立新的同步碼</button></div>
+            <div class="row">
+                <input id="syncKeyInput" placeholder="輸入其他裝置的同步碼，例如 Ab3d-Ef5g-…" autocomplete="off">
+                <button type="button" id="syncLink">連結</button>
+            </div>`;
+        document.getElementById("syncCreate").onclick = createSyncKey;
+        document.getElementById("syncLink").onclick = () => linkSyncKey(document.getElementById("syncKeyInput").value.trim());
+        return;
+    }
+
+    const last = sync.lastSync ? new Date(sync.lastSync).toLocaleString("zh-TW", { hour12: false }) : "尚未同步";
+    panel.innerHTML = `
+        <p>此裝置的自選單已同步。在其他裝置按「☁ 同步」→ 輸入下面的同步碼即可共用。請像密碼一樣保管同步碼。</p>
+        <div class="row"><span>同步碼</span><code id="syncKeyText"></code></div>
+        <div class="row">
+            <button type="button" id="syncCopy">複製同步碼</button>
+            <button type="button" class="secondary" id="syncNow">立即同步</button>
+            <button type="button" class="secondary" id="syncUnlink">此裝置取消同步</button>
+        </div>
+        <div class="status${syncError ? " err" : ""}" id="syncStatusText"></div>`;
+    document.getElementById("syncKeyText").textContent = sync.key;
+    document.getElementById("syncStatusText").textContent = syncError || `最後同步：${last}`;
+    document.getElementById("syncCopy").onclick = async () => {
+        try { await navigator.clipboard.writeText(sync.key); document.getElementById("syncCopy").textContent = "已複製 ✓"; }
+        catch (e) { prompt("請手動複製同步碼：", sync.key); }
+    };
+    document.getElementById("syncNow").onclick = pullWatchlist;
+    document.getElementById("syncUnlink").onclick = unlinkSync;
+}
+
+document.getElementById("syncBtn").addEventListener("click", () => {
+    const panel = document.getElementById("syncPanel");
+    panel.hidden = !panel.hidden;
+    renderSyncPanel();
+});
+// 切回這個頁面時，下載其他裝置的修改
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pullWatchlist(); });
 
 function renderWatchlist() {
     const box = document.getElementById("watchlist");
@@ -1032,7 +1220,7 @@ function renderFavButton(s) {
     const item = watchlist.find(w => w.code === code);
     if (item && state.source !== "sim" && s.name && s.name !== code && item.name !== s.name) {
         item.name = s.name;
-        saveWatchlist();
+        watchlistChanged();
         renderWatchlist();
     }
 }
@@ -1184,6 +1372,8 @@ function renderVersionHistory() {
 
 renderWatchlist();
 renderVersionHistory();
+renderSyncPanel();
+pullWatchlist();
 refresh().then(loadStockNames);  // 等第一次載入確定有沒有後端，再決定名稱清單來源
 </script>
 </body>
