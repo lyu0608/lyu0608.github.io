@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>0050 KD 決策儀表板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 <style>
     :root {
         --bg: #0b1120;
@@ -204,7 +205,7 @@
                 <datalist id="stockNames"></datalist>
                 <button type="submit">看盤</button>
             </form>
-            <button type="button" class="sync-btn" id="syncBtn" title="自選單跨裝置同步">☁ 同步</button>
+            <button type="button" class="sync-btn" id="syncBtn" title="會員登入：自選單跟著帳號走">👤 登入</button>
         </div>
         <div class="sync-panel" id="syncPanel" hidden></div>
         <div class="quote-row">
@@ -272,11 +273,20 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.8.0", date: "2026-10-19", scope: "儀表板",
+      changes: ["網頁版支援上櫃股票 (例如 宜鼎 5289、矽瑪 3511)：名稱查詢、日 K 線、成交量與盤中即時價",
+                "上櫃名稱與日線改由 FinMind 取得 (櫃買中心會封鎖 Cloudflare，無法經 Worker 轉送)，與證交所請求共用限速佇列"],
+      services: ["FinMind API (TaiwanStockInfo 上櫃名稱、TaiwanStockPrice 上櫃日線，免費、允許跨網域)"] },
+    { ver: "v2.7.0", date: "2026-10-19", scope: "儀表板",
+      changes: ["會員登入 (Email + 密碼)：自選單跟著帳號走，在任何裝置登入同一帳號即共用",
+                "第一次登入時把此裝置的自選單帶進帳號；之後以帳號資料為準，修改即上傳、切回頁面即下載",
+                "取代 v2.6.0 的同步碼；Cloudflare Worker 只保留即時報價"],
+      services: ["Supabase (會員登入 Auth、自選單資料庫 Postgres + RLS)", "supabase-js 2.49.4 (jsDelivr CDN)"] },
     { ver: "v2.6.0", date: "2026-10-19", scope: "儀表板",
       changes: ["自選單跨裝置同步：按「☁ 同步」建立同步碼，其他裝置輸入同一組碼即共用自選單",
                 "修改時立即上傳，載入或切回頁面時下載；離線修改會在恢復連線後補上傳",
                 "雲端只存同步碼的雜湊值，不存同步碼本身"],
-      services: ["Cloudflare Workers KV (自選單儲存，經 tw-quote Worker 讀寫)"] },
+      services: ["Cloudflare Workers KV (自選單儲存，經 tw-quote Worker 讀寫；v2.7.0 起停用)"] },
     { ver: "v2.5.0", date: "2026-10-19", scope: "儀表板",
       changes: ["個股看盤可用公司名稱查詢：輸入時出現下拉選單 (例如輸入「台積」出現「2330 台積電」)，也可輸入完整或部分名稱",
                 "部分名稱符合多檔時列出候選；名稱清單快取在瀏覽器一天",
@@ -534,19 +544,8 @@ function parseTwse(json, isIndex) {
     })).filter(c => [c.open, c.high, c.low, c.close].every(Number.isFinite));  // 排除停牌 ("--")
 }
 
-async function fetchTwse(code) {
-    const isIndex = code === INDEX_SYMBOL;
-    const now = new Date();
-    const count = isIndex ? TWSE_MONTHS.index : TWSE_MONTHS.stock;
-    let name = isIndex ? "加權指數" : code;
-    const candles = [];
-    for (let i = count - 1; i >= 0; i--) {
-        const json = await twseMonth(code, yyyymm(new Date(now.getFullYear(), now.getMonth() - i, 1)));
-        candles.push(...parseTwse(json, isIndex));
-        const m = !isIndex && json && json.title && json.title.match(new RegExp(code + "\\s+(\\S+)"));
-        if (m) name = m[1];
-    }
-    if (candles.length < 2) return null;
+// 由日線組成畫面用的資料 (含 KD)
+function buildDailyItem(name, candles) {
     const kd = calcKD(candles);
     const last = candles[candles.length - 1], prev = candles[candles.length - 2];
     const change = +(last.close - prev.close).toFixed(2);
@@ -554,6 +553,56 @@ async function fetchTwse(code) {
         name, price: last.close, change, change_pct: +(change / prev.close * 100).toFixed(2),
         candles: candles.slice(-80), k: kd.k.slice(-80), d: kd.d.slice(-80), quoteTime: null, dataDate: last.time,
     };
+}
+
+const recentMonths = count => {
+    const now = new Date();
+    return Array.from({ length: count }, (_, i) => yyyymm(new Date(now.getFullYear(), now.getMonth() - (count - 1 - i), 1)));
+};
+
+// 加權指數與上市股票：證交所日線；上櫃股票 (或證交所查無資料時) 改用 FinMind 日線
+async function fetchTwse(code) {
+    const isIndex = code === INDEX_SYMBOL;
+    const canUseTpex = !isIndex;
+    if (canUseTpex && otcCodes.has(code)) return fetchTpex(code);
+
+    let name = isIndex ? "加權指數" : code;
+    const candles = [];
+    for (const ym of recentMonths(isIndex ? TWSE_MONTHS.index : TWSE_MONTHS.stock)) {
+        const json = await twseMonth(code, ym);
+        candles.push(...parseTwse(json, isIndex));
+        const m = !isIndex && json && json.title && json.title.match(new RegExp(code + "\\s+(\\S+)"));
+        if (m) name = m[1];
+    }
+    if (candles.length < 2) return canUseTpex ? fetchTpex(code) : null;
+    return buildDailyItem(name, candles);
+}
+
+// 上櫃股日線：櫃買中心不允許跨網域、也封鎖 Cloudflare，改用 FinMind (允許跨網域，一次取得約 4 個月)
+// 免費、不需登入，但每個 IP 每小時約 300 次請求，所以快取 10 分鐘並與證交所請求共用限速佇列
+const FINMIND_URL = "https://api.finmindtrade.com/api/v4/data";
+const FINMIND_DAYS = 130;
+
+async function fetchTpex(code) {
+    const key = `finmind:${code}`;
+    const cached = cacheGet(key);
+    let rows;
+    if (cached && Date.now() - cached.at < TWSE_CURRENT_MONTH_TTL) {
+        rows = cached.rows;
+    } else {
+        setStatusNote(`載入上櫃股資料：${code}…`);
+        const start = new Date(Date.now() - FINMIND_DAYS * 86400000).toISOString().slice(0, 10);
+        const json = await twseThrottled(`${FINMIND_URL}?dataset=TaiwanStockPrice&data_id=${encodeURIComponent(code)}&start_date=${start}`);
+        if (json.status !== 200 && json.msg !== "success") throw new Error(`FinMind ${json.msg || json.status}`);
+        rows = (json.data || []).map(r => ({
+            time: r.date, open: r.open, high: r.max, low: r.min, close: r.close, volume: r.Trading_Volume,
+        })).filter(c => c.close > 0 && c.high > 0);  // 排除無成交日
+        cacheSet(key, { at: Date.now(), rows });
+    }
+    const candles = rows;
+    if (candles.length < 2) return null;
+    const known = stockNames.find(s => s.code === code);
+    return buildDailyItem(known ? known.name : code, candles);
 }
 
 let refreshTimer = null, refreshSeq = 0;
@@ -863,7 +912,7 @@ function renderStock() {
         return;
     }
     if (!s) {
-        const hint = state.source === "twse" ? "（網頁版只有上市股票與 ETF，上櫃股請用本機版）" : "，請確認代號";
+        const hint = "，請確認代號（興櫃股票沒有日線資料）";
         quote.innerHTML = `<span class="flat">查無 ${state.selected} 的資料${hint}</span>`;
         drawCandles(null);
         return;
@@ -1018,157 +1067,167 @@ function removeFromWatchlist(code) {
     renderStock();
 }
 
-// ----- 自選單跨裝置同步 (Cloudflare Worker + Workers KV) -----
-// 各裝置輸入同一組同步碼即共用一份自選單；修改時立即上傳，載入頁面或切回頁面時下載。
-// 本機有未上傳的修改 (dirty) 時以本機為準，否則以雲端為準。
-const SYNC_URL = REALTIME_WORKER_URL ? `${REALTIME_WORKER_URL}/watchlist` : null;
-const SYNC_STATE_KEY = "kd_dashboard_sync";
-const SYNC_KEY_PATTERN = /^[A-Za-z0-9-]{16,64}$/;
+// ----- 會員登入與自選單同步 (Supabase) -----
+// Email + 密碼登入；自選單存在 Supabase 資料表 watchlists (每位使用者一列，RLS 限制只能讀寫自己的)。
+// 資料表與權限設定見 tools/supabase-setup.sql。URL 與 anon (publishable) key 本來就會公開在網頁上，不是密碼。
+// 登入後：雲端沒有資料 → 上傳此裝置的自選單；雲端有資料 → 以雲端為準 (此裝置有未上傳的修改時以本機為準)。
+// 修改時立即上傳；載入頁面、登入、切回頁面時下載。登出後自選單留在此裝置。
+const SUPABASE_URL = "";       // 例如 "https://xxxx.supabase.co"
+const SUPABASE_ANON_KEY = "";  // 專案的 anon / publishable key
+const SYNC_STATE_KEY = "kd_dashboard_sync";  // { userId, dirty, lastSync }
+
+const sb = SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+let currentUser = null;  // { id, email }
+let syncError = null;
+let authMessage = null;  // 登入面板的提示訊息
 
 function loadSyncState() {
     const saved = cacheGet(SYNC_STATE_KEY);
-    return saved && SYNC_KEY_PATTERN.test(saved.key || "")
-        ? saved : { key: null, dirty: false, lastSync: 0 };
+    return saved && saved.userId ? saved : { userId: null, dirty: false, lastSync: null };
 }
 
 let sync = loadSyncState();
-let syncError = null;
 const saveSyncState = () => cacheSet(SYNC_STATE_KEY, sync);
 
-function generateSyncKey() {  // 20 個隨機字元 (排除易混淆的 0/O/1/l/I)，每 4 碼一段
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-    const bytes = crypto.getRandomValues(new Uint8Array(20));
-    return [...bytes].map(b => chars[b % chars.length]).join("").match(/.{4}/g).join("-");
-}
-
-async function syncRequest(method, body) {
-    const headers = { "X-Sync-Key": sync.key };
-    if (body) headers["Content-Type"] = "application/json";
-    const res = await fetch(SYNC_URL, { method, headers, body: body ? JSON.stringify(body) : undefined });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    return data;
-}
-
 async function pushWatchlist() {
-    if (!sync.key || !SYNC_URL) return;
-    sync.dirty = true;
+    if (!sb || !currentUser) return;
+    sync = { ...sync, userId: currentUser.id, dirty: true };
     saveSyncState();
-    try {
-        const r = await syncRequest("PUT", { watchlist });
+    const { data, error } = await sb.from("watchlists")
+        .upsert({ user_id: currentUser.id, items: watchlist, updated_at: new Date().toISOString() })
+        .select("updated_at").single();
+    if (error) {
+        syncError = `上傳失敗：${error.message}（下次開啟頁面會再試）`;
+    } else {
         sync.dirty = false;
-        sync.lastSync = r.updatedAt;
+        sync.lastSync = data.updated_at;
         syncError = null;
-    } catch (e) {
-        syncError = `上傳失敗：${e.message}（下次開啟頁面會再試）`;
     }
     saveSyncState();
     renderSyncPanel();
 }
 
 async function pullWatchlist() {
-    if (!sync.key || !SYNC_URL) return;
-    if (sync.dirty) return pushWatchlist();
-    try {
-        const r = await syncRequest("GET");
-        if (!Array.isArray(r.watchlist)) return pushWatchlist();  // 雲端還沒有資料：上傳本機
-        if (r.updatedAt !== sync.lastSync) {
-            watchlist = r.watchlist;
+    if (!sb || !currentUser) return;
+    // 此裝置有同一位使用者未上傳的修改：以本機為準
+    if (sync.dirty && sync.userId === currentUser.id) return pushWatchlist();
+    const { data, error } = await sb.from("watchlists")
+        .select("items, updated_at").eq("user_id", currentUser.id).maybeSingle();
+    if (error) {
+        syncError = `下載失敗：${error.message}`;
+    } else if (!data) {
+        return pushWatchlist();  // 第一次登入：把此裝置的自選單帶進帳號
+    } else {
+        if (data.updated_at !== sync.lastSync || sync.userId !== currentUser.id) {
+            watchlist = (data.items || []).filter(w => w && CODE_PATTERN.test(w.code)).slice(0, WATCHLIST_MAX);
             saveWatchlist();
             renderWatchlist();
             renderStock();
         }
-        sync.lastSync = r.updatedAt;
+        sync = { userId: currentUser.id, dirty: false, lastSync: data.updated_at };
         syncError = null;
-    } catch (e) {
-        syncError = `下載失敗：${e.message}`;
-    }
-    saveSyncState();
-    renderSyncPanel();
-}
-
-async function createSyncKey() {
-    sync = { key: generateSyncKey(), dirty: true, lastSync: 0 };
-    await pushWatchlist();
-}
-
-async function linkSyncKey(key) {
-    if (!SYNC_KEY_PATTERN.test(key)) { alert("同步碼格式不正確，請確認是否完整複製"); return; }
-    const previous = sync;
-    sync = { key, dirty: false, lastSync: 0 };
-    let cloud;
-    try { cloud = await syncRequest("GET"); }
-    catch (e) { sync = previous; alert(`無法連線同步服務：${e.message}`); renderSyncPanel(); return; }
-
-    if (Array.isArray(cloud.watchlist)) {
-        if (!confirm(`雲端自選單有 ${cloud.watchlist.length} 檔，將取代此裝置目前的自選單 (${watchlist.length} 檔)，確定連結？`)) {
-            sync = previous; renderSyncPanel(); return;
-        }
-        watchlist = cloud.watchlist;
-        sync.lastSync = cloud.updatedAt;
-        saveWatchlist();
         saveSyncState();
-        renderWatchlist();
-        renderStock();
-        syncError = null;
-        renderSyncPanel();
-    } else {
-        if (!confirm("雲端沒有這組同步碼的資料（可能輸入錯誤）。要用此裝置的自選單建立嗎？")) {
-            sync = previous; renderSyncPanel(); return;
-        }
-        await pushWatchlist();
     }
+    renderSyncPanel();
 }
 
-function unlinkSync() {
-    if (!confirm("此裝置將停止同步（自選單保留在此裝置，雲端資料不會刪除）。確定？")) return;
-    sync = { key: null, dirty: false, lastSync: 0 };
-    syncError = null;
-    saveSyncState();
+// Supabase 英文錯誤訊息轉成中文
+function authErrorText(error) {
+    const msg = (error && error.message) || String(error);
+    if (/invalid login credentials/i.test(msg)) return "Email 或密碼錯誤";
+    if (/already registered|already exists/i.test(msg)) return "這個 Email 已經註冊過，請直接登入";
+    if (/password should be at least/i.test(msg)) return "密碼至少需要 6 個字元";
+    if (/email not confirmed/i.test(msg)) return "Email 尚未驗證，請先到信箱點確認連結";
+    if (/unable to validate email|invalid email/i.test(msg)) return "Email 格式不正確";
+    if (/rate limit/i.test(msg)) return "嘗試次數太多，請稍後再試";
+    return msg;
+}
+
+async function signIn(email, password) {
+    authMessage = "登入中…";
     renderSyncPanel();
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    authMessage = error ? authErrorText(error) : null;
+    renderSyncPanel();  // 成功時由 onAuthStateChange 接手同步
+}
+
+async function signUp(email, password) {
+    authMessage = "註冊中…";
+    renderSyncPanel();
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if (error) authMessage = authErrorText(error);
+    else if (!data.session) authMessage = "註冊成功，請到信箱點確認連結後再登入";
+    else authMessage = null;
+    renderSyncPanel();
+}
+
+async function signOut() {
+    await sb.auth.signOut();
+    sync = { userId: null, dirty: false, lastSync: null };
+    saveSyncState();
+}
+
+async function handleAuthChange(session) {
+    const user = session && session.user;
+    const changed = (user && user.id) !== (currentUser && currentUser.id);
+    currentUser = user ? { id: user.id, email: user.email } : null;
+    if (!currentUser) syncError = null;
+    renderSyncPanel();
+    if (currentUser && changed) await pullWatchlist();
 }
 
 function renderSyncPanel() {
     const btn = document.getElementById("syncBtn");
-    btn.textContent = !sync.key ? "☁ 同步" : syncError ? "☁ 同步異常" : "☁ 已同步";
-    btn.classList.toggle("on", !!sync.key && !syncError);
-    btn.classList.toggle("err", !!sync.key && !!syncError);
+    btn.textContent = currentUser ? `👤 ${currentUser.email}${syncError ? "（同步異常）" : ""}` : "👤 登入";
+    btn.classList.toggle("on", !!currentUser && !syncError);
+    btn.classList.toggle("err", !!currentUser && !!syncError);
 
     const panel = document.getElementById("syncPanel");
     if (panel.hidden) return;
-    if (!SYNC_URL) { panel.textContent = "未設定同步服務網址 (REALTIME_WORKER_URL)，無法同步。"; return; }
+    if (!sb) {
+        panel.textContent = window.supabase || !SUPABASE_URL
+            ? "尚未設定會員服務 (SUPABASE_URL / SUPABASE_ANON_KEY)，自選單只存在此裝置。"
+            : "會員服務載入失敗，請檢查網路後重新整理。";
+        return;
+    }
 
-    if (!sync.key) {
+    if (!currentUser) {
         panel.innerHTML = `
-            <p>在每台裝置使用同一組「同步碼」，自選單就會自動同步。第一台裝置建立同步碼，其他裝置輸入同一組碼即可。</p>
-            <div class="row"><button type="button" id="syncCreate">建立新的同步碼</button></div>
-            <div class="row">
-                <input id="syncKeyInput" placeholder="輸入其他裝置的同步碼，例如 Ab3d-Ef5g-…" autocomplete="off">
-                <button type="button" id="syncLink">連結</button>
-            </div>`;
-        document.getElementById("syncCreate").onclick = createSyncKey;
-        document.getElementById("syncLink").onclick = () => linkSyncKey(document.getElementById("syncKeyInput").value.trim());
+            <p>登入後，自選單會跟著帳號走：在任何裝置登入同一個帳號，就看到同一份自選單。第一次登入時，會把此裝置目前的自選單帶進帳號。</p>
+            <form class="row" id="authForm">
+                <input id="authEmail" type="email" placeholder="Email" autocomplete="username" required>
+                <input id="authPassword" type="password" placeholder="密碼 (至少 6 個字元)" autocomplete="current-password" minlength="6" required>
+                <button type="submit">登入</button>
+                <button type="button" class="secondary" id="authSignUp">註冊新帳號</button>
+            </form>
+            <div class="status" id="authMsg"></div>`;
+        const msg = document.getElementById("authMsg");
+        msg.textContent = authMessage || "";
+        msg.classList.toggle("err", !!authMessage && !/中…$|^註冊成功/.test(authMessage));  // 進行中與成功提示不用警告色
+        const values = () => [document.getElementById("authEmail").value.trim(), document.getElementById("authPassword").value];
+        document.getElementById("authForm").onsubmit = e => { e.preventDefault(); signIn(...values()); };
+        document.getElementById("authSignUp").onclick = () => {
+            const form = document.getElementById("authForm");
+            if (form.reportValidity()) signUp(...values());
+        };
         return;
     }
 
     const last = sync.lastSync ? new Date(sync.lastSync).toLocaleString("zh-TW", { hour12: false }) : "尚未同步";
     panel.innerHTML = `
-        <p>此裝置的自選單已同步。在其他裝置按「☁ 同步」→ 輸入下面的同步碼即可共用。請像密碼一樣保管同步碼。</p>
-        <div class="row"><span>同步碼</span><code id="syncKeyText"></code></div>
+        <p>已登入，自選單會自動同步到帳號。在其他裝置登入同一個帳號即可共用。</p>
+        <div class="row"><span>帳號</span><code id="authEmailText"></code></div>
         <div class="row">
-            <button type="button" id="syncCopy">複製同步碼</button>
             <button type="button" class="secondary" id="syncNow">立即同步</button>
-            <button type="button" class="secondary" id="syncUnlink">此裝置取消同步</button>
+            <button type="button" class="secondary" id="authSignOut">登出</button>
         </div>
         <div class="status${syncError ? " err" : ""}" id="syncStatusText"></div>`;
-    document.getElementById("syncKeyText").textContent = sync.key;
-    document.getElementById("syncStatusText").textContent = syncError || `最後同步：${last}`;
-    document.getElementById("syncCopy").onclick = async () => {
-        try { await navigator.clipboard.writeText(sync.key); document.getElementById("syncCopy").textContent = "已複製 ✓"; }
-        catch (e) { prompt("請手動複製同步碼：", sync.key); }
-    };
+    document.getElementById("authEmailText").textContent = currentUser.email;
+    document.getElementById("syncStatusText").textContent = syncError || `最後同步：${last}（登出後自選單仍保留在此裝置）`;
     document.getElementById("syncNow").onclick = pullWatchlist;
-    document.getElementById("syncUnlink").onclick = unlinkSync;
+    document.getElementById("authSignOut").onclick = signOut;
 }
 
 document.getElementById("syncBtn").addEventListener("click", () => {
@@ -1233,14 +1292,17 @@ document.getElementById("favBtn").addEventListener("click", () => {
 
 // ----- 以代號或公司名稱查詢 -----
 // 名稱清單：本機後端 /api/names (含上櫃)；沒有後端時用證交所 STOCK_DAY_ALL (上市 + ETF，允許跨網域)
+// 加上 FinMind TaiwanStockInfo 的上櫃名稱 (允許跨網域)
 const NAMES_CACHE_KEY = "kd_dashboard_names";
 const NAMES_TTL = 24 * 60 * 60 * 1000;
-let stockNames = [];  // [{ code, name }]
-let stockNamesSource = null;  // local (含上櫃) | twse (上市 + ETF)
+let stockNames = [];  // [{ code, name, market? }]
+let stockNamesSource = null;  // local (含上櫃) | twse+tpex (上市 + ETF + 上櫃) | twse (上櫃名稱取得失敗)
+let otcCodes = new Set();     // 上櫃代號：網頁版直接改用櫃買中心日線
 
 async function loadStockNames() {
     const cached = cacheGet(NAMES_CACHE_KEY);
-    if (cached && Date.now() - cached.at < NAMES_TTL && cached.source === (apiAvailable ? "local" : "twse")) {
+    const wantedSource = apiAvailable ? "local" : "twse+tpex";
+    if (cached && Date.now() - cached.at < NAMES_TTL && cached.source === wantedSource) {
         return setStockNames(cached.list, cached.source);
     }
     let list = null, source = "local";
@@ -1257,8 +1319,20 @@ async function loadStockNames() {
             // 欄位：日期, 證券代號, 證券名稱, ... (每欄以雙引號包住)
             list = csv.split("\n").map(line => [...line.matchAll(/"([^"]*)"/g)].map(m => m[1]))
                 .filter(f => f.length >= 3 && CODE_PATTERN.test(f[1]))
-                .map(f => ({ code: f[1], name: f[2].trim() }));
+                .map(f => ({ code: f[1], name: f[2].trim(), market: "tse" }));
         } catch (e) { list = null; }
+        try {
+            const body = await twseThrottled(`${FINMIND_URL}?dataset=TaiwanStockInfo`);
+            const listed = new Set((list || []).map(s => s.code));
+            const otc = new Map();  // 同一檔可能有多筆 (不同產業別)，以代號去重
+            (body.data || []).forEach(s => {
+                if (s.type === "tpex" && CODE_PATTERN.test(s.stock_id) && !listed.has(s.stock_id)) otc.set(s.stock_id, s.stock_name);
+            });
+            if (otc.size) {
+                list = (list || []).concat([...otc].map(([code, name]) => ({ code, name, market: "otc" })));
+                source = "twse+tpex";
+            }
+        } catch (e) { /* 上櫃名稱取得失敗時只用上市清單，下次載入再試 */ }
     }
     if (list && list.length) {
         cacheSet(NAMES_CACHE_KEY, { at: Date.now(), source, list });
@@ -1269,6 +1343,15 @@ async function loadStockNames() {
 function setStockNames(list, source) {
     stockNames = list;
     stockNamesSource = source;
+    otcCodes = new Set(list.filter(s => s.market === "otc").map(s => s.code));
+
+    // 名稱清單載入前就顯示的上櫃股只有代號，補上名稱
+    let patched = false;
+    Object.entries(state.daily).forEach(([code, item]) => {
+        const known = item && item.name === code && list.find(s => s.code === code);
+        if (known) { item.name = known.name; patched = true; }
+    });
+    if (patched) { rebuild(); renderStock(); }
     const datalist = document.getElementById("stockNames");
     datalist.innerHTML = "";
     const frag = document.createDocumentFragment();
@@ -1295,7 +1378,7 @@ function resolveStock(input) {
         alert(`符合「${raw}」的有 ${partial.length} 檔：${sample}${partial.length > 8 ? "…" : ""}\n請從下拉選單選擇，或輸入完整名稱 / 代號`);
         return null;
     }
-    const scopeHint = stockNamesSource === "twse" ? "（網頁版名稱清單只有上市股票與 ETF）" : "";
+    const scopeHint = stockNamesSource === "twse" ? "（上櫃股名稱暫時無法載入，請改用代號）" : "";
     alert(stockNames.length
         ? `找不到「${raw}」，請確認名稱或改用代號${scopeHint}`
         : "股票名稱清單尚未載入，請稍候或改用代號，例如 2603 或 00878");
@@ -1373,7 +1456,11 @@ function renderVersionHistory() {
 renderWatchlist();
 renderVersionHistory();
 renderSyncPanel();
-pullWatchlist();
+if (sb) {
+    // 載入時會先觸發一次 (INITIAL_SESSION)，帶出上次登入的狀態；
+    // 回呼中不能直接 await Supabase 呼叫 (官方建議)，所以延到下一輪執行
+    sb.auth.onAuthStateChange((event, session) => setTimeout(() => handleAuthChange(session), 0));
+}
 refresh().then(loadStockNames);  // 等第一次載入確定有沒有後端，再決定名稱清單來源
 </script>
 </body>
