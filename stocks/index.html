@@ -186,7 +186,8 @@
             <span class="watchlist-label">⭐ 自選</span>
             <div class="watchlist" id="watchlist"></div>
             <form class="custom" id="customForm">
-                <input id="customCode" placeholder="輸入代號" maxlength="6" autocomplete="off">
+                <input id="customCode" placeholder="代號或公司名稱" maxlength="20" autocomplete="off" list="stockNames">
+                <datalist id="stockNames"></datalist>
                 <button type="submit">看盤</button>
             </form>
         </div>
@@ -255,6 +256,11 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.5.0", date: "2026-10-19", scope: "儀表板",
+      changes: ["個股看盤可用公司名稱查詢：輸入時出現下拉選單 (例如輸入「台積」出現「2330 台積電」)，也可輸入完整或部分名稱",
+                "部分名稱符合多檔時列出候選；名稱清單快取在瀏覽器一天",
+                "本機版新增 /api/names (含上櫃)；網頁版名稱清單為上市股票與 ETF"],
+      services: ["證交所 afterTrading/STOCK_DAY_ALL (網頁版股票名稱清單，CSV)"] },
     { ver: "v2.4.0", date: "2026-10-19", scope: "儀表板",
       changes: ["個股看盤自選單：可加入 / 移除，存在瀏覽器，自動補上股票名稱，記住上次看的股票",
                 "頁面加入版本紀錄 (含各版本使用的第三方服務)"],
@@ -457,14 +463,14 @@ const TWSE_MONTHS = { index: 5, stock: 4 };     // 約 100 / 80 個交易日，�
 
 let twseLastRequest = 0, twseChain = Promise.resolve();
 
-function twseThrottled(url) {
+function twseThrottled(url, asText = false) {
     const run = async () => {
         const wait = twseLastRequest + TWSE_GAP_MS - Date.now();
         if (wait > 0) await new Promise(r => setTimeout(r, wait));
         twseLastRequest = Date.now();
         const res = await fetch(url);
         if (!res.ok) throw new Error(`TWSE HTTP ${res.status}`);
-        return res.json();
+        return asText ? res.text() : res.json();
     };
     const p = twseChain.then(run, run);
     twseChain = p.catch(() => {});
@@ -1037,11 +1043,83 @@ document.getElementById("favBtn").addEventListener("click", () => {
     else addToWatchlist(code, s && state.source !== "sim" ? s.name : "");
 });
 
+// ----- 以代號或公司名稱查詢 -----
+// 名稱清單：本機後端 /api/names (含上櫃)；沒有後端時用證交所 STOCK_DAY_ALL (上市 + ETF，允許跨網域)
+const NAMES_CACHE_KEY = "kd_dashboard_names";
+const NAMES_TTL = 24 * 60 * 60 * 1000;
+let stockNames = [];  // [{ code, name }]
+let stockNamesSource = null;  // local (含上櫃) | twse (上市 + ETF)
+
+async function loadStockNames() {
+    const cached = cacheGet(NAMES_CACHE_KEY);
+    if (cached && Date.now() - cached.at < NAMES_TTL && cached.source === (apiAvailable ? "local" : "twse")) {
+        return setStockNames(cached.list, cached.source);
+    }
+    let list = null, source = "local";
+    if (apiAvailable) {
+        try {
+            const res = await fetch("/api/names");
+            if (res.ok) list = await res.json();
+        } catch (e) { list = null; }
+    }
+    if (!list) {
+        source = "twse";
+        try {
+            const csv = await twseThrottled(`${TWSE_BASE}/afterTrading/STOCK_DAY_ALL?response=json`, true);
+            // 欄位：日期, 證券代號, 證券名稱, ... (每欄以雙引號包住)
+            list = csv.split("\n").map(line => [...line.matchAll(/"([^"]*)"/g)].map(m => m[1]))
+                .filter(f => f.length >= 3 && CODE_PATTERN.test(f[1]))
+                .map(f => ({ code: f[1], name: f[2].trim() }));
+        } catch (e) { list = null; }
+    }
+    if (list && list.length) {
+        cacheSet(NAMES_CACHE_KEY, { at: Date.now(), source, list });
+        setStockNames(list, source);
+    }
+}
+
+function setStockNames(list, source) {
+    stockNames = list;
+    stockNamesSource = source;
+    const datalist = document.getElementById("stockNames");
+    datalist.innerHTML = "";
+    const frag = document.createDocumentFragment();
+    list.forEach(({ code, name }) => {
+        const opt = document.createElement("option");
+        opt.value = `${code} ${name}`;
+        frag.appendChild(opt);
+    });
+    datalist.appendChild(frag);
+}
+
+// 輸入可以是「2330」、「2330 台積電」(下拉選單)、「台積電」或部分名稱
+function resolveStock(input) {
+    const raw = input.trim();
+    const codeMatch = raw.toUpperCase().match(/^([0-9]{4}[0-9A-Z]{0,2})(\s|$)/);
+    if (codeMatch) return codeMatch[1];
+    if (!raw) return null;
+    const exact = stockNames.find(s => s.name === raw);
+    if (exact) return exact.code;
+    const partial = stockNames.filter(s => s.name.includes(raw));
+    if (partial.length === 1) return partial[0].code;
+    if (partial.length > 1) {
+        const sample = partial.slice(0, 8).map(s => `${s.code} ${s.name}`).join("、");
+        alert(`符合「${raw}」的有 ${partial.length} 檔：${sample}${partial.length > 8 ? "…" : ""}\n請從下拉選單選擇，或輸入完整名稱 / 代號`);
+        return null;
+    }
+    const scopeHint = stockNamesSource === "twse" ? "（網頁版名稱清單只有上市股票與 ETF）" : "";
+    alert(stockNames.length
+        ? `找不到「${raw}」，請確認名稱或改用代號${scopeHint}`
+        : "股票名稱清單尚未載入，請稍候或改用代號，例如 2603 或 00878");
+    return null;
+}
+
 document.getElementById("customForm").addEventListener("submit", e => {
     e.preventDefault();
-    const code = document.getElementById("customCode").value.trim().toUpperCase();
-    if (!CODE_PATTERN.test(code)) { alert("請輸入 4~6 碼台股代號，例如 2603 或 00878"); return; }
-    document.getElementById("customCode").value = "";
+    const input = document.getElementById("customCode");
+    const code = resolveStock(input.value);
+    if (!code) return;
+    input.value = "";
     selectStock(code);
 });
 
@@ -1106,7 +1184,7 @@ function renderVersionHistory() {
 
 renderWatchlist();
 renderVersionHistory();
-refresh();
+refresh().then(loadStockNames);  // 等第一次載入確定有沒有後端，再決定名稱清單來源
 </script>
 </body>
 </html>
