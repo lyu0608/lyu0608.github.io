@@ -511,11 +511,14 @@ function isMarketOpen() {
 }
 
 let realtimeTimer = null;
+let realtimeFailures = 0;
+const REALTIME_RETRY_MS = 5000, REALTIME_MAX_RETRIES = 5;  // 證交所偶爾拒絕中繼請求，失敗時快速重試
 
 // force：無論是否盤中都抓一次 (載入或切換股票時，取得今日收盤價)
 async function pollRealtime(force = false) {
     clearTimeout(realtimeTimer);
     const url = realtimeUrl();
+    let failed = false;
     if (url && state.source !== "sim" && (force || isMarketOpen())) {
         const codes = [...new Set([INDEX_SYMBOL, "0050", state.selected])];
         try {
@@ -525,13 +528,16 @@ async function pollRealtime(force = false) {
             Object.assign(state.realtime, body.quotes || {});
             state.realtimeError = null;
         } catch (e) {
-            state.realtimeError = "即時報價連線失敗";
+            state.realtimeError = "即時報價連線失敗，稍後重試";
+            failed = true;
         }
         rebuild();
         renderAll();
     }
-    // 盤外每分鐘檢查是否開盤
-    realtimeTimer = setTimeout(pollRealtime, isMarketOpen() ? REALTIME_MS : 60000);
+    realtimeFailures = failed ? realtimeFailures + 1 : 0;
+    const retry = failed && realtimeFailures <= REALTIME_MAX_RETRIES;
+    // 失敗時 5 秒後重試 (盤外也會重試，以取得收盤價)；盤中每 10 秒更新；盤外每分鐘檢查是否開盤
+    realtimeTimer = setTimeout(() => pollRealtime(retry), retry ? REALTIME_RETRY_MS : (isMarketOpen() ? REALTIME_MS : 60000));
 }
 
 // 資料來源優先順序：本機後端 (即時) → 證交所日線 → 模擬資料
