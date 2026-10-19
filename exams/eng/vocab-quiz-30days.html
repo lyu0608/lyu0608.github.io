@@ -1,4 +1,701 @@
-<!-- 👥 免密碼切換學員彈窗 -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>英語單字特訓 App (純淨美音聽力與會考真題版)</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="vocab2000.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --success-bg: #dcfce7;
+      --danger: #dc2626;
+      --danger-bg: #fee2e2;
+      --purple: #7c3aed;
+      --purple-hover: #6d28d9;
+      --amber: #d97706;
+      --cyan: #0891b2;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+    /* 關鍵修復：強制讓 hidden 最高優先權隱藏，避免 Modal 預設平鋪露出 */
+    .hidden { display: none !important; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding: clamp(8px, 2vw, 20px);
+      padding-top: env(safe-area-inset-top, 12px);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+      height: 100%;
+      max-height: 96vh;
+      max-height: 96dvh;
+      background: var(--card-bg);
+      border-radius: clamp(12px, 2.5vw, 20px);
+      box-shadow: 0 4px 25px -4px rgba(0, 0, 0, 0.06);
+      padding: clamp(12px, 2.5vw, 20px);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    .top-utility-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed var(--border);
+      font-size: clamp(11px, 2vw, 13px);
+      flex-shrink: 0;
+    }
+    .status-badge { font-weight: 600; color: #334155; }
+    .cloud-badge { color: #0284c7; font-weight: 600; }
+    .changelog-btn {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .app-install-banner {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .install-banner-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e40af;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .install-banner-text span {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #3b82f6;
+    }
+    .install-guide-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .auth-box { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 4px; }
+    .auth-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-weight: 600; color: var(--muted); }
+    .auth-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .input-group input { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; }
+    .input-group input:focus { border-color: var(--primary); }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.05s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+    .btn-guest {
+      background: #f1f5f9;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .divider { display: flex; align-items: center; text-align: center; color: var(--muted); font-size: 12px; margin: 2px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
+    .divider::before { margin-right: 10px; }
+    .divider::after { margin-left: 10px; }
+
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .user-badge {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #eff6ff;
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+    .admin-badge-btn {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
+
+    .quiz-type-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .quiz-type-btn {
+      padding: clamp(6px, 1.2vw, 9px) 2px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      font-size: clamp(11px, 2.2vw, 13px);
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .quiz-type-btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+    .quiz-type-btn.exam-active { background: #fef3c7; border-color: var(--amber); color: #b45309; }
+    .quiz-type-btn.listen-active { background: #ecfeff; border-color: var(--cyan); color: #0e7490; }
+
+    .random-panel {
+      background: #faf5ff;
+      border: 1px solid #e9d5ff;
+      border-radius: 12px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .random-title { font-size: 12px; font-weight: 700; color: #6b21a8; }
+    .random-btn-group { display: flex; gap: 6px; }
+    .random-btn {
+      background: #fff;
+      color: var(--purple);
+      border: 1px solid #d8b4fe;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .random-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+    .filter-panel {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .filter-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+    select {
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
+    .stats-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; flex-shrink: 0; }
+    .progress-bar { width: 100%; height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; margin-bottom: 10px; flex-shrink: 0; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s ease; }
+
+    .word-card {
+      background: #f8fafc;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      text-align: center;
+      padding: 12px 10px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .exam-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+    }
+    .exam-tag.listen-tag { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+    .word-title {
+      font-size: clamp(17px, 4.5vw, 24px);
+      font-weight: 800;
+      margin-bottom: 4px;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+
+    .audio-player-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .listen-btn-main {
+      background: #0891b2;
+      color: #fff;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(8, 145, 178, 0.2);
+    }
+    .listen-btn-main:active { transform: scale(0.97); }
+
+    .cloze-blank {
+      display: inline-block;
+      min-width: 60px;
+      border-bottom: 2.5px solid var(--primary);
+      color: var(--primary);
+      padding: 0 4px;
+      font-weight: 800;
+    }
+    .cloze-translation-hint {
+      font-size: 13px;
+      color: #166534;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-top: 8px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .word-kk { font-size: 13px; color: #64748b; margin-bottom: 6px; }
+    .sound-btn {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .options-grid { display: grid; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+    .option-btn {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      min-height: 48px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: clamp(14px, 2.5vw, 15.5px);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.12s;
+    }
+    .option-btn:active { transform: scale(0.98); }
+    .opt-key {
+      width: 22px;
+      height: 22px;
+      background: #f1f5f9;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .opt-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 100%;
+    }
+    .opt-primary-text { line-height: 1.35; }
+    .opt-sub-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+    .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
+    .option-btn.correct .opt-sub-text { color: #15803d; }
+    .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
+    .option-btn.wrong .opt-sub-text { color: #b91c1c; }
+
+    .explanation-card {
+      background: #eff6ff;
+      border: 1.5px dashed #bfdbfe;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-size: clamp(12.5px, 2.2vw, 14px);
+      line-height: 1.55;
+      text-align: left;
+      min-height: 110px;
+      max-height: 24vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .explanation-card.placeholder {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #94a3b8;
+      align-items: center;
+      font-style: italic;
+    }
+    .explanation-card::-webkit-scrollbar { width: 5px; }
+    .explanation-card::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 10px; }
+    .explanation-title { font-size: 13.5px; font-weight: 700; color: #1e40af; margin-bottom: 6px; border-bottom: 1px dashed #bfdbfe; padding-bottom: 4px; }
+    .sentence-en { font-weight: 600; color: #0f172a; margin-bottom: 4px; display: block; line-height: 1.45; }
+    .sentence-zh { color: #475569; margin-bottom: 6px; display: block; line-height: 1.45; }
+    .grammar-note { font-size: 12px; color: #1d4ed8; background: #dbeafe; padding: 5px 8px; border-radius: 6px; display: block; line-height: 1.4; }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      bottom: -6px;
+      background: var(--card-bg);
+      padding: 8px 0 4px 0;
+      border-top: 1px solid var(--border);
+      z-index: 10;
+      margin-top: auto;
+      flex-shrink: 0;
+    }
+    .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+    .hint-keyboard { font-size: 11.5px; color: var(--muted); }
+
+    /* ★ 關鍵樣式：彈窗遮罩與卡片樣式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(15, 23, 42, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 9999; padding: 16px;
+    }
+    .modal-card {
+      width: 100%; max-width: 540px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.2);
+      padding: 20px 18px;
+      max-height: 85vh;
+      display: flex; flex-direction: column;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: #0f172a; }
+    .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; }
+    .modal-body { overflow-y: auto; padding-top: 14px; font-size: 13px; line-height: 1.6; }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+      min-width: 660px;
+    }
+    .admin-table th, .admin-table td {
+      border: 1px solid var(--border);
+      padding: 8px 6px;
+      text-align: center;
+    }
+    .admin-table th { background: #f8fafc; color: #334155; font-weight: 700; }
+    .admin-table tr:nth-child(even) { background: #fbfcfe; }
+    .mode-badge {
+      display: inline-block;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin: 1px 0;
+    }
+    .badge-word { background: #eff6ff; color: #1d4ed8; }
+    .badge-cloze { background: #f0fdf4; color: #15803d; }
+    .badge-exam { background: #fef3c7; color: #b45309; }
+    .badge-listen { background: #ecfeff; color: #0e7490; }
+
+    .account-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; border: 1.5px solid var(--border);
+      border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+    }
+    .account-item:hover { border-color: var(--primary); background: #eff6ff; }
+    .account-item.active { border-color: var(--primary); background: #dbeafe; font-weight: 700; }
+    .account-avatar {
+      width: 32px; height: 32px; background: var(--primary); color: #fff;
+      border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; margin-right: 10px;
+    }
+
+    .install-step-card { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .install-step-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #0f172a; }
+    .install-step-card ol { margin-left: 20px; color: #334155; }
+    .install-step-card li { margin-bottom: 6px; }
+    .history-item { margin-bottom: 16px; border-left: 3px solid var(--primary); padding-left: 10px; }
+    .history-tag { font-weight: 700; color: var(--primary); font-size: 13.5px; margin-bottom: 2px; }
+    .history-desc { color: #334155; }
+    .history-desc ul { margin-left: 16px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="top-utility-bar">
+    <span class="status-badge" id="sourceStatus">🟡 題庫檢測中...</span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span class="cloud-badge" id="syncStatus">☁️ 本地模式</span>
+      <button class="changelog-btn" onclick="toggleChangelogModal(true)">🛠️ 維護紀錄</button>
+    </div>
+  </div>
+
+  <!-- 首頁 / 登入區塊 -->
+  <div id="authSection" class="auth-box">
+    <div class="app-install-banner">
+      <div class="install-banner-text">
+        📲 安裝為桌面 App (支援離線)
+        <span>一鍵加入手機主畫面，全螢幕無干擾背單字</span>
+      </div>
+      <button class="install-guide-btn" onclick="toggleInstallModal(true)">安裝指引</button>
+    </div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">學員登入</div>
+      <div class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">註冊帳號</div>
+    </div>
+    <div class="input-group">
+      <label>電子信箱 (Email)</label>
+      <input type="email" id="authEmail" placeholder="student@example.com" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <label>密碼</label>
+      <input type="password" id="authPassword" placeholder="至少 6 位數密碼" autocomplete="current-password">
+    </div>
+    <div class="input-group hidden" id="confirmPasswordGroup">
+      <label>確認密碼</label>
+      <input type="password" id="authPasswordConfirm" placeholder="請再次輸入密碼" autocomplete="new-password">
+    </div>
+
+    <button class="btn" id="authSubmitBtn" onclick="handleSupabaseAuth()">登入並同步進度</button>
+    <div class="divider">或</div>
+    <button class="btn-guest" onclick="loginAsGuest()">以訪客免登入模式體驗</button>
+  </div>
+
+  <!-- 測驗主操作區塊 -->
+  <div id="quizSection" class="hidden">
+    <div class="user-header">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="user-badge" id="displayUsername" onclick="openSwitchAccountModal()">👤 學員 ▾</span>
+        <button id="adminPanelBtn" class="admin-badge-btn hidden" onclick="openAdminDashboardModal()">👑 後台監控</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span class="link-btn" onclick="openSwitchAccountModal()" style="color:var(--primary); font-weight:600;">👥 切換</span>
+        <span class="link-btn" onclick="toggleHistory()">成果</span>
+        <span class="link-btn" onclick="promptClearRecords()" style="color:var(--danger);">清空</span>
+        <button class="logout-btn" onclick="handleLogout()">登出</button>
+      </div>
+    </div>
+
+    <div class="quiz-type-selector">
+      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 單字識義</button>
+      <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 句子填空</button>
+      <button class="quiz-type-btn" id="typeExamBtn" onclick="setQuizType('exam')">🏛️ 會考真題</button>
+      <button class="quiz-type-btn" id="typeListenBtn" onclick="setQuizType('listen')">🎧 會考聽力</button>
+    </div>
+
+    <div class="random-panel">
+      <span class="random-title">🎲 快速亂數刷題：</span>
+      <div class="random-btn-group">
+        <button class="random-btn" id="btnRand100" onclick="startRandomQuiz(100)">⚡ 100題</button>
+        <button class="random-btn" id="btnRand200" onclick="startRandomQuiz(200)">🔥 200題</button>
+        <button class="random-btn" id="btnRandAll" onclick="startRandomQuiz('all')">🏆 全部(2240)</button>
+      </div>
+    </div>
+
+    <div class="filter-panel" id="planPanel">
+      <div class="filter-row">
+        <div>
+          <span><b>背誦週期：</b></span>
+          <select id="cycleDaysSelect" onchange="changeCycleDays(this.value)">
+            <option value="30">30 天計畫</option>
+            <option value="40">40 天計畫</option>
+            <option value="50">50 天計畫</option>
+            <option value="60">60 天計畫</option>
+          </select>
+        </div>
+        <div>
+          <label style="cursor:pointer;"><input type="radio" name="scopeType" value="todayOnly" checked onchange="handleFilterChange()"> 僅今日</label>
+          <label style="cursor:pointer; margin-left:8px;"><input type="radio" name="scopeType" value="cumulative" onchange="handleFilterChange()"> 滾動複習</label>
+        </div>
+      </div>
+      <div class="filter-row" style="border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+        <label style="cursor:pointer;">
+          <input type="checkbox" id="includeMistakesCheckbox" onchange="handleFilterChange()"> 混合錯題強化複習
+        </label>
+        <span class="link-btn" id="mistakeLink" onclick="reviewMistakes()">純錯題特訓 (0)</span>
+      </div>
+    </div>
+
+    <div id="historyBox" class="explanation-card hidden" style="border:1px solid #bfdbfe; background:#eff6ff;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
+        <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空進度</button>
+      </div>
+      <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
+    </div>
+
+    <div class="controls">
+      <select id="daySelect" onchange="changeDay(this.value)"></select>
+      <span id="poolInfoText" style="font-size: 12px; color: var(--muted);">題庫載入中</span>
+    </div>
+
+    <div class="stats-info">
+      <span id="progressText">第 1 題</span>
+      <span id="scoreText">正確: 0 | 錯誤: 0</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <div class="word-card">
+      <div id="examSourceTag" class="exam-tag hidden">🏛️ 來源載入中</div>
+      <div class="word-title" id="wordDisplay">載入中...</div>
+
+      <div id="audioPlayerBox" class="audio-player-box hidden">
+        <button class="listen-btn-main" id="playAudioBtn" onclick="playCurrentListeningAudio()">
+          ▶️ 播放聽力考題 (美式標準音)
+        </button>
+        <span id="audioStatusText" style="font-size: 11px; color: var(--muted);">原生發音引擎，點擊即可完整播放</span>
+      </div>
+
+      <div class="cloze-translation-hint hidden" id="clozeZhHint"></div>
+      <div class="word-kk" id="wordKk">[/.../]</div>
+      <button class="sound-btn" id="soundBtn" onclick="speakCurrentWord()">🔊 聆聽單字發音 (R)</button>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <div id="explanationBox" class="explanation-card placeholder">
+      <span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>
+    </div>
+
+    <div class="footer-bar">
+      <span class="hint-keyboard">鍵盤快捷鍵: 1-4 / 空白鍵 / R</span>
+      <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>下一題</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- ★ 彈窗集中放置區 (預設全數包覆 hidden 類別) -->
+<!-- ========================================== -->
+
+<!-- 1. 👥 免密碼切換學員彈窗 -->
 <div id="switchAccountModal" class="modal-overlay hidden" onclick="toggleSwitchAccountModal(false)">
   <div class="modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -16,7 +713,7 @@
   </div>
 </div>
 
-<!-- 🔐 清空紀錄密碼驗證彈窗 -->
+<!-- 2. 🔐 清空紀錄密碼驗證彈窗 -->
 <div id="clearConfirmModal" class="modal-overlay hidden" onclick="toggleClearModal(false)">
   <div class="modal-card" style="max-width:400px;" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -37,7 +734,7 @@
   </div>
 </div>
 
-<!-- 🛠️ 軟體維護歷程彈窗 -->
+<!-- 3. 🛠️ 軟體維護歷程彈窗 -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -60,6 +757,74 @@
             <li><b>即時作答累計機制：</b>每答一題立即更新累計總數與題型分類。</li>
           </ul>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 👑 管理者後台監控彈窗 -->
+<div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
+  <div class="modal-card" style="max-width:820px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">👑 全體學員學習進度監控後台 (即時累計統計)</div>
+      <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; color:var(--muted);" id="adminTotalStudents">載入中...</span>
+        <button class="link-btn" onclick="fetchAdminAllProgress()">🔄 重新整理資料</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding-left:10px;">學員 Email</th>
+              <th>完成進度</th>
+              <th>總作答題數</th>
+              <th>綜合正確率</th>
+              <th>四大題型作答明細 (題數 / 正確率)</th>
+              <th>錯題量 (分題型統計)</th>
+              <th>最後更新</th>
+            </tr>
+          </thead>
+          <tbody id="adminProgressTableBody">
+            <tr><td colspan="7" style="text-align:center; padding:15px;">讀取中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 📲 App 安裝教學彈窗 -->
+<div id="installGuideModal" class="modal-overlay hidden" onclick="toggleInstallModal(false)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">📲 如何將單字特訓安裝為 App</div>
+      <button class="modal-close" onclick="toggleInstallModal(false)">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="pwaNativeInstallArea" class="hidden" style="margin-bottom:12px; text-align:center;">
+        <button class="btn" style="width:100%; background:var(--success);" onclick="triggerPwaPrompt()">
+          ⬇️ 點此立即安裝 App 到本裝置
+        </button>
+      </div>
+      <div class="install-step-card">
+        <div class="install-step-title">🍎 iPhone / iPad (iOS Safari)</div>
+        <ol>
+          <li>使用 <b>Safari 瀏覽器</b> 開啟此特訓網頁。</li>
+          <li>點擊螢幕下方底欄的 <b>「分享」按鈕</b>（箭頭方塊圖示）。</li>
+          <li>在選單中點選 <b>「加入主畫面」</b>。</li>
+          <li>點擊右上角 <b>「新增」</b> 即可生成 App 圖示。</li>
+        </ol>
+      </div>
+      <div class="install-step-card">
+        <div class="install-step-title">🤖 Android 手機 (Chrome 瀏覽器)</div>
+        <ol>
+          <li>使用 <b>Chrome 瀏覽器</b> 開啟此特訓網頁。</li>
+          <li>點擊右上角 <b>三個點選單圖示 (⋮)</b>。</li>
+          <li>點選 <b>「安裝應用程式」</b> 或 <b>「新增至主畫面」</b> 即可。</li>
+        </ol>
       </div>
     </div>
   </div>
@@ -755,7 +1520,7 @@ let currentQuizType = "wordDef";
 
 let speechKeepAliveTimer = null;
 
-// 快速字典緩存表 (英文轉中文、中文轉英文)
+// 快速字典緩存表
 let VOCAB_MAP_EN = {};
 let VOCAB_MAP_ZH = {};
 
