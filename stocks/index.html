@@ -210,10 +210,19 @@ const CANDLE_DAYS = 60;
 const API_URL = location.protocol.startsWith("http") ? "/api/analyze" : null;
 let apiAvailable = !!API_URL;
 
+// 盤中即時報價中繼 (證交所 mis.twse.com.tw)：本機由 Flask /api/realtime 提供；
+// 網頁版 (GitHub Pages) 需部署 tools/cloudflare-worker.js 並填入網址，留空則只用日線
+const REALTIME_WORKER_URL = "https://tw-quote.lyu0608.workers.dev";
+const REALTIME_MS = 10000;
+const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL || null);
+
 const state = {
-    source: "sim",      // live | sim
-    index: null,        // { name, price, change, change_pct, candles, k:[], d:[] }
-    stocks: {},         // code -> { name, price, change, change_pct, candles }
+    source: "sim",      // live (本機後端) | twse (證交所日線) | sim (模擬)
+    daily: {},          // code -> 日線資料 (未合併即時報價)
+    realtime: {},       // code -> 證交所即時報價
+    realtimeError: null,
+    index: null,        // 合併即時報價後的大盤 { name, price, change, change_pct, candles, k:[], d:[], realtime? }
+    stocks: {},         // code -> 合併即時報價後的個股；undefined = 載入中、null = 查無
     selected: "0050",
     sandbox: false,
     sandboxK: 50,
@@ -425,10 +434,104 @@ async function fetchTwse(code) {
 let refreshTimer = null, refreshSeq = 0;
 
 function applyData(data, source) {
+    if (source !== state.source) state.realtime = {};  // 換資料來源時舍棄舊的即時報價
     state.source = source;
-    if (data[INDEX_SYMBOL]) state.index = data[INDEX_SYMBOL];
-    Object.entries(data).forEach(([code, item]) => { if (code !== INDEX_SYMBOL) state.stocks[code] = item; });
+    Object.assign(state.daily, data);
+    rebuild();
     renderAll();
+}
+
+// 由日線資料 + 即時報價重建畫面用的資料
+function rebuild() {
+    Object.entries(state.daily).forEach(([code, item]) => {
+        const merged = mergeRealtime(item, state.realtime[code]);
+        if (code === INDEX_SYMBOL) { if (merged) state.index = merged; }
+        else state.stocks[code] = merged;
+    });
+}
+
+// ===================== 盤中即時 KD =====================
+// 以即時報價作為今日 K 棒 (取代或接在日線之後)，並以前一日 K、D 遞推今日 K、D：
+// 與用完整歷史重算的結果相同，不需要更多歷史資料
+function mergeRealtime(item, q) {
+    if (!item || !q || state.source === "sim" || !q.price || !q.date) return item;
+    const today = `${q.date.slice(0, 4)}-${q.date.slice(4, 6)}-${q.date.slice(6, 8)}`;
+    const candles = item.candles.slice(), k = item.k.slice(), d = item.d.slice();
+    const last = candles[candles.length - 1];
+    if (!last || today < last.time) return item;
+
+    const replace = last.time === today;
+    if (replace) { candles.pop(); k.pop(); d.pop(); }
+    if (candles.length === 0 || k.length === 0) return item;
+
+    const bar = {
+        time: today,
+        open: q.open ?? q.price,
+        high: Math.max(q.high ?? q.price, q.price),
+        low: Math.min(q.low ?? q.price, q.price),
+        close: q.price,
+        volume: q.volumeLots != null ? q.volumeLots * 1000 : (replace ? last.volume : 0),
+    };
+    candles.push(bar);
+    const win = candles.slice(-9);
+    const hi = Math.max(...win.map(c => c.high)), lo = Math.min(...win.map(c => c.low));
+    const rsv = hi > lo ? (bar.close - lo) / (hi - lo) * 100 : 50;
+    const kToday = k[k.length - 1] * 2 / 3 + rsv / 3;
+    const dToday = d[d.length - 1] * 2 / 3 + kToday / 3;
+    k.push(+kToday.toFixed(2));
+    d.push(+dToday.toFixed(2));
+
+    const prevClose = q.prevClose ?? candles[candles.length - 2].close;
+    const change = +(q.price - prevClose).toFixed(2);
+    return {
+        ...item,
+        candles: candles.slice(-80), k: k.slice(-80), d: d.slice(-80),
+        price: q.price, change, change_pct: +(change / prevClose * 100).toFixed(2),
+        dataDate: today,
+        realtime: { time: q.time, provisional: isMarketOpen() && today === taipeiNow().date },
+    };
+}
+
+function taipeiNow() {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit",
+        weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(new Date()).map(p => [p.type, p.value]));
+    return {
+        date: `${parts.year}-${parts.month}-${parts.day}`,
+        weekday: parts.weekday,
+        minutes: (+parts.hour % 24) * 60 + +parts.minute,
+    };
+}
+
+// 台股盤中 (週一至週五 09:00 ~ 13:30，多留 5 分鐘接收盤價)；未處理國定假日，假日時報價不變不影響結果
+function isMarketOpen() {
+    const t = taipeiNow();
+    return !["Sat", "Sun"].includes(t.weekday) && t.minutes >= 9 * 60 && t.minutes <= 13 * 60 + 35;
+}
+
+let realtimeTimer = null;
+
+// force：無論是否盤中都抓一次 (載入或切換股票時，取得今日收盤價)
+async function pollRealtime(force = false) {
+    clearTimeout(realtimeTimer);
+    const url = realtimeUrl();
+    if (url && state.source !== "sim" && (force || isMarketOpen())) {
+        const codes = [...new Set([INDEX_SYMBOL, "0050", state.selected])];
+        try {
+            const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}codes=${codes.join(",")}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            Object.assign(state.realtime, body.quotes || {});
+            state.realtimeError = null;
+        } catch (e) {
+            state.realtimeError = "即時報價連線失敗";
+        }
+        rebuild();
+        renderAll();
+    }
+    // 盤外每分鐘檢查是否開盤
+    realtimeTimer = setTimeout(pollRealtime, isMarketOpen() ? REALTIME_MS : 60000);
 }
 
 // 資料來源優先順序：本機後端 (即時) → 證交所日線 → 模擬資料
@@ -463,6 +566,7 @@ async function refresh() {
     }
     setStatusNote(null);
     refreshTimer = setTimeout(refresh, source === "live" ? REFRESH_MS : TWSE_REFRESH_MS);
+    pollRealtime(true);
 }
 
 // ===================== 畫面 =====================
@@ -480,24 +584,32 @@ function renderAll() {
 function renderHeader() {
     const badge = document.getElementById("sourceBadge");
     if (state.sandbox) { badge.className = "source sandbox"; badge.textContent = "🧪 沙盒模式"; }
-    else if (state.source === "live") { badge.className = "source live"; badge.textContent = "● 即時資料 (Yahoo 約延遲 20 分鐘)"; }
+    else if (state.source === "live") {
+        badge.className = "source live";
+        badge.textContent = state.index && state.index.realtime ? "● 即時資料（證交所即時報價）" : "● 即時資料 (Yahoo 約延遲 20 分鐘)";
+    }
     else if (state.source === "twse") {
         const dd = state.index && state.index.dataDate;
         badge.className = "source live";
-        badge.textContent = `● 證交所日線資料${dd ? `（資料日 ${dd.slice(5).replace("-", "/")}）` : ""}`;
+        badge.textContent = state.index && state.index.realtime
+            ? `● 證交所日線 + 即時報價（${dd.slice(5).replace("-", "/")}）`
+            : `● 證交所日線資料${dd ? `（資料日 ${dd.slice(5).replace("-", "/")}）` : ""}`;
     }
     else { badge.className = "source sim"; badge.textContent = "◐ 模擬資料 (無法連線證交所；稍後會自動重試)"; }
 
     if (statusNote) { document.getElementById("updatedAt").textContent = statusNote; return renderIndexQuote(); }
 
     let txt = `更新 ${new Date().toLocaleTimeString("zh-TW", { hour12: false })}`;
+    const rt = state.index && state.index.realtime;
     const qt = state.index && state.index.quoteTime;
-    if (qt) {
+    if (qt && !rt) {  // 有證交所即時報價時不顯示 Yahoo 的延遲報價時間
         const t = new Date(qt * 1000);  // 後端已 +8 小時，以 UTC 讀出即為台北時間
         txt += ` ｜ 報價時間 ${String(t.getUTCHours()).padStart(2, "0")}:${String(t.getUTCMinutes()).padStart(2, "0")}`;
     }
-    if (state.source === "live" && apiAvailable) txt += " ｜ 每 10 秒自動更新";
-    if (state.source === "twse") txt += " ｜ 當日資料約 14:30 盤後公布，每 10 分鐘檢查";
+    if (rt) txt += ` ｜ 證交所即時報價 ${rt.time}${rt.provisional ? "（盤中，每 10 秒更新）" : ""}`;
+    else if (state.realtimeError) txt += ` ｜ ${state.realtimeError}`;
+    else if (state.source === "live" && apiAvailable) txt += " ｜ 每 10 秒自動更新";
+    else if (state.source === "twse") txt += realtimeUrl() ? "" : " ｜ 未設定即時報價中繼，僅顯示日線（當日資料約 14:30 盤後公布）";
     document.getElementById("updatedAt").textContent = txt;
     renderIndexQuote();
 }
@@ -525,7 +637,8 @@ function renderDecision() {
     const box = document.getElementById("decision");
     box.className = `decision ${r.level}`;
     document.getElementById("signalText").textContent = r.text;
-    document.getElementById("signalWhy").textContent = r.why;
+    const provisional = !state.sandbox && state.index.realtime && state.index.realtime.provisional;
+    document.getElementById("signalWhy").textContent = provisional ? `${r.why}（盤中即時 KD，13:30 收盤後定案）` : r.why;
     document.getElementById("statK").textContent = kd.k.toFixed(2);
     document.getElementById("statD").textContent = kd.d.toFixed(2);
 
