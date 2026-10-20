@@ -44,6 +44,9 @@
     .warning .icon { font-size: 22px; }
     .warning .detail { font-size: 13px; font-weight: normal; opacity: 0.9; }
     .warning.buy-prep { display: flex; color: #fef3c7; background: linear-gradient(90deg, rgba(34, 197, 94, 0.35), rgba(251, 191, 36, 0.35)); border: 1px solid var(--gold); animation: breatheGold 1.6s ease-in-out infinite; }
+    /* K < 20：已進入買進區，紅色快速呼吸閃爍 (台股紅色代表買進) */
+    .warning.buy-now { display: flex; color: #fff1f2; background: rgba(220, 38, 38, 0.55); border: 2px solid #ef4444; animation: breatheRed 0.9s ease-in-out infinite; }
+    .warning.buy-now .text { animation-duration: 0.9s; }
     .warning.sell-prep { display: flex; color: #fff1f2; background: rgba(220, 38, 38, 0.45); border: 1px solid #f87171; animation: breatheRed 1.2s ease-in-out infinite; }
     .warning .text { animation: textBreathe 1.6s ease-in-out infinite; }
     @keyframes breatheGold {
@@ -55,6 +58,13 @@
         50%      { box-shadow: 0 0 26px 6px rgba(239, 68, 68, 0.7); filter: brightness(1.3); }
     }
     @keyframes textBreathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    /* 當日死亡交叉：綠色呼吸閃爍 (台股綠色代表賣出 / 轉弱)，與 K 值預警各自獨立顯示 */
+    .warning.death-cross { display: flex; color: #dcfce7; background: rgba(22, 163, 74, 0.4); border: 2px solid #22c55e; animation: breatheGreen 1s ease-in-out infinite; }
+    .warning.death-cross .text { animation-duration: 1s; }
+    @keyframes breatheGreen {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.0); filter: brightness(0.85); }
+        50%      { box-shadow: 0 0 26px 6px rgba(34, 197, 94, 0.65); filter: brightness(1.3); }
+    }
 
     /* ===== 決策卡片 ===== */
     .decision { text-align: center; padding: 18px 12px; border-radius: 10px; background: var(--card-2); border: 2px solid var(--border); transition: border-color 0.3s, background 0.3s; }
@@ -164,6 +174,14 @@
     </div>
 </div>
 
+<div id="crossAlert" class="warning" role="alert">
+    <span class="icon">📉</span>
+    <div>
+        <div class="text" id="crossText"></div>
+        <div class="detail" id="crossDetail"></div>
+    </div>
+</div>
+
 <div class="grid">
     <!-- 決策卡片 -->
     <section class="card">
@@ -237,6 +255,7 @@
                 <button class="chip" data-k="19" data-d="16" data-pk="14" data-pd="17">K19 黃金交叉（強烈買進）</button>
                 <button class="chip" data-k="21" data-d="30" data-pk="23" data-pd="32">K21（準備買進）</button>
                 <button class="chip" data-k="50" data-d="48" data-pk="49" data-pd="47">K50（觀望）</button>
+                <button class="chip" data-k="50" data-d="52" data-pk="55" data-pd="51">K50 死亡交叉（轉弱提示）</button>
                 <button class="chip" data-k="79" data-d="70" data-pk="77" data-pd="68">K79（停利警示）</button>
                 <button class="chip" data-k="85" data-d="80" data-pk="83" data-pd="78">K85（賣出）</button>
                 <button class="chip" data-k="82" data-d="86" data-pk="88" data-pd="85">K82 死亡交叉（強烈賣出）</button>
@@ -273,6 +292,10 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.9.0", date: "2026-10-20", scope: "儀表板",
+      changes: ["大盤 K < 20 時改為紅色快速閃爍「買進訊號」；20 ≤ K < 22 維持金色「準備買進」預警",
+                "新增死亡交叉提示：當日 K 向下跌破 D 時顯示綠色閃爍，K > 80 時註明強烈賣出；沙盒新增「K50 死亡交叉」情境"],
+      services: [] },
     { ver: "v2.8.0", date: "2026-10-19", scope: "儀表板",
       changes: ["網頁版支援上櫃股票 (例如 宜鼎 5289、矽瑪 3511)：名稱查詢、日 K 線、成交量與盤中即時價",
                 "上櫃名稱與日線改由 FinMind 取得 (櫃買中心會封鎖 Cloudflare，無法經 Worker 轉送)，與證交所請求共用限速佇列"],
@@ -404,7 +427,8 @@ function decide(k, d, prevK, prevD) {
     else if (k > KD_SELL)          { level = "sell";        text = "賣出 0050";     why = `K ${k.toFixed(1)} > ${KD_SELL}，進入過熱區`; }
 
     let warning = null;
-    if (k < KD_WARN_LOW)       warning = "buy-prep";
+    if (k < KD_BUY)            warning = "buy-now";   // K < 20：紅色閃爍
+    else if (k < KD_WARN_LOW)  warning = "buy-prep";  // 20 ≤ K < 22：金色預警
     else if (k > KD_WARN_HIGH) warning = "sell-prep";
 
     return { level, text, why, golden, death, warning };
@@ -835,7 +859,11 @@ function renderDecision() {
 
     const warn = document.getElementById("warning");
     warn.className = `warning ${r.warning || ""}`;
-    if (r.warning === "buy-prep") {
+    if (r.warning === "buy-now") {
+        document.getElementById("warnIcon").textContent = "🔴";
+        document.getElementById("warnText").textContent = `買進訊號：大盤 K 值 ${kd.k.toFixed(1)} < ${KD_BUY}，進入超賣區，買進 0050`;
+        document.getElementById("warnDetail").textContent = r.golden ? "K 向上穿越 D（黃金交叉），強烈買進" : "若 K 向上穿越 D（黃金交叉）則為強烈買進";
+    } else if (r.warning === "buy-prep") {
         document.getElementById("warnIcon").textContent = "🟡";
         document.getElementById("warnText").textContent = `超跌預警：大盤 K 值 ${kd.k.toFixed(1)} < ${KD_WARN_LOW}，準備買進 0050`;
         document.getElementById("warnDetail").textContent = `K < ${KD_BUY} 觸發買進；若同時出現黃金交叉為強烈買進`;
@@ -843,6 +871,17 @@ function renderDecision() {
         document.getElementById("warnIcon").textContent = "🔥";
         document.getElementById("warnText").textContent = `過熱警示：大盤 K 值 ${kd.k.toFixed(1)} > ${KD_WARN_HIGH}，留意 0050 停利`;
         document.getElementById("warnDetail").textContent = `K > ${KD_SELL} 觸發賣出；若同時出現死亡交叉為強烈賣出`;
+    }
+
+    // 死亡交叉提示：前日 K ≥ D 且今日 K < D，任何 K 值區間都顯示
+    const crossAlert = document.getElementById("crossAlert");
+    crossAlert.className = `warning${r.death ? " death-cross" : ""}`;
+    if (r.death) {
+        document.getElementById("crossText").textContent =
+            `死亡交叉：大盤 K 值 ${kd.k.toFixed(1)} 向下跌破 D 值 ${kd.d.toFixed(1)}`;
+        document.getElementById("crossDetail").textContent = kd.k > KD_SELL
+            ? `K > ${KD_SELL} 且死亡交叉 → 強烈賣出 0050`
+            : `短線轉弱訊號，留意 0050 風險（K > ${KD_SELL} 時出現死亡交叉為強烈賣出）`;
     }
 }
 
