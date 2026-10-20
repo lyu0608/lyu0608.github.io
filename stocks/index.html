@@ -292,6 +292,9 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.9.1", date: "2026-10-20", scope: "儀表板",
+      changes: ["會員登入暫不啟用：未設定 Supabase 時隱藏「登入」按鈕與面板，自選單只存在此裝置 (登入程式保留，填入設定值後自動出現)"],
+      services: [] },
     { ver: "v2.9.0", date: "2026-10-20", scope: "儀表板",
       changes: ["大盤 K < 20 時改為紅色快速閃爍「買進訊號」；20 ≤ K < 22 維持金色「準備買進」預警",
                 "新增死亡交叉提示：當日 K 向下跌破 D 時顯示綠色閃爍，K > 80 時註明強烈賣出；沙盒新增「K50 死亡交叉」情境"],
@@ -1219,6 +1222,9 @@ async function handleAuthChange(session) {
 
 function renderSyncPanel() {
     const btn = document.getElementById("syncBtn");
+    // 尚未設定 Supabase (SUPABASE_URL / SUPABASE_ANON_KEY 留空) 時隱藏登入按鈕與面板，自選單只存在此裝置
+    btn.hidden = !sb;
+    if (!sb) { document.getElementById("syncPanel").hidden = true; return; }
     btn.textContent = currentUser ? `👤 ${currentUser.email}${syncError ? "（同步異常）" : ""}` : "👤 登入";
     btn.classList.toggle("on", !!currentUser && !syncError);
     btn.classList.toggle("err", !!currentUser && !!syncError);
