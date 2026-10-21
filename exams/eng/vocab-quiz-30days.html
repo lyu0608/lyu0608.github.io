@@ -2019,3 +2019,212 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   buttons.forEach(b => {
     const subEl = b.querySelector(".opt-sub-text");
     if (subEl && (b.dataset.sub || b.dataset.kk)) {
+      const isWordDef = (currentQuizType === "wordDef");
+      const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
+      
+      const englishTextToSpeak = isWordDef ? b.dataset.sub : b.dataset.target;
+      
+      const soundBtnHtml = englishTextToSpeak 
+        ? `<button class="opt-sound-btn" onclick="event.stopPropagation(); speakPureUS('${englishTextToSpeak.replace(/'/g, "\\'")}')">🔊 發音</button>` 
+        : "";
+
+      if (isWordDef) {
+        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}`;
+      } else if (currentQuizType === "listen") {
+        subEl.innerHTML = `<span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
+      } else {
+        subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
+      }
+      subEl.classList.remove("hidden");
+    }
+
+    if (b.dataset.target === answerTarget) {
+      b.classList.add("correct");
+    }
+  });
+
+  const isCorrect = (selectedText === answerTarget);
+
+  if (!userStore.stats) userStore.stats = getDefaultStore().stats;
+  userStore.stats.totalQ = (userStore.stats.totalQ || 0) + 1;
+  if (!userStore.stats[currentQuizType]) {
+    userStore.stats[currentQuizType] = { total: 0, correct: 0 };
+  }
+  userStore.stats[currentQuizType].total = (userStore.stats[currentQuizType].total || 0) + 1;
+
+  if (isCorrect) {
+    correctCount++;
+    userStore.stats.totalCorrect = (userStore.stats.totalCorrect || 0) + 1;
+    userStore.stats[currentQuizType].correct = (userStore.stats[currentQuizType].correct || 0) + 1;
+
+    if (currentQuizType === "cloze" || currentQuizType === "exam") {
+      const blank = document.querySelector(".cloze-blank");
+      if (blank) { blank.innerText = item.en; blank.style.color = "var(--success)"; }
+    }
+  } else {
+    btn.classList.add("wrong");
+    wrongCount++;
+    
+    const mistakeRecord = currentQuizType === "listen" 
+      ? { ...item, quizType: "listen", id: item.scriptEn }
+      : { ...item, quizType: currentQuizType };
+
+    const itemIdentifier = mistakeRecord.en || mistakeRecord.scriptEn;
+    if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === itemIdentifier)) {
+      userStore.mistakes.push(mistakeRecord);
+      updateMistakeCount();
+    }
+
+    if (currentQuizType === "cloze" || currentQuizType === "exam") {
+      const blank = document.querySelector(".cloze-blank");
+      if (blank) { blank.innerText = item.en; blank.style.color = "var(--danger)"; }
+    }
+  }
+
+  triggerAutoSync();
+
+  const zhHintEl = document.getElementById("clozeZhHint");
+  const expBox = document.getElementById("explanationBox");
+  expBox.className = "explanation-card";
+
+  if (currentQuizType === "listen") {
+    const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
+    zhHintEl.innerText = `聽力原文：${listenData.scriptEn}\n中文翻譯：${listenData.scriptZh}`;
+    zhHintEl.classList.remove("hidden");
+
+    expBox.innerHTML = `
+      <div class="explanation-title">💡 考點解析與會考完整語境</div>
+      <span class="sentence-en">• 完整聽力文本：${listenData.scriptEn}</span>
+      <span class="sentence-zh">• 題目中文翻譯：${listenData.scriptZh}</span>
+      <div class="grammar-note">【${listenData.year} ${listenData.section}】 ${listenData.explanation}</div>
+    `;
+  } else {
+    const cleanWord = item.en.trim().toLowerCase();
+    const examData = CAP_EXAM_BANK[cleanWord];
+    if (currentQuizType === "exam") {
+      zhHintEl.innerText = examData ? `題目中文翻譯：${examData.zh}` : `語意翻譯：${item.sentenceZh || item.zh}`;
+      zhHintEl.classList.remove("hidden");
+    } else if (currentQuizType === "cloze") {
+      zhHintEl.innerText = `語意翻譯：${item.sentenceZh || item.zh}`;
+      zhHintEl.classList.remove("hidden");
+    }
+
+    const sourceLabel = examData 
+      ? `【${examData.year} ${examData.section}】` 
+      : CAP_YEAR_MAPPING.getSource(item.en, item.level);
+
+    expBox.innerHTML = `
+      <div class="explanation-title">💡 考點解析與會考完整語境</div>
+      <span class="sentence-en">• 完整會考語境：${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span>
+      <span class="sentence-zh">• 題目中文翻譯：${examData ? examData.zh : (item.sentenceZh || '')} (核心單字：${item.zh})</span>
+      <div class="grammar-note">${sourceLabel} ${item.grammar || '會考核心重要高頻詞'}</div>
+    `;
+  }
+
+  document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
+  document.getElementById("nextBtn").disabled = false;
+}
+
+function nextQuestion() {
+  if (!hasAnswered) return;
+  stopAllAudio();
+  currentIndex++;
+  renderQuestion();
+}
+
+function updateMistakeCount() {
+  document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userStore.mistakes.length})`;
+}
+
+function reviewMistakes() {
+  if (userStore.mistakes.length === 0) return alert("目前無錯題！");
+  isRandomMode = false;
+  currentTestQueue = shuffle(userStore.mistakes);
+  currentIndex = 0;
+  correctCount = 0;
+  wrongCount = 0;
+  
+  document.getElementById("poolInfoText").innerText = `純錯題特訓 (${currentTestQueue.length} 題)`;
+  renderQuestion();
+}
+
+function toggleHistory() {
+  const box = document.getElementById("historyBox");
+  box.classList.toggle("hidden");
+  const details = document.getElementById("historyDetails");
+  const entries = Object.entries(userStore.history);
+  const typeNames = { wordDef: "單字識義", cloze: "句子填空", exam: "會考真題", listen: "會考聽力" };
+  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date}</div>`).join("");
+}
+
+function speakCurrentWord() {
+  if (currentIndex >= currentTestQueue.length) return;
+  const cur = currentTestQueue[currentIndex];
+  let textToSpeak = cur.en || cur.scriptEn || "";
+  
+  if (hasAnswered) {
+    if (currentQuizType === "exam") {
+      const examData = CAP_EXAM_BANK[(cur.en || "").trim().toLowerCase()];
+      textToSpeak = examData ? examData.sentence.replace('______', cur.en) : cur.sentenceEn;
+    } else if (currentQuizType === "cloze") {
+      textToSpeak = cur.sentenceEn;
+    }
+  }
+
+  speakPureUS(textToSpeak);
+}
+
+window.addEventListener("keydown", (e) => {
+  const k = e.key.toUpperCase();
+  const btns = document.querySelectorAll(".option-btn");
+  if (!hasAnswered) {
+    if (["1", "A"].includes(k) && btns[0]) btns[0].click();
+    if (["2", "B"].includes(k) && btns[1]) btns[1].click();
+    if (["3", "C"].includes(k) && btns[2]) btns[2].click();
+    if (["4", "D"].includes(k) && btns[3]) btns[3].click();
+  } else if (e.code === "Space" || e.key === "Enter") {
+    e.preventDefault();
+    nextQuestion();
+  }
+  if (k === "R") {
+    if (currentQuizType === "listen") playCurrentListeningAudio();
+    else speakCurrentWord();
+  }
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { getBestUSVoice(); };
+}
+
+// 頁面載入初始化：結合題庫載入與 Supabase 自動記住登入狀態
+window.onload = async () => {
+  if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB)) {
+    FULL_VOCAB = window.EXTERNAL_VOCAB;
+    buildVocabMaps();
+    document.getElementById("sourceStatus").innerText = `🟢 題庫就緒 (${FULL_VOCAB.length} 字)`;
+    
+    const btnAll = document.getElementById("btnRandAll");
+    if (btnAll) btnAll.innerText = `🏆 全部(${FULL_VOCAB.length})`;
+  }
+
+  // 自動檢查並恢復 Supabase 登入狀態 (免重複登入)
+  if (supabaseClient) {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session && session.user) {
+        enterApp(session.user);
+      }
+    } catch (err) {
+      console.log("自動恢復登入狀態失敗，請手動登入");
+    }
+  }
+};
+</script>
+</body>
+</html>
