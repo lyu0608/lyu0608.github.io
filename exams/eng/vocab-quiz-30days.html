@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+  <!-- 引用外部 Supabase 函式庫與本機 2277 競賽字庫 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="vocab2000.js"></script>
 
@@ -34,7 +35,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-    /* 最高優先權隱藏，避免 Modal 預設平鋪露出 */
+    /* 【關鍵樣式】最高優先權隱藏，避免 Modal 預設平鋪露出 */
     .hidden { display: none !important; }
 
     body {
@@ -154,6 +155,8 @@
     .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
 
     .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
     .btn-guest {
       background: #f1f5f9;
       color: var(--text);
@@ -370,7 +373,7 @@
       gap: 5px;
     }
 
-    /* 選項列表與英中對照樣式 */
+    /* 選項樣式與答題後雙語對照 */
     .options-grid { display: grid; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
     .option-btn {
       display: flex;
@@ -420,7 +423,6 @@
       font-size: 11px;
       font-weight: normal;
       color: #64748b;
-      font-family: inherit;
     }
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.correct .opt-sub-text { color: #15803d; }
@@ -475,7 +477,7 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* 彈窗遮罩與卡片樣式 */
+    /* Modal 彈窗遮罩與卡片樣式 */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -622,7 +624,7 @@
       <div class="random-btn-group">
         <button class="random-btn" id="btnRand100" onclick="startRandomQuiz(100)">⚡ 100題</button>
         <button class="random-btn" id="btnRand200" onclick="startRandomQuiz(200)">🔥 200題</button>
-        <button class="random-btn" id="btnRandAll" onclick="startRandomQuiz('all')">🏆 全部(2240)</button>
+        <button class="random-btn" id="btnRandAll" onclick="startRandomQuiz('all')">🏆 全部(載入中)</button>
       </div>
     </div>
 
@@ -752,19 +754,12 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.3.0 - 選項英中對照強化與 KK 音標全面整合</div>
+        <div class="history-tag">v3.5.0 - 中文選項去重優化與防掉單保障</div>
         <div class="history-desc">
           <ul>
-            <li><b>作答後 KK 音標呈現：</b>作答後所有選項展開英中雙語，並附帶對應單字的 KK 音標。</li>
-            <li><b>彈窗 CSS 優先權修復：</b>加強 `.hidden` 與 `.modal-overlay` 樣式層級，解決頁面載入時彈窗錯誤展開問題。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v3.1.0 - 答題即時同步與即時統計修復</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>即時作答累計機制：</b>每答一題立即更新累計總數與題型分類。</li>
+            <li><b>高效能唯一去重：</b>採用高效隨機抽樣搭配 Set 過濾，確保選項中文絕對不重複。</li>
+            <li><b>防掉單安全機制：</b>新增視窗可視狀態監聽，關閉頁面時自動觸發最終資料同步。</li>
+            <li><b>動態題庫計算：</b>同步支援 2,277 題競賽與會考字庫的平均分配排程。</li>
           </ul>
         </div>
       </div>
@@ -979,7 +974,7 @@ const CAP_YEAR_MAPPING = {
 };
 
 // ========================================================
-// 2. Supabase 雲端同步與多學員管理
+// 2. Supabase 雲端同步與多學員管理核心
 // ========================================================
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
@@ -1095,6 +1090,15 @@ async function syncToCloud() {
   }
 }
 
+// 防掉單安全機制：當分頁隱藏或關閉時立刻強制同步
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && syncDebounceTimer) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = null;
+    syncToCloud();
+  }
+});
+
 let authTab = "login";
 function switchAuthTab(tab) {
   authTab = tab;
@@ -1181,7 +1185,7 @@ async function handleLogout() {
 }
 
 // ========================================================
-// 管理者後台學習進度總覽 (以 select('*') 容錯讀取)
+// 管理者後台：讀取全體學員進度與題型統計
 // ========================================================
 function toggleAdminModal(show) {
   const modal = document.getElementById("adminDashboardModal");
@@ -1323,7 +1327,7 @@ async function fetchAdminAllProgress() {
   }
 }
 
-// App 安裝控制
+// PWA 原生安裝支援
 let deferredPwaPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
@@ -1350,7 +1354,7 @@ function triggerPwaPrompt() {
   }
 }
 
-// 切換學員控制
+// 免密碼快速切換學員
 function toggleSwitchAccountModal(show) {
   const modal = document.getElementById("switchAccountModal");
   if (show) modal.classList.remove("hidden");
@@ -1514,7 +1518,7 @@ async function executeClearRecords() {
 }
 
 // ========================================================
-// 3. 測驗引擎核心
+// 3. 測驗引擎核心模組
 // ========================================================
 let FULL_VOCAB = [];
 let DAYS_COUNT = 30;
@@ -1530,7 +1534,6 @@ let currentQuizType = "wordDef";
 
 let speechKeepAliveTimer = null;
 
-// 快速字典緩存表 (英文轉項目、中文轉項目)
 let VOCAB_MAP_EN = {};
 let VOCAB_MAP_ZH = {};
 
@@ -1689,6 +1692,8 @@ function startRandomQuiz(count) {
   correctCount = 0;
   wrongCount = 0;
   document.getElementById("progressBar").style.background = "var(--purple)";
+  
+  document.getElementById("poolInfoText").innerText = `亂數特訓 (${currentTestQueue.length} 題)`;
   renderQuestion();
 }
 
@@ -1727,6 +1732,8 @@ function changeDay(day) {
   currentIndex = 0;
   correctCount = 0;
   wrongCount = 0;
+
+  document.getElementById("poolInfoText").innerText = `本輪共 ${currentTestQueue.length} 題`;
   renderQuestion();
 }
 
@@ -1734,8 +1741,14 @@ function handleFilterChange() {
   if (!isRandomMode) changeDay(currentDay);
 }
 
-function createClozeSentence(sentence, targetWord) {
-  if (!sentence) return { masked: "______", hasReplaced: false };
+// 句子防呆防空白句型處理
+function createClozeSentence(sentence, targetWord, fallbackZh) {
+  if (!sentence || sentence.trim() === "") {
+    return { 
+      masked: `請選出「<b>${fallbackZh || '此字'}</b>」對應的英文單字：<span class="cloze-blank">_______</span>`, 
+      hasReplaced: false 
+    };
+  }
   const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`\\b${escaped}\\b`, 'i');
   if (regex.test(sentence)) {
@@ -1749,7 +1762,6 @@ function createClozeSentence(sentence, targetWord) {
   return { masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`, hasReplaced: false };
 }
 
-// 輔助函式：根據英文或中文查詢項目資訊 (包含 KK 音標)
 function lookupWordDetail(text, fromType) {
   if (!text) return { zh: "", en: "", kk: "" };
   if (fromType === "en") {
@@ -1761,6 +1773,32 @@ function lookupWordDetail(text, fromType) {
     const item = VOCAB_MAP_ZH[clean];
     return item ? { zh: item.zh || "", en: item.en || "", kk: item.kk || "" } : { zh: text, en: "", kk: "" };
   }
+}
+
+// 【高效能唯一去重抽樣】確保單字識義的中文選項絕不重複
+function pickDistractors(correctItem, count = 3) {
+  const chosenEn = new Set([correctItem.en.trim().toLowerCase()]);
+  const chosenZh = new Set([correctItem.zh.trim()]);
+  const result = [];
+  const maxAttempts = 200;
+  let attempts = 0;
+
+  while (result.length < count && attempts < maxAttempts) {
+    attempts++;
+    const randIdx = Math.floor(Math.random() * FULL_VOCAB.length);
+    const candidate = FULL_VOCAB[randIdx];
+    if (!candidate || !candidate.en || !candidate.zh) continue;
+
+    const cEn = candidate.en.trim().toLowerCase();
+    const cZh = candidate.zh.trim();
+
+    if (!chosenEn.has(cEn) && !chosenZh.has(cZh)) {
+      chosenEn.add(cEn);
+      chosenZh.add(cZh);
+      result.push(candidate);
+    }
+  }
+  return result;
 }
 
 function renderQuestion() {
@@ -1812,7 +1850,6 @@ function renderQuestion() {
   const cur = currentTestQueue[currentIndex];
   const examTagEl = document.getElementById("examSourceTag");
 
-  // 統一選項結構：{ primaryText, subText, subKk, targetValue }
   let options = [];
   let answerTarget = "";
 
@@ -1855,11 +1892,11 @@ function renderQuestion() {
     let distStrs = [];
 
     if (examData) {
-      const clozeObj = createClozeSentence(examData.sentence, cur.en);
+      const clozeObj = createClozeSentence(examData.sentence, cur.en, cur.zh);
       document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
       distStrs = examData.distractors;
     } else {
-      const clozeObj = createClozeSentence(cur.sentenceEn, cur.en);
+      const clozeObj = createClozeSentence(cur.sentenceEn, cur.en, cur.zh);
       document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
       distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
     }
@@ -1870,7 +1907,7 @@ function renderQuestion() {
       return {
         primaryText: wordEn,
         subText: detail.zh,
-        subKk: detail.kk, // KK 音標
+        subKk: detail.kk,
         targetValue: wordEn
       };
     }));
@@ -1882,7 +1919,7 @@ function renderQuestion() {
     soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
 
-    const clozeObj = createClozeSentence(cur.sentenceEn, cur.en);
+    const clozeObj = createClozeSentence(cur.sentenceEn, cur.en, cur.zh);
     document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
     document.getElementById("wordKk").innerText = `[/ 文意字彙考點 /]`;
 
@@ -1895,13 +1932,13 @@ function renderQuestion() {
       return {
         primaryText: wordEn,
         subText: detail.zh,
-        subKk: detail.kk, // KK 音標
+        subKk: detail.kk,
         targetValue: wordEn
       };
     }));
 
   } else {
-    // 🔤 單字識義題 (題目為英文，選項初始為中文，作答後顯示英文與 KK 音標)
+    // 🔤 單字識義題型 (使用 pickDistractors 確保中文選項絕不重複)
     audioBox.classList.add("hidden");
     soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
@@ -1910,13 +1947,13 @@ function renderQuestion() {
     document.getElementById("wordKk").innerText = cur.kk || "";
 
     answerTarget = cur.zh;
-    const distItems = shuffle(FULL_VOCAB.filter(i => i.zh !== cur.zh)).slice(0, 3);
+    const distItems = pickDistractors(cur, 3);
     const fullItems = [cur, ...distItems];
 
     options = shuffle(fullItems.map(item => ({
       primaryText: item.zh,
       subText: item.en,
-      subKk: item.kk || "", // KK 音標
+      subKk: item.kk || "",
       targetValue: item.zh
     })));
   }
@@ -1953,7 +1990,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
 
   const buttons = document.querySelectorAll(".option-btn");
   
-  // ★ 答題後：展開所有選項的英中對照文本與 KK 音標
   buttons.forEach(b => {
     const subEl = b.querySelector(".opt-sub-text");
     if (subEl && (b.dataset.sub || b.dataset.kk)) {
@@ -1961,13 +1997,10 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
       const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
 
       if (isWordDef) {
-        // 單字識義題：[ 英文 ] + KK音標
         subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted}`;
       } else if (currentQuizType === "listen") {
-        // 聽力題：( 中文語意 )
         subEl.innerHTML = `<span>( ${b.dataset.sub} )</span>`;
       } else {
-        // 填空/真題：KK音標 + ( 中文 )
         subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span>`;
       }
       subEl.classList.remove("hidden");
@@ -2078,6 +2111,8 @@ function reviewMistakes() {
   currentIndex = 0;
   correctCount = 0;
   wrongCount = 0;
+  
+  document.getElementById("poolInfoText").innerText = `純錯題特訓 (${currentTestQueue.length} 題)`;
   renderQuestion();
 }
 
@@ -2140,6 +2175,9 @@ window.onload = async () => {
     FULL_VOCAB = window.EXTERNAL_VOCAB;
     buildVocabMaps();
     document.getElementById("sourceStatus").innerText = `🟢 題庫就緒 (${FULL_VOCAB.length} 字)`;
+    
+    const btnAll = document.getElementById("btnRandAll");
+    if (btnAll) btnAll.innerText = `🏆 全部(${FULL_VOCAB.length})`;
   }
 };
 </script>
