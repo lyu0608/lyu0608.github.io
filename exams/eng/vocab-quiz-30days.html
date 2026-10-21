@@ -413,7 +413,7 @@
     .opt-sub-text {
       font-size: 12px;
       font-weight: 600;
-      color: var(--primary);
+      color: #2563eb;
       display: flex;
       align-items: center;
       flex-wrap: wrap;
@@ -770,12 +770,12 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.7.0 - 自動記住登入狀態 (持久化 Session)</div>
+        <div class="history-tag">v3.8.0 - 跨題型順序隨機洗牌機制</div>
         <div class="history-desc">
           <ul>
-            <li><b>免重複登入：</b>引入 Supabase 自動 Session 恢復機制，開啟網頁或重新整理時自動維持登入狀態。</li>
-            <li><b>選項獨立發音：</b>答題後在選項的英文單字/句子旁加入專屬發音按鈕（🔊），點擊即可聆聽標準美式發音。</li>
-            <li><b>高效能唯一去重：</b>採用高效隨機抽樣搭配 Set 過濾，確保單字識義選項中文絕對不重複。</li>
+            <li><b>動態隨機順序：</b>每次切換天數或轉換題型（單字/填空/真題）時，系統都會自動對題庫進行洗牌，確保各題型的單字順序完全不同。</li>
+            <li><b>免重複登入：</b>內建 Supabase 持久化 Session 記憶，保持登入狀態不中斷。</li>
+            <li><b>選項獨立發音：</b>作答後選項支援獨立發音按鈕（🔊）與去重機制。</li>
           </ul>
         </div>
       </div>
@@ -1009,7 +1009,7 @@ let supabaseClient = null;
 if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
-      persistSession: true, // 啟用 Supabase 內建持久化憑證記憶
+      persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true
     }
@@ -1668,7 +1668,16 @@ function setQuizType(type) {
   listenBtn.classList.toggle("listen-active", type === "listen");
   listenBtn.classList.toggle("active", type === "listen");
 
-  renderQuestion();
+  // 切換題型時重新洗牌當前佇列，確保不同題型的單字順序完全不同
+  if (!isRandomMode) {
+    changeDay(currentDay);
+  } else {
+    currentTestQueue = shuffle(currentTestQueue);
+    currentIndex = 0;
+    correctCount = 0;
+    wrongCount = 0;
+    renderQuestion();
+  }
 }
 
 function shuffle(arr) {
@@ -1689,7 +1698,9 @@ function initDayPlans() {
   let cursor = 0;
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const count = d <= remainder ? (basePerDay + 1) : basePerDay;
-    dayPlans[d] = FULL_VOCAB.slice(cursor, cursor + count);
+    // 每次初始化各天計畫時，對完整字庫進行隨機洗牌切分，確保順序每次都不一樣
+    const shuffledFull = shuffle(FULL_VOCAB);
+    dayPlans[d] = shuffledFull.slice(cursor, cursor + count);
     cursor += count;
   }
 }
@@ -1757,6 +1768,7 @@ function changeDay(day) {
     });
   }
 
+  // 每次切換天數時重新洗牌，確保順序隨機
   currentTestQueue = shuffle(pool);
   currentIndex = 0;
   correctCount = 0;
@@ -2202,7 +2214,6 @@ if (typeof window !== "undefined" && window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => { getBestUSVoice(); };
 }
 
-// 頁面載入初始化：結合題庫載入與 Supabase 自動記住登入狀態
 window.onload = async () => {
   if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB)) {
     FULL_VOCAB = window.EXTERNAL_VOCAB;
@@ -2213,7 +2224,6 @@ window.onload = async () => {
     if (btnAll) btnAll.innerText = `🏆 全部(${FULL_VOCAB.length})`;
   }
 
-  // 自動檢查並恢復 Supabase 登入狀態 (免重複登入)
   if (supabaseClient) {
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -2221,7 +2231,7 @@ window.onload = async () => {
         enterApp(session.user);
       }
     } catch (err) {
-      console.log("自動恢復登入狀態失敗，請手動登入");
+      console.log("自動恢復登入狀態失敗");
     }
   }
 };
