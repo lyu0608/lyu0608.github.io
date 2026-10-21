@@ -424,6 +424,22 @@
       font-weight: normal;
       color: #64748b;
     }
+    .opt-sound-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #eff6ff;
+      color: var(--primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .opt-sound-btn:hover {
+      background: #dbeafe;
+    }
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.correct .opt-sub-text { color: #15803d; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
@@ -754,12 +770,12 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.5.0 - 中文選項去重優化與防掉單保障</div>
+        <div class="history-tag">v3.6.0 - 選項翻譯英文獨立發音按鈕</div>
         <div class="history-desc">
           <ul>
-            <li><b>高效能唯一去重：</b>採用高效隨機抽樣搭配 Set 過濾，確保選項中文絕對不重複。</li>
+            <li><b>選項獨立發音：</b>答題後在選項的英文單字/句子旁加入專屬發音按鈕（🔊），點擊即可直接聆聽該選項的標準美式發音。</li>
+            <li><b>高效能唯一去重：</b>採用高效隨機抽樣搭配 Set 過濾，確保單字識義選項中文絕對不重複。</li>
             <li><b>防掉單安全機制：</b>新增視窗可視狀態監聽，關閉頁面時自動觸發最終資料同步。</li>
-            <li><b>動態題庫計算：</b>同步支援 2,277 題競賽與會考字庫的平均分配排程。</li>
           </ul>
         </div>
       </div>
@@ -767,7 +783,7 @@
         <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
         <div class="history-desc">
           <ul>
-            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照，方便同時複習其他干擾項的字義與 KK 音標。</li>
+            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照與 KK 音標。</li>
           </ul>
         </div>
       </div>
@@ -2007,13 +2023,21 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     if (subEl && (b.dataset.sub || b.dataset.kk)) {
       const isWordDef = (currentQuizType === "wordDef");
       const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
+      
+      // 取得該選項對應的英文原文（單字識義題的 subText 是英文，填空真題則是 primaryText 或是 targetValue）
+      const englishTextToSpeak = isWordDef ? b.dataset.sub : b.dataset.target;
+      
+      // 建立選項專屬的發音按鈕
+      const soundBtnHtml = englishTextToSpeak 
+        ? `<button class="opt-sound-btn" onclick="event.stopPropagation(); speakPureUS('${englishTextToSpeak.replace(/'/g, "\\'")}')">🔊 發音</button>` 
+        : "";
 
       if (isWordDef) {
-        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted}`;
+        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}`;
       } else if (currentQuizType === "listen") {
-        subEl.innerHTML = `<span>( ${b.dataset.sub} )</span>`;
+        subEl.innerHTML = `<span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
       } else {
-        subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span>`;
+        subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
       }
       subEl.classList.remove("hidden");
     }
