@@ -745,7 +745,7 @@
   </div>
 </div>
 
-<!-- 3. 🛠️ 軟體維護歷程彈窗 -->
+<!-- 3. 🛠️ 軟體維護歷程彈窗 (完整歷史紀錄) -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -760,6 +760,22 @@
             <li><b>高效能唯一去重：</b>採用高效隨機抽樣搭配 Set 過濾，確保選項中文絕對不重複。</li>
             <li><b>防掉單安全機制：</b>新增視窗可視狀態監聽，關閉頁面時自動觸發最終資料同步。</li>
             <li><b>動態題庫計算：</b>同步支援 2,277 題競賽與會考字庫的平均分配排程。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照，方便同時複習其他干擾項的字義與 KK 音標。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v3.1.0 - 答題即時同步與即時統計修復</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>即時作答累計機制：</b>每答一題立即更新累計總數與題型分類。</li>
           </ul>
         </div>
       </div>
@@ -1090,7 +1106,6 @@ async function syncToCloud() {
   }
 }
 
-// 防掉單安全機制：當分頁隱藏或關閉時立刻強制同步
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && syncDebounceTimer) {
     clearTimeout(syncDebounceTimer);
@@ -1741,7 +1756,6 @@ function handleFilterChange() {
   if (!isRandomMode) changeDay(currentDay);
 }
 
-// 句子防呆防空白句型處理
 function createClozeSentence(sentence, targetWord, fallbackZh) {
   if (!sentence || sentence.trim() === "") {
     return { 
@@ -1775,7 +1789,6 @@ function lookupWordDetail(text, fromType) {
   }
 }
 
-// 【高效能唯一去重抽樣】確保單字識義的中文選項絕不重複
 function pickDistractors(correctItem, count = 3) {
   const chosenEn = new Set([correctItem.en.trim().toLowerCase()]);
   const chosenZh = new Set([correctItem.zh.trim()]);
@@ -1938,7 +1951,6 @@ function renderQuestion() {
     }));
 
   } else {
-    // 🔤 單字識義題型 (使用 pickDistractors 確保中文選項絕不重複)
     audioBox.classList.add("hidden");
     soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
