@@ -319,6 +319,9 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.10.1", date: "2026-10-22", scope: "儀表板",
+      changes: ["修正：自選卡片每 10 秒整個重建，點擊剛好遇到重建時會點不到；改為只在自選清單變動時重建，平時只更新價格與走勢小圖"],
+      services: [] },
     { ver: "v2.10.0", date: "2026-10-22", scope: "儀表板",
       changes: ["自選單改為卡片：每檔顯示即時價、漲跌與當日 1 分鐘走勢小圖 (昨收虛線，末端接上證交所即時價)",
                 "點擊卡片捲到下方，顯示該股 KD (9,3,3) 圖 (含 80/20 門檻、78/22 預警線) 與日 K 線",
@@ -1405,66 +1408,85 @@ document.getElementById("syncBtn").addEventListener("click", () => {
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pullWatchlist(); });
 
 // ----- 自選卡片：名稱、即時價、漲跌、當日走勢小圖；點擊開啟 KD 與日 K 線 -----
+// 卡片只在自選清單 (代號、順序、名稱) 改變時重建；每 10 秒的更新只改價格與小圖，
+// 避免使用者點擊時元素剛好被換掉而點不到。
+const watchCards = new Map();  // code -> { card, nameEl, priceEl, spark }
+let watchSignature = "";
+
 function renderWatchlist() {
     const box = document.getElementById("watchlist");
-    box.innerHTML = "";
     if (watchlist.length === 0) {
         box.innerHTML = `<span class="watchlist-empty">尚無自選，輸入代號或名稱看盤後按「☆ 加入自選」</span>`;
+        watchCards.clear();
+        watchSignature = "";
         return;
     }
-    watchlist.forEach(w => {
-        const q = state.realtime[w.code];
-        const series = state.intraday[w.code];
-        const prevClose = (q && q.prevClose) || (series && series.prevClose) || null;
-        const price = (q && q.price) || (series && series.points.length ? series.points[series.points.length - 1].p : null);
-        const change = price != null && prevClose ? price - prevClose : null;
+    const signature = watchlist.map(w => `${w.code}:${w.name}`).join("|");
+    if (signature !== watchSignature) {
+        box.innerHTML = "";
+        watchCards.clear();
+        watchlist.forEach(w => {
+            const els = createWatchCard(w);
+            watchCards.set(w.code, els);
+            box.appendChild(els.card);
+        });
+        watchSignature = signature;
+    }
+    watchlist.forEach(w => updateWatchCard(w, watchCards.get(w.code)));
+}
 
-        const card = document.createElement("div");
-        card.className = "watch-card" + (w.code === state.selected ? " active" : "");
-        card.dataset.code = w.code;
-        card.tabIndex = 0;
-        card.setAttribute("role", "button");
-        card.title = `${w.name || w.code}：點擊看 KD 與日 K 線`;
+function createWatchCard(w) {
+    const card = document.createElement("div");
+    card.className = "watch-card";
+    card.dataset.code = w.code;
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.title = `${w.name || w.code}：點擊看 KD 與日 K 線`;
 
-        const head = document.createElement("div");
-        head.className = "wc-head";
-        const name = document.createElement("span");
-        name.className = "wc-name";
-        name.textContent = w.name || w.code;
-        const code = document.createElement("span");
-        code.className = "wc-code";
-        code.textContent = w.code;
-        const remove = document.createElement("button");
-        remove.type = "button";
-        remove.className = "wc-x";
-        remove.textContent = "×";
-        remove.title = `從自選移除 ${w.code}`;
-        remove.setAttribute("aria-label", remove.title);
-        remove.addEventListener("click", e => { e.stopPropagation(); removeFromWatchlist(w.code); });
-        head.append(name, code, remove);
+    const head = document.createElement("div");
+    head.className = "wc-head";
+    const nameEl = document.createElement("span");
+    nameEl.className = "wc-name";
+    nameEl.textContent = w.name || w.code;
+    const codeEl = document.createElement("span");
+    codeEl.className = "wc-code";
+    codeEl.textContent = w.code;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "wc-x";
+    remove.textContent = "×";
+    remove.title = `從自選移除 ${w.code}`;
+    remove.setAttribute("aria-label", remove.title);
+    remove.addEventListener("click", e => { e.stopPropagation(); removeFromWatchlist(w.code); });
+    head.append(nameEl, codeEl, remove);
 
-        const priceEl = document.createElement("div");
-        priceEl.className = `wc-price ${colorOf(change || 0)}`;
-        if (price != null) {
-            priceEl.textContent = fmt(price);
-            if (change != null) {
-                const small = document.createElement("small");
-                small.textContent = `${signed(change)} (${signed(change / prevClose * 100)}%)`;
-                priceEl.appendChild(small);
-            }
-        } else {
-            priceEl.textContent = "—";
-        }
+    const priceEl = document.createElement("div");
+    const spark = document.createElement("canvas");
+    spark.className = "wc-spark";
+    card.append(head, priceEl, spark);
 
-        const spark = document.createElement("canvas");
-        spark.className = "wc-spark";
-        card.append(head, priceEl, spark);
-        const open = () => selectStock(w.code, true);
-        card.addEventListener("click", open);
-        card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
-        box.appendChild(card);
-        drawSparkline(spark, series, q, prevClose);
-    });
+    const open = () => selectStock(w.code, true);
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+    return { card, nameEl, priceEl, spark };
+}
+
+function updateWatchCard(w, els) {
+    const q = state.realtime[w.code];
+    const series = state.intraday[w.code];
+    const prevClose = (q && q.prevClose) || (series && series.prevClose) || null;
+    const price = (q && q.price) || (series && series.points.length ? series.points[series.points.length - 1].p : null);
+    const change = price != null && prevClose ? price - prevClose : null;
+
+    els.card.classList.toggle("active", w.code === state.selected);
+    els.priceEl.className = `wc-price ${colorOf(change || 0)}`;
+    els.priceEl.textContent = price != null ? fmt(price) : "—";
+    if (price != null && change != null) {
+        const small = document.createElement("small");
+        small.textContent = `${signed(change)} (${signed(change / prevClose * 100)}%)`;
+        els.priceEl.appendChild(small);
+    }
+    drawSparkline(els.spark, series, q, prevClose);
 }
 
 // 當日走勢小圖：X 軸固定 09:00 ~ 13:30 (盤中只畫到目前)，昨收為虛線；末端接上證交所即時價
