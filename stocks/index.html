@@ -98,6 +98,26 @@
 
     /* 自選單：每個項目 = 看盤按鈕 + 移除按鈕 */
     .watchlist-label { font-size: 13px; color: var(--sub); }
+
+    /* 自選卡片：當日走勢小圖，點擊看 KD 與日 K 線 */
+    .watch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 6px; }
+    .watch-card { background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px 6px; cursor: pointer; transition: border-color 0.2s, transform 0.1s; min-width: 0; }
+    .watch-card:hover { border-color: #475569; }
+    .watch-card:active { transform: scale(0.98); }
+    .watch-card.active { border: 2px solid var(--accent); padding: 7px 9px 5px; }
+    .wc-head { display: flex; align-items: baseline; gap: 6px; }
+    .wc-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wc-code { font-size: 11px; color: var(--sub); }
+    .wc-x { margin-left: auto; background: none; border: none; color: var(--sub); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; opacity: 0.6; }
+    .wc-x:hover { opacity: 1; color: var(--up); }
+    .wc-price { font-size: 16px; font-weight: 800; margin-top: 2px; }
+    .wc-price small { font-size: 11px; font-weight: 600; margin-left: 4px; }
+    .wc-spark { width: 100%; height: 46px; display: block; margin-top: 4px; }
+    .watch-note { font-size: 11px; color: var(--sub); margin-bottom: 12px; }
+    .stock-detail { border-top: 1px solid var(--border); padding-top: 12px; scroll-margin-top: 12px; }
+    .detail-title { font-size: 13px; margin: 10px 0 4px; }
+    .detail-title small { color: var(--sub); font-weight: normal; margin-left: 6px; }
+    .stock-kd-box { height: 200px; }
     .watchlist { display: flex; flex-wrap: wrap; gap: 6px; }
     .watchlist .chip { display: inline-flex; align-items: center; padding: 0; overflow: hidden; }
     .watchlist .chip button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; }
@@ -214,10 +234,9 @@
 
     <!-- 個股 K 線 -->
     <section class="card span-2">
-        <h2>🕯️ 個股看盤 <small>日 K 線 · 紅漲綠跌 · 成交量 (張)</small></h2>
+        <h2>🕯️ 個股看盤 <small>自選顯示當日走勢 · 點擊卡片看 KD 與日 K 線</small></h2>
         <div class="stock-bar" id="stockBar">
             <span class="watchlist-label">⭐ 自選</span>
-            <div class="watchlist" id="watchlist"></div>
             <form class="custom" id="customForm">
                 <input id="customCode" placeholder="代號或公司名稱" maxlength="20" autocomplete="off" list="stockNames">
                 <datalist id="stockNames"></datalist>
@@ -226,11 +245,19 @@
             <button type="button" class="sync-btn" id="syncBtn" title="會員登入：自選單跟著帳號走">👤 登入</button>
         </div>
         <div class="sync-panel" id="syncPanel" hidden></div>
-        <div class="quote-row">
-            <div class="quote" id="stockQuote">—</div>
-            <button class="fav-btn" id="favBtn" type="button" hidden></button>
+        <div class="watch-grid" id="watchlist"></div>
+        <div class="watch-note" id="intradayNote"></div>
+
+        <div class="stock-detail" id="stockDetail">
+            <div class="quote-row">
+                <div class="quote" id="stockQuote">—</div>
+                <button class="fav-btn" id="favBtn" type="button" hidden></button>
+            </div>
+            <h3 class="detail-title">KD (9,3,3) <small>80 / 20 門檻 · 78 / 22 預警</small></h3>
+            <div class="kd-chart-box stock-kd-box"><canvas id="stockKdChart"></canvas></div>
+            <h3 class="detail-title">日 K 線 <small>紅漲綠跌 · 成交量 (張)</small></h3>
+            <canvas id="candleCanvas"></canvas>
         </div>
-        <canvas id="candleCanvas"></canvas>
     </section>
 
     <!-- 沙盒 -->
@@ -292,6 +319,11 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.10.0", date: "2026-10-22", scope: "儀表板",
+      changes: ["自選單改為卡片：每檔顯示即時價、漲跌與當日 1 分鐘走勢小圖 (昨收虛線，末端接上證交所即時價)",
+                "點擊卡片捲到下方，顯示該股 KD (9,3,3) 圖 (含 80/20 門檻、78/22 預警線) 與日 K 線",
+                "即時報價一次最多 21 檔 (大盤 + 自選 20 檔)；本機新增 /api/intraday、Worker 新增 /intraday"],
+      services: ["Yahoo Finance spark (個股當日 1 分鐘走勢，約延遲 20 分鐘；網頁版經 tw-quote Worker 轉送)"] },
     { ver: "v2.9.1", date: "2026-10-20", scope: "儀表板",
       changes: ["會員登入暫不啟用：未設定 Supabase 時隱藏「登入」按鈕與面板，自選單只存在此裝置 (登入程式保留，填入設定值後自動出現)"],
       services: [] },
@@ -381,6 +413,7 @@ const state = {
     source: "sim",      // live (本機後端) | twse (證交所日線) | sim (模擬)
     daily: {},          // code -> 日線資料 (未合併即時報價)
     realtime: {},       // code -> 證交所即時報價
+    intraday: {},       // code -> 當日 1 分鐘走勢 { prevClose, points: [{ t, p }] } (自選卡片小圖)
     realtimeError: null,
     index: null,        // 合併即時報價後的大盤 { name, price, change, change_pct, candles, k:[], d:[], realtime? }
     stocks: {},         // code -> 合併即時報價後的個股；undefined = 載入中、null = 查無
@@ -721,7 +754,8 @@ async function pollRealtime(force = false) {
     const url = realtimeUrl();
     let failed = false;
     if (url && state.source !== "sim" && (force || isMarketOpen())) {
-        const codes = [...new Set([INDEX_SYMBOL, "0050", state.selected])];
+        // 大盤 + 目前看的股票 + 0050 + 自選 (自選卡片的即時價)；中繼一次最多 21 檔
+        const codes = [...new Set([INDEX_SYMBOL, state.selected, "0050", ...watchlist.map(w => w.code)])].slice(0, 21);
         try {
             const res = await fetch(`${url}${url.includes("?") ? "&" : "?"}codes=${codes.join(",")}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -739,6 +773,35 @@ async function pollRealtime(force = false) {
     const retry = failed && realtimeFailures <= REALTIME_MAX_RETRIES;
     // 失敗時 5 秒後重試 (盤外也會重試，以取得收盤價)；盤中每 10 秒更新；盤外每分鐘檢查是否開盤
     realtimeTimer = setTimeout(() => pollRealtime(retry), retry ? REALTIME_RETRY_MS : (isMarketOpen() ? REALTIME_MS : 60000));
+}
+
+// ===================== 自選卡片的當日走勢 =====================
+// 本機：Flask /api/intraday；網頁版：Cloudflare Worker /intraday (兩者都轉 Yahoo，約延遲 20 分鐘)
+const INTRADAY_MS = 60000;
+const intradayUrl = () => (apiAvailable ? "/api/intraday" : (REALTIME_WORKER_URL ? `${REALTIME_WORKER_URL}/intraday` : null));
+let intradayTimer = null, intradayError = null;
+
+async function pollIntraday() {
+    clearTimeout(intradayTimer);
+    const url = intradayUrl();
+    const codes = watchlist.map(w => w.code).slice(0, 20);
+    if (url && codes.length && state.source !== "sim") {
+        try {
+            const res = await fetch(`${url}?codes=${codes.join(",")}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const body = await res.json();
+            if (!body.series) throw new Error(body.error || "no data");
+            Object.assign(state.intraday, body.series);
+            intradayError = null;
+        } catch (e) {
+            intradayError = "當日走勢暫時無法取得，卡片只顯示即時價";
+        }
+        renderWatchlist();
+    }
+    document.getElementById("intradayNote").textContent = !url || state.source === "sim" ? ""
+        : intradayError || "小圖為當日 1 分鐘走勢 (Yahoo，約延遲 20 分鐘)，末端接上證交所即時價；虛線為昨收";
+    // 盤中每分鐘更新；盤外每 10 分鐘 (收盤後取得完整走勢)
+    intradayTimer = setTimeout(pollIntraday, isMarketOpen() ? INTRADAY_MS : 10 * 60000);
 }
 
 // 資料來源優先順序：本機後端 (即時) → 證交所日線 → 模擬資料
@@ -785,6 +848,7 @@ function renderAll() {
     renderHeader();
     renderDecision();
     renderKdChart();
+    renderWatchlist();
     renderStock();
 }
 
@@ -944,24 +1008,76 @@ function renderKdChart() {
 
 // ----- 個股 K 線 (Canvas) -----
 function renderStock() {
-    document.querySelectorAll("#watchlist .chip").forEach(b => b.classList.toggle("active", b.dataset.code === state.selected));
+    document.querySelectorAll("#watchlist .watch-card").forEach(b => b.classList.toggle("active", b.dataset.code === state.selected));
     const s = state.stocks[state.selected];
     const quote = document.getElementById("stockQuote");
     renderFavButton(s);
     if (s === undefined) {
         quote.innerHTML = `<span class="flat">載入 ${state.selected} 中…</span>`;
         drawCandles(null);
+        renderStockKdChart(null);
         return;
     }
     if (!s) {
         const hint = "，請確認代號（興櫃股票沒有日線資料）";
         quote.innerHTML = `<span class="flat">查無 ${state.selected} 的資料${hint}</span>`;
         drawCandles(null);
+        renderStockKdChart(null);
         return;
     }
+    const k = s.k[s.k.length - 1], d = s.d[s.d.length - 1];
     quote.innerHTML = `${s.name} (${state.selected})<span class="px ${colorOf(s.change)}">${fmt(s.price)}</span>
-        <span class="${colorOf(s.change)}">${signed(s.change)} (${signed(s.change_pct)}%)</span>`;
+        <span class="${colorOf(s.change)}">${signed(s.change)} (${signed(s.change_pct)}%)</span>
+        <span class="flat">　K ${fmt(k)} / D ${fmt(d)}</span>`;
     drawCandles(s.candles.slice(-CANDLE_DAYS));
+    renderStockKdChart(s);
+}
+
+// ----- 個股 KD 圖 (Chart.js)：最近 60 個交易日，含 80 / 20 門檻與 78 / 22 預警線 -----
+let stockKdChart = null;
+
+function renderStockKdChart(s) {
+    if (typeof Chart === "undefined") return;
+    const days = s ? s.candles.slice(-CANDLE_DAYS) : [];
+    const labels = days.map(c => c.time.slice(5));
+    const n = labels.length;
+    const k = s ? s.k.slice(-n) : [], d = s ? s.d.slice(-n) : [];
+    const flat = v => labels.map(() => v);
+    const line = (label, data, color, dash = [], width = 1) => ({
+        label, data, borderColor: color, borderWidth: width, borderDash: dash,
+        pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0,
+    });
+    const datasets = [
+        { label: "K", data: k, borderColor: "#a78bfa", borderWidth: 2, tension: 0.25, pointHoverRadius: 4,
+          pointRadius: k.map((_, i) => (i === n - 1 ? 4 : 0)), pointBackgroundColor: "#a78bfa" },
+        { label: "D", data: d, borderColor: "#f472b6", borderWidth: 2, tension: 0.25, pointRadius: 0, pointHoverRadius: 4 },
+        line("80", flat(KD_SELL), "#ef4444", [], 1.5),
+        line("78", flat(KD_WARN_HIGH), "rgba(248, 113, 113, 0.75)", [6, 4]),
+        line("22", flat(KD_WARN_LOW), "rgba(251, 191, 36, 0.85)", [6, 4]),
+        line("20", flat(KD_BUY), "#22c55e", [], 1.5),
+    ];
+    if (stockKdChart) {
+        stockKdChart.data.labels = labels;
+        stockKdChart.data.datasets.forEach((ds, i) => Object.assign(ds, datasets[i]));
+        stockKdChart.update("none");
+        return;
+    }
+    stockKdChart = new Chart(document.getElementById("stockKdChart"), {
+        type: "line",
+        data: { labels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { mode: "index", intersect: false },
+            scales: {
+                y: { min: 0, max: 100, ticks: { color: "#94a3b8", stepSize: 20 }, grid: { color: "rgba(148, 163, 184, 0.12)" } },
+                x: { ticks: { color: "#94a3b8", maxTicksLimit: 8 }, grid: { display: false } },
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: { filter: item => item.datasetIndex < 2 },
+            },
+        },
+    });
 }
 
 function drawCandles(candles) {
@@ -1075,11 +1191,14 @@ document.getElementById("candleCanvas").addEventListener("mouseleave", e => {
     state.hoverIndex = null; drawCandles(e.currentTarget._candles);
 });
 
-function selectStock(code) {
+// scrollToDetail：從自選卡片點進來時，捲到下方的 KD 與日 K 線
+function selectStock(code, scrollToDetail = false) {
     state.selected = code;
     state.hoverIndex = null;
     cacheSet(SELECTED_KEY, code);
+    renderWatchlist();
     renderStock();
+    if (scrollToDetail) document.getElementById("stockDetail").scrollIntoView({ behavior: "smooth", block: "start" });
     refresh();
 }
 
@@ -1100,6 +1219,8 @@ function addToWatchlist(code, name) {
     watchlistChanged();
     renderWatchlist();
     renderStock();
+    pollIntraday();     // 新加入的股票立即取得當日走勢
+    pollRealtime(true);
 }
 
 function removeFromWatchlist(code) {
@@ -1283,32 +1404,130 @@ document.getElementById("syncBtn").addEventListener("click", () => {
 // 切回這個頁面時，下載其他裝置的修改
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") pullWatchlist(); });
 
+// ----- 自選卡片：名稱、即時價、漲跌、當日走勢小圖；點擊開啟 KD 與日 K 線 -----
 function renderWatchlist() {
     const box = document.getElementById("watchlist");
     box.innerHTML = "";
     if (watchlist.length === 0) {
-        box.innerHTML = `<span class="watchlist-empty">尚無自選，輸入代號看盤後按「☆ 加入自選」</span>`;
+        box.innerHTML = `<span class="watchlist-empty">尚無自選，輸入代號或名稱看盤後按「☆ 加入自選」</span>`;
         return;
     }
     watchlist.forEach(w => {
-        const chip = document.createElement("span");
-        chip.className = "chip" + (w.code === state.selected ? " active" : "");
-        chip.dataset.code = w.code;
-        const main = document.createElement("button");
-        main.type = "button";
-        main.className = "chip-main";
-        main.textContent = `${w.code} ${w.name}`.trim();
-        main.addEventListener("click", () => selectStock(w.code));
+        const q = state.realtime[w.code];
+        const series = state.intraday[w.code];
+        const prevClose = (q && q.prevClose) || (series && series.prevClose) || null;
+        const price = (q && q.price) || (series && series.points.length ? series.points[series.points.length - 1].p : null);
+        const change = price != null && prevClose ? price - prevClose : null;
+
+        const card = document.createElement("div");
+        card.className = "watch-card" + (w.code === state.selected ? " active" : "");
+        card.dataset.code = w.code;
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.title = `${w.name || w.code}：點擊看 KD 與日 K 線`;
+
+        const head = document.createElement("div");
+        head.className = "wc-head";
+        const name = document.createElement("span");
+        name.className = "wc-name";
+        name.textContent = w.name || w.code;
+        const code = document.createElement("span");
+        code.className = "wc-code";
+        code.textContent = w.code;
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "chip-x";
+        remove.className = "wc-x";
         remove.textContent = "×";
         remove.title = `從自選移除 ${w.code}`;
         remove.setAttribute("aria-label", remove.title);
-        remove.addEventListener("click", () => removeFromWatchlist(w.code));
-        chip.append(main, remove);
-        box.appendChild(chip);
+        remove.addEventListener("click", e => { e.stopPropagation(); removeFromWatchlist(w.code); });
+        head.append(name, code, remove);
+
+        const priceEl = document.createElement("div");
+        priceEl.className = `wc-price ${colorOf(change || 0)}`;
+        if (price != null) {
+            priceEl.textContent = fmt(price);
+            if (change != null) {
+                const small = document.createElement("small");
+                small.textContent = `${signed(change)} (${signed(change / prevClose * 100)}%)`;
+                priceEl.appendChild(small);
+            }
+        } else {
+            priceEl.textContent = "—";
+        }
+
+        const spark = document.createElement("canvas");
+        spark.className = "wc-spark";
+        card.append(head, priceEl, spark);
+        const open = () => selectStock(w.code, true);
+        card.addEventListener("click", open);
+        card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
+        box.appendChild(card);
+        drawSparkline(spark, series, q, prevClose);
     });
+}
+
+// 當日走勢小圖：X 軸固定 09:00 ~ 13:30 (盤中只畫到目前)，昨收為虛線；末端接上證交所即時價
+function drawSparkline(canvas, series, quote, prevClose) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    const points = series ? series.points.slice() : [];
+    if (quote && quote.price && quote.date && quote.time) {
+        // 證交所即時價 (台北時間) 換算成 unix 秒，比 Yahoo 最後一點新才接上
+        const t = Date.parse(`${quote.date.slice(0, 4)}-${quote.date.slice(4, 6)}-${quote.date.slice(6, 8)}T${quote.time}+08:00`) / 1000;
+        if (!points.length || t > points[points.length - 1].t) points.push({ t, p: quote.price });
+    }
+    if (points.length < 2) {
+        ctx.fillStyle = "#64748b";
+        ctx.font = "11px sans-serif";
+        ctx.textBaseline = "middle";
+        ctx.fillText(points.length ? "盤中走勢累積中…" : "尚無當日走勢", 4, H / 2);
+        return;
+    }
+
+    // 以最後一點的台北日期定出當日 09:00 ~ 13:30
+    const lastT = points[points.length - 1].t;
+    const day = new Date((lastT + 8 * 3600) * 1000).toISOString().slice(0, 10);
+    const open = Date.parse(`${day}T09:00:00+08:00`) / 1000, close = Date.parse(`${day}T13:30:00+08:00`) / 1000;
+    const dayPoints = points.filter(x => x.t >= open - 60);
+    if (dayPoints.length < 2) return;
+
+    const prices = dayPoints.map(x => x.p).concat(prevClose ? [prevClose] : []);
+    let hi = Math.max(...prices), lo = Math.min(...prices);
+    if (hi === lo) { hi += hi * 0.005; lo -= lo * 0.005; }
+    const pad = 3;
+    const x = t => pad + (Math.min(Math.max(t, open), close) - open) / (close - open) * (W - pad * 2);
+    const y = p => pad + (hi - p) / (hi - lo) * (H - pad * 2);
+
+    const last = dayPoints[dayPoints.length - 1].p;
+    const css = getComputedStyle(document.documentElement);
+    const base = prevClose || dayPoints[0].p;
+    const color = last > base ? css.getPropertyValue("--up").trim() : last < base ? css.getPropertyValue("--down").trim() : "#94a3b8";
+
+    if (prevClose) {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.6)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(pad, y(prevClose)); ctx.lineTo(W - pad, y(prevClose)); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    dayPoints.forEach((pt, i) => (i ? ctx.lineTo(x(pt.t), y(pt.p)) : ctx.moveTo(x(pt.t), y(pt.p))));
+    ctx.stroke();
+    // 線下淡色填滿
+    ctx.lineTo(x(dayPoints[dayPoints.length - 1].t), H);
+    ctx.lineTo(x(dayPoints[0].t), H);
+    ctx.closePath();
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
 }
 
 // 查得到資料時才顯示加入 / 移除按鈕；自選中缺少或過時的名稱以實際資料補上 (模擬資料除外)
@@ -1477,6 +1696,7 @@ document.querySelectorAll(".presets .chip").forEach(b => b.addEventListener("cli
 window.addEventListener("resize", () => {
     const s = state.stocks[state.selected];
     if (s) drawCandles(s.candles.slice(-CANDLE_DAYS));
+    renderWatchlist();  // 重畫自選卡片的走勢小圖
 });
 
 function renderVersionHistory() {
@@ -1506,7 +1726,7 @@ if (sb) {
     // 回呼中不能直接 await Supabase 呼叫 (官方建議)，所以延到下一輪執行
     sb.auth.onAuthStateChange((event, session) => setTimeout(() => handleAuthChange(session), 0));
 }
-refresh().then(loadStockNames);  // 等第一次載入確定有沒有後端，再決定名稱清單來源
+refresh().then(() => { loadStockNames(); pollIntraday(); });  // 等第一次載入確定有沒有後端，再決定名稱清單來源
 </script>
 </body>
 </html>
