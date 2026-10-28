@@ -522,7 +522,7 @@
       border-collapse: collapse;
       font-size: 11.5px;
       margin-top: 8px;
-      min-width: 780px;
+      min-width: 840px;
     }
     .admin-table th, .admin-table td {
       border: 1px solid var(--border);
@@ -533,11 +533,12 @@
     .admin-table tr:nth-child(even) { background: #fbfcfe; }
     .mode-badge {
       display: inline-block;
-      padding: 2px 5px;
+      padding: 2px 6px;
       border-radius: 4px;
       font-size: 11px;
       font-weight: 600;
-      margin: 1px 0;
+      margin: 2px 0;
+      text-align: left;
     }
     .badge-word { background: #eff6ff; color: #1d4ed8; }
     .badge-hard { background: #fdf4ff; color: #7e22ce; }
@@ -774,11 +775,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.1.0 - 後台五大題型獨立數據呈現</div>
+        <div class="history-tag">v5.2.0 - 後台五大題型數據完全分類呈現</div>
         <div class="history-desc">
           <ul>
-            <li><b>獨立進度與正確率：</b>管理者後台的完成進度、總作答題數與綜合正確率現在完全區分為五種獨立考題（單字、單字(難)、填空、真題、聽力）。</li>
-            <li><b>歷史紀錄自動歸納：</b>舊版綜合紀錄自動對應至「單字」模式。</li>
+            <li><b>分類呈現：</b>管理者後台的完成進度、總作答題數與綜合正確率已完整區分為五大獨立題型（單字、單字(難)、填空、真題、聽力）。</li>
+            <li><b>歷史自動歸納：</b>舊版綜合紀錄自動對應至「單字」模式。</li>
           </ul>
         </div>
       </div>
@@ -799,7 +800,7 @@
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (含五大題型獨立拆分)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (五大題型分類明細)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -812,10 +813,10 @@
           <thead>
             <tr>
               <th style="text-align:left; padding-left:8px;">學員 Email</th>
-              <th>完成進度 (各題型 30 天)</th>
-              <th>總作答題數 (各題型)</th>
-              <th>綜合正確率 (各題型)</th>
-              <th>五大題型作答明細</th>
+              <th>五大題型完成進度 (30天)</th>
+              <th>五大題型總作答題數</th>
+              <th>五大題型正確率</th>
+              <th>五大題型詳細明細</th>
               <th>錯題量</th>
               <th style="text-align:left; min-width:200px;">📅 最近 14 天每日使用狀況 (時數/題數)</th>
               <th>最後更新</th>
@@ -990,7 +991,6 @@ async function syncFromCloud() {
   try {
     const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats').eq('user_id', currentUser.id).single();
     if (data) {
-      // 💡 自動將舊版或未分類紀錄歸納到「單字」模式中
       if (data.historyByQuiz) {
         userStore.historyByQuiz = data.historyByQuiz;
       } else if (data.history) {
@@ -1132,7 +1132,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 升級後的管理者後台 (五大題型各自獨立顯示完成進度、總題數與正確率)
+// 👑 管理者後台監控 (五大題型完全分類顯示)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1185,7 +1185,6 @@ async function fetchAdminAllProgress() {
         listen: { total: 0, correct: 0, days: new Set() }
       };
 
-      // 計算各題型獨立的 30 天完成進度與題數
       Object.keys(typeStats).forEach(qType => {
         const qHist = historyByQuiz[qType] || {};
         Object.keys(qHist).forEach(key => {
@@ -1201,7 +1200,6 @@ async function fetchAdminAllProgress() {
         });
       });
 
-      // 如果有 stats 資料，優先採用 stats 內的總題數與正確率
       if (stats) {
         ["wordDef", "hard", "cloze", "exam", "listen"].forEach(k => {
           if (stats[k]) {
@@ -1236,24 +1234,23 @@ async function fetchAdminAllProgress() {
         dailyHtml += `</div>`;
       }
 
-      // 💡 呈現獨立的五大題型（完成天數、總題數、正確率）
-      const renderTypeDetail = (label, st, badgeClass) => {
+      const renderTypeClassification = (label, st, badgeClass) => {
         const rate = st.total > 0 ? Math.round((st.correct / st.total) * 100) : 0;
-        return `<span class="mode-badge ${badgeClass}">${label}: ${st.days.size}/30天 | ${st.total}題 (${rate}%)</span>`;
+        return `<span class="mode-badge ${badgeClass}">${label} ➔ 進度: ${st.days.size}/30天 | 總題數: ${st.total}題 | 正確率: ${rate}%</span>`;
       };
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:8px;">${displayEmail}</td>
-        <td><b>綜合統計</b></td>
+        <td><b>五大題型獨立區分</b></td>
         <td><b>${overallTotal}</b> 題</td>
         <td style="color:${avgRate >= 80 ? 'var(--success)' : 'var(--amber)'}; font-weight:700;">${avgRate}%</td>
-        <td style="text-align:left; padding:6px; line-height:1.6;">
-          ${renderTypeDetail("🔤單字", typeStats.wordDef, "badge-word")}<br>
-          ${renderTypeDetail("🔥單字(難)", typeStats.hard, "badge-hard")}<br>
-          ${renderTypeDetail("📝填空", typeStats.cloze, "badge-cloze")}<br>
-          ${renderTypeDetail("🏛️真題", typeStats.exam, "badge-exam")}<br>
-          ${renderTypeDetail("🎧聽力", typeStats.listen, "badge-listen")}
+        <td style="text-align:left; padding:6px; line-height:1.7;">
+          ${renderTypeClassification("🔤 單字", typeStats.wordDef, "badge-word")}<br>
+          ${renderTypeClassification("🔥 單字(難)", typeStats.hard, "badge-hard")}<br>
+          ${renderTypeClassification("📝 填空", typeStats.cloze, "badge-cloze")}<br>
+          ${renderTypeClassification("🏛️ 真題", typeStats.exam, "badge-exam")}<br>
+          ${renderTypeClassification("🎧 聽力", typeStats.listen, "badge-listen")}
         </td>
         <td style="text-align:left; padding:6px;">
           <b style="color:var(--danger);">總計: ${totalMistakesCount} 題</b>
