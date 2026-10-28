@@ -774,11 +774,19 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.9.8 - 成果紀錄即時自動刷新</div>
+        <div class="history-tag">v4.0.0 - 完成 Day 自動切換與即時紀錄同步</div>
         <div class="history-desc">
           <ul>
-            <li><b>即時成果更新：</b>測驗完成結算時，學習成果紀錄面板自動重新整理並呈現最新成績。</li>
-            <li><b>永久鎖定錯題：</b>只要曾經答錯過一次的單字，即永久鎖定在錯題庫中強化複習。</li>
+            <li><b>自動切換次日：</b>當天任務完成結算後，系統自動幫學員選取並載入下一天的單字測驗。</li>
+            <li><b>即時成果更新：</b>測驗完成時自動重新整理學習成果紀錄面板，同步保存至雲端。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v3.9.5 - 永久鎖定錯題強化複習</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>永久錯題追蹤：</b>只要曾經答錯過一次的單字，不論後續答對幾次，都會持續保留在錯題庫中。</li>
           </ul>
         </div>
       </div>
@@ -786,17 +794,7 @@
         <div class="history-tag">v3.9.1 - 最近 14 天每日使用狀況追蹤</div>
         <div class="history-desc">
           <ul>
-            <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援最近 14 天數據維護。</li>
-            <li><b>後台 14 天檢視：</b>管理者後台可即時查閱各學員最近 14 天的每日活躍明細與刷題數據。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v3.5.0 - 雲端多帳號同步與安全性升級</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>Supabase 雲端備份：</b>全面串接 Supabase 資料庫，支援學員進度與錯題本雲端自動同步。</li>
-            <li><b>安全清空機制：</b>新增清空紀錄時的密碼二次驗證，防止誤刪與資料外洩。</li>
+            <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援後台 14 天明細檢視。</li>
           </ul>
         </div>
       </div>
@@ -805,7 +803,6 @@
         <div class="history-desc">
           <ul>
             <li><b>雙語即時對照：</b>作答後所有選項即刻展開中英雙語對照、KK 音標與單字發音按鈕。</li>
-            <li><b>四大題型完整支援：</b>涵蓋單字識義、句子填空、會考真題與會考聽力測驗。</li>
           </ul>
         </div>
       </div>
@@ -1022,7 +1019,7 @@ async function syncFromCloud() {
       if (data.stats) userStore.stats = data.stats;
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
-      refreshHistoryDisplay(); // 💡 同步完成後自動刷新成果紀錄顯示
+      refreshHistoryDisplay();
     }
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
     saveKnownUser(currentUser, null, userStore);
@@ -1035,7 +1032,7 @@ let syncDebounceTimer = null;
 function triggerAutoSync() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   saveKnownUser(currentUser, null, userStore);
-  refreshHistoryDisplay(); // 💡 每次操作觸發同步時自動重新整理成果紀錄顯示
+  refreshHistoryDisplay();
 
   if (!supabaseClient || isGuest || !currentUser) return;
   if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
@@ -1120,7 +1117,7 @@ function enterApp(user) {
   initDaySelector();
   changeDay(1);
   startDailyActivityTracker();
-  refreshHistoryDisplay(); // 💡 進入 App 時即時渲染成果紀錄
+  refreshHistoryDisplay();
 }
 
 async function handleLogout() {
@@ -1559,14 +1556,27 @@ function renderQuestion() {
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
     userStore.history[recordKey] = { score: correctCount, total: currentTestQueue.length, rate: Math.round((correctCount / currentTestQueue.length) * 100), quizType: currentQuizType, cycleDays: DAYS_COUNT, date: new Date().toLocaleDateString() };
     
-    triggerAutoSync(); // 💡 測驗完成時自動同步並即時重新整理畫面上的學習成果紀錄
-    initDaySelector(); // 更新天數選單上的已完成勾選狀態
+    triggerAutoSync();
+    initDaySelector();
 
     document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("examSourceTag").classList.add("hidden");
     audioBox.classList.add("hidden"); expBox.classList.add("hidden");
     document.getElementById("optionsGrid").innerHTML = `<div style="text-align:center; padding:18px; color:var(--muted);"><b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b></div>`;
+    
+    // 💡 針對順序刷題模式（非亂數），當前天數完成時自動幫忙選取並跳轉至下一天 (Day + 1)
+    if (!isRandomMode && currentDay < DAYS_COUNT) {
+      const nextDayNum = currentDay + 1;
+      setTimeout(() => {
+        const daySelectEl = document.getElementById("daySelect");
+        if (daySelectEl) {
+          daySelectEl.value = nextDayNum;
+          changeDay(nextDayNum);
+        }
+      }, 1500); // 延遲 1.5 秒讓學員看見完成畫面後自動切換
+    }
+
     return;
   }
 
@@ -1670,7 +1680,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     btn.classList.add("wrong");
     wrongCount++;
     
-    // 💡 永久鎖定錯題規則：只要曾經答錯過一次，就加入錯題庫中且不再自動移除
     const mistakeRecord = currentQuizType === "listen" ? { ...item, quizType: "listen", id: item.scriptEn } : { ...item, quizType: currentQuizType };
     const identifier = mistakeRecord.en || mistakeRecord.scriptEn;
     if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === identifier)) {
@@ -1726,7 +1735,6 @@ function reviewMistakes() {
   renderQuestion();
 }
 
-// 💡 即時重新整理並渲染學習成果紀錄面板的內容
 function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
@@ -1779,7 +1787,7 @@ window.onload = async () => {
       if (session && session.user) enterApp(session.user);
     } catch (err) {}
   }
-  refreshHistoryDisplay(); // 💡 頁面載入時初始化渲染成果紀錄
+  refreshHistoryDisplay();
 };
 </script>
 </body>
