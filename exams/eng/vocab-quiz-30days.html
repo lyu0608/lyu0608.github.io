@@ -770,12 +770,12 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v3.8.0 - 跨題型順序隨機洗牌機制</div>
+        <div class="history-tag">v3.9.1 - 最近 14 天每日使用狀況追蹤</div>
         <div class="history-desc">
           <ul>
-            <li><b>動態隨機順序：</b>每次切換天數或轉換題型（單字/填空/真題）時，系統都會自動對題庫進行洗牌，確保各題型的單字順序完全不同。</li>
-            <li><b>免重複登入：</b>內建 Supabase 持久化 Session 記憶，保持登入狀態不中斷。</li>
-            <li><b>選項獨立發音：</b>作答後選項支援獨立發音按鈕（🔊）與去重機制。</li>
+            <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援最近 14 天數據維護。</li>
+            <li><b>跨題型隨機洗牌：</b>每次切換天數或題型時自動打亂題庫順序。</li>
+            <li><b>狀態持久化：</b>自動記住登入狀態與雲端同步。</li>
           </ul>
         </div>
       </div>
@@ -998,7 +998,7 @@ const CAP_YEAR_MAPPING = {
 };
 
 // ========================================================
-// 2. Supabase 雲端同步與自動記住登入狀態核心
+// 2. Supabase 雲端同步與最近 14 天每日使用狀況追蹤
 // ========================================================
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
@@ -1018,6 +1018,64 @@ if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
 
 let currentUser = null;
 let isGuest = false;
+
+// 取得當日日期字串 (YYYY-MM-DD)
+function getTodayDateString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 記錄或更新當日使用狀況 (最近 14 天每日數據)
+async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
+  if (!supabaseClient || isGuest || !currentUser) return;
+  const todayStr = getTodayDateString();
+  try {
+    let { data: existing, error } = await supabaseClient
+      .from('user_daily_activity')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .eq('activity_date', todayStr)
+      .single();
+
+    if (existing) {
+      await supabaseClient
+        .from('user_daily_activity')
+        .update({
+          active_seconds: (existing.active_seconds || 0) + addedSeconds,
+          questions_answered: (existing.questions_answered || 0) + addedQuestions,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existing.id);
+    } else {
+      await supabaseClient
+        .from('user_daily_activity')
+        .insert({
+          user_id: currentUser.id,
+          email: currentUser.email,
+          activity_date: todayStr,
+          active_seconds: addedSeconds,
+          questions_answered: addedQuestions,
+          updated_at: new Date().toISOString()
+        });
+    }
+  } catch (err) {
+    console.log("更新每日使用狀況失敗:", err);
+  }
+}
+
+// 線上活躍心跳計時器（每 1 分鐘自動為當天增加 60 秒使用時間）
+let dailyActivityTimer = null;
+function startDailyActivityTracker() {
+  if (dailyActivityTimer) clearInterval(dailyActivityTimer);
+  dailyActivityTimer = setInterval(() => {
+    if (currentUser && !isGuest && document.visibilityState === "visible") {
+      updateDailyActivity(60, 0);
+    }
+  }, 60 * 1000);
+}
 
 function getDefaultStore() {
   return {
@@ -1200,9 +1258,11 @@ function enterApp(user) {
   initDayPlans();
   initDaySelector();
   changeDay(1);
+  startDailyActivityTracker();
 }
 
 async function handleLogout() {
+  if (dailyActivityTimer) clearInterval(dailyActivityTimer);
   if (supabaseClient && !isGuest) {
     await supabaseClient.auth.signOut();
   }
@@ -1668,7 +1728,6 @@ function setQuizType(type) {
   listenBtn.classList.toggle("listen-active", type === "listen");
   listenBtn.classList.toggle("active", type === "listen");
 
-  // 切換題型時重新洗牌當前佇列，確保不同題型的單字順序完全不同
   if (!isRandomMode) {
     changeDay(currentDay);
   } else {
@@ -1696,10 +1755,10 @@ function initDayPlans() {
   const basePerDay = Math.floor(total / DAYS_COUNT);
   const remainder = total % DAYS_COUNT;
   let cursor = 0;
+  
+  const shuffledFull = shuffle(FULL_VOCAB);
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const count = d <= remainder ? (basePerDay + 1) : basePerDay;
-    // 每次初始化各天計畫時，對完整字庫進行隨機洗牌切分，確保順序每次都不一樣
-    const shuffledFull = shuffle(FULL_VOCAB);
     dayPlans[d] = shuffledFull.slice(cursor, cursor + count);
     cursor += count;
   }
@@ -1768,7 +1827,6 @@ function changeDay(day) {
     });
   }
 
-  // 每次切換天數時重新洗牌，確保順序隨機
   currentTestQueue = shuffle(pool);
   currentIndex = 0;
   correctCount = 0;
@@ -2093,6 +2151,8 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     }
   }
 
+  // 作答時自動幫當日使用狀況增加 1 題作答數
+  updateDailyActivity(0, 1);
   triggerAutoSync();
 
   const zhHintEl = document.getElementById("clozeZhHint");
