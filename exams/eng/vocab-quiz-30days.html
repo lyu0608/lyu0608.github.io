@@ -35,7 +35,6 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
-    /* 【關鍵樣式】最高優先權隱藏，避免 Modal 預設平鋪露出 */
     .hidden { display: none !important; }
 
     body {
@@ -373,7 +372,6 @@
       gap: 5px;
     }
 
-    /* 選項樣式與答題後雙語對照 */
     .options-grid { display: grid; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
     .option-btn {
       display: flex;
@@ -437,9 +435,7 @@
       align-items: center;
       gap: 2px;
     }
-    .opt-sound-btn:hover {
-      background: #dbeafe;
-    }
+    .opt-sound-btn:hover { background: #dbeafe; }
     .option-btn.correct { border-color: var(--success); background: var(--success-bg); color: #14532d; font-weight: 700; }
     .option-btn.correct .opt-sub-text { color: #15803d; }
     .option-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: #7f1d1d; }
@@ -493,7 +489,6 @@
     .link-btn { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
     .hint-keyboard { font-size: 11.5px; color: var(--muted); }
 
-    /* Modal 彈窗遮罩與卡片樣式 */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -504,12 +499,12 @@
       z-index: 9999; padding: 16px;
     }
     .modal-card {
-      width: 100%; max-width: 540px;
+      width: 100%; max-width: 860px;
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.2);
       padding: 20px 18px;
-      max-height: 85vh;
+      max-height: 88vh;
       display: flex; flex-direction: column;
     }
     .modal-header {
@@ -523,9 +518,9 @@
     .admin-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 11.5px;
       margin-top: 8px;
-      min-width: 660px;
+      min-width: 780px;
     }
     .admin-table th, .admin-table td {
       border: 1px solid var(--border);
@@ -546,6 +541,18 @@
     .badge-cloze { background: #f0fdf4; color: #15803d; }
     .badge-exam { background: #fef3c7; color: #b45309; }
     .badge-listen { background: #ecfeff; color: #0e7490; }
+
+    .daily-box {
+      font-size: 11px;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 4px 6px;
+      text-align: left;
+      max-height: 75px;
+      overflow-y: auto;
+    }
 
     .account-item {
       display: flex; justify-content: space-between; align-items: center;
@@ -581,7 +588,6 @@
     </div>
   </div>
 
-  <!-- 首頁 / 登入區塊 -->
   <div id="authSection" class="auth-box">
     <div class="app-install-banner">
       <div class="install-banner-text">
@@ -613,7 +619,6 @@
     <button class="btn-guest" onclick="loginAsGuest()">以訪客免登入模式體驗</button>
   </div>
 
-  <!-- 測驗主操作區塊 -->
   <div id="quizSection" class="hidden">
     <div class="user-header">
       <div style="display:flex; align-items:center; gap:6px;">
@@ -719,10 +724,9 @@
 </div>
 
 <!-- ========================================== -->
-<!-- 彈窗集中放置區 (預設全數包覆 hidden 類別) -->
+<!-- 彈窗集中放置區 -->
 <!-- ========================================== -->
 
-<!-- 1. 👥 免密碼切換學員彈窗 -->
 <div id="switchAccountModal" class="modal-overlay hidden" onclick="toggleSwitchAccountModal(false)">
   <div class="modal-card" style="max-width:440px;" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -740,7 +744,6 @@
   </div>
 </div>
 
-<!-- 2. 🔐 清空紀錄密碼驗證彈窗 -->
 <div id="clearConfirmModal" class="modal-overlay hidden" onclick="toggleClearModal(false)">
   <div class="modal-card" style="max-width:400px;" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -761,7 +764,6 @@
   </div>
 </div>
 
-<!-- 3. 🛠️ 軟體維護歷程彈窗 (完整歷史紀錄) -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -774,16 +776,7 @@
         <div class="history-desc">
           <ul>
             <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援最近 14 天數據維護。</li>
-            <li><b>跨題型隨機洗牌：</b>每次切換天數或題型時自動打亂題庫順序。</li>
-            <li><b>狀態持久化：</b>自動記住登入狀態與雲端同步。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照與 KK 音標。</li>
+            <li><b>後台 14 天檢視：</b>管理者後台可即時查閱各學員最近 14 天的每日活躍明細。</li>
           </ul>
         </div>
       </div>
@@ -791,11 +784,11 @@
   </div>
 </div>
 
-<!-- 4. 👑 管理者後台監控彈窗 -->
+<!-- 👑 管理者後台監控彈窗 (含 14 天每日使用狀況) -->
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
-  <div class="modal-card" style="max-width:820px;" onclick="event.stopPropagation()">
+  <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (即時累計統計)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (含最近 14 天每日明細)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -807,17 +800,18 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th style="text-align:left; padding-left:10px;">學員 Email</th>
+              <th style="text-align:left; padding-left:8px;">學員 Email</th>
               <th>完成進度</th>
               <th>總作答題數</th>
               <th>綜合正確率</th>
-              <th>四大題型作答明細 (題數 / 正確率)</th>
-              <th>錯題量 (分題型統計)</th>
+              <th>四大題型作答明細</th>
+              <th>錯題量</th>
+              <th style="text-align:left; min-width:200px;">📅 最近 14 天每日使用狀況 (時數/題數)</th>
               <th>最後更新</th>
             </tr>
           </thead>
           <tbody id="adminProgressTableBody">
-            <tr><td colspan="7" style="text-align:center; padding:15px;">讀取中...</td></tr>
+            <tr><td colspan="8" style="text-align:center; padding:15px;">讀取中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -825,7 +819,6 @@
   </div>
 </div>
 
-<!-- 5. 📲 App 安裝教學彈窗 -->
 <div id="installGuideModal" class="modal-overlay hidden" onclick="toggleInstallModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -842,9 +835,8 @@
         <div class="install-step-title">🍎 iPhone / iPad (iOS Safari)</div>
         <ol>
           <li>使用 <b>Safari 瀏覽器</b> 開啟此特訓網頁。</li>
-          <li>點擊螢幕下方底欄的 <b>「分享」按鈕</b>（箭頭方塊圖示）。</li>
-          <li>在選單中點選 <b>「加入主畫面」</b>。</li>
-          <li>點擊右上角 <b>「新增」</b> 即可生成 App 圖示。</li>
+          <li>點擊螢幕下方底欄的 <b>「分享」按鈕</b>。</li>
+          <li>點選 <b>「加入主畫面」</b> 即可。</li>
         </ol>
       </div>
       <div class="install-step-card">
@@ -852,7 +844,7 @@
         <ol>
           <li>使用 <b>Chrome 瀏覽器</b> 開啟此特訓網頁。</li>
           <li>點擊右上角 <b>三個點選單圖示 (⋮)</b>。</li>
-          <li>點選 <b>「安裝應用程式」</b> 或 <b>「新增至主畫面」</b> 即可。</li>
+          <li>點選 <b>「安裝應用程式」</b> 即可。</li>
         </ol>
       </div>
     </div>
@@ -860,180 +852,59 @@
 </div>
 
 <script>
-// ========================================================
-// 1. 會考歷屆試題庫 (純文字真題語料)
-// ========================================================
 const CAP_EXAM_BANK = {
-  "abroad": {
-    year: "112年國中教育會考", section: "英語科閱讀單選 第1題",
-    sentence: "Mr. Lin has lived ______ for many years, so he can speak English very well.",
-    zh: "林先生在國外住了許多年，所以他英文說得非常好。", distractors: ["ahead", "almost", "alone"]
-  },
-  "accident": {
-    year: "111年國中教育會考", section: "英語科閱讀單選 第2題",
-    sentence: "Be careful when you cross the street. There was a terrible car ______ here yesterday.",
-    zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。", distractors: ["action", "activity", "advice"]
-  },
-  "convenient": {
-    year: "113年國中教育會考", section: "英語科閱讀單選 第3題",
-    sentence: "Living near the MRT station is very ______. It takes me only five minutes to get to school.",
-    zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。", distractors: ["comfortable", "dangerous", "expensive"]
-  },
-  "borrow": {
-    year: "110年國中教育會考", section: "英語科閱讀單選 第1題",
-    sentence: "I forgot to bring my pen today. Could I please ______ one from you?",
-    zh: "我今天忘記帶筆了。我可以向你借一隻嗎？", distractors: ["lend", "buy", "sell"]
-  },
-  "collect": {
-    year: "109年國中教育會考", section: "英語科閱讀單選 第2題",
-    sentence: "My brother likes to ______ stamps from all over the world.",
-    zh: "我的哥哥喜歡收集來自世界各地的郵票。", distractors: ["correct", "connect", "control"]
-  },
-  "famous": {
-    year: "112年國中教育會考", section: "英語科閱讀單選 第4題",
-    sentence: "Tainan is ______ for its delicious traditional street food.",
-    zh: "台南以其道地美味的傳統街頭小吃聞名。", distractors: ["foreign", "fresh", "friendly"]
-  },
-  "weather": {
-    year: "108年國中教育會考", section: "英語科閱讀單選 第1題",
-    sentence: "The ______ in Taipei is often rainy and humid in winter.",
-    zh: "台北冬天的氣候經常多雨且潮濕。", distractors: ["season", "holiday", "nature"]
-  },
-  "healthy": {
-    year: "110年國中教育會考補考", section: "英語科閱讀單選 第2題",
-    sentence: "Eating fresh fruit and exercising every day helps you stay ______.",
-    zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。", distractors: ["hungry", "heavy", "helpful"]
-  },
-  "traffic": {
-    year: "113年國中教育會考", section: "英語科閱讀單選 第2題",
-    sentence: "The morning ______ is always heavy, so you should leave home earlier.",
-    zh: "早晨的交通總是非常擁擠，所以你應該提早出門。", distractors: ["trouble", "travel", "ticket"]
-  },
-  "environment": {
-    year: "111年國中教育會考", section: "英語科閱讀單選 第5題",
-    sentence: "We should use less plastic to protect our natural ______.",
-    zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。", distractors: ["experience", "equipment", "energy"]
-  }
+  "abroad": { year: "112年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "Mr. Lin has lived ______ for many years, so he can speak English very well.", zh: "林先生在國外住了許多年，所以他英文說得非常好。", distractors: ["ahead", "almost", "alone"] },
+  "accident": { year: "111年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "Be careful when you cross the street. There was a terrible car ______ here yesterday.", zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。", distractors: ["action", "activity", "advice"] },
+  "convenient": { year: "113年國中教育會考", section: "英語科閱讀單選 第3題", sentence: "Living near the MRT station is very ______. It takes me only five minutes to get to school.", zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。", distractors: ["comfortable", "dangerous", "expensive"] },
+  "borrow": { year: "110年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "I forgot to bring my pen today. Could I please ______ one from you?", zh: "我今天忘記帶筆了。我可以向你借一隻嗎？", distractors: ["lend", "buy", "sell"] },
+  "collect": { year: "109年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "My brother likes to ______ stamps from all over the world.", zh: "我的哥哥喜歡收集來自世界各地的郵票。", distractors: ["correct", "connect", "control"] },
+  "famous": { year: "112年國中教育會考", section: "英語科閱讀單選 第4題", sentence: "Tainan is ______ for its delicious traditional street food.", zh: "台南以其道地美味的傳統街頭小吃聞名。", distractors: ["foreign", "fresh", "friendly"] },
+  "weather": { year: "108年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "The ______ in Taipei is often rainy and humid in winter.", zh: "台北冬天的氣候經常多雨且潮濕。", distractors: ["season", "holiday", "nature"] },
+  "healthy": { year: "110年國中教育會考補考", section: "英語科閱讀單選 第2題", sentence: "Eating fresh fruit and exercising every day helps you stay ______.", zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。", distractors: ["hungry", "heavy", "helpful"] },
+  "traffic": { year: "113年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "The morning ______ is always heavy, so you should leave home earlier.", zh: "早晨的交通總是非常擁擠，所以你應該提早出門。", distractors: ["trouble", "travel", "ticket"] },
+  "environment": { year: "111年國中教育會考", section: "英語科閱讀單選 第5題", sentence: "We should use less plastic to protect our natural ______.", zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。", distractors: ["experience", "equipment", "energy"] }
 };
 
 const CAP_LISTENING_BANK = [
-  {
-    year: "112年國中教育會考 聽力測驗", section: "基本問答 第5題",
-    scriptEn: "Would you like some more delicious apple pie?",
-    scriptZh: "你想要再來點美味的蘋果派嗎？",
-    options: [
-      { en: "Yes, please. It tastes wonderful.", zh: "好的，請給我一些。嚐起來太美味了。" },
-      { en: "I bought it at the bakery yesterday.", zh: "我昨天是在麵包店買的。" },
-      { en: "Apple pie is my mother's favorite dessert.", zh: "蘋果派是我媽媽最喜歡的甜點。" }
-    ],
-    answerEn: "Yes, please. It tastes wonderful.",
-    explanation: "【考點：日常應答與點心款待】對方提出招待詢問，最適當回應為表達禮貌接受。"
-  },
-  {
-    year: "111年國中教育會考 聽力測驗", section: "辨識句意 第1題",
-    scriptEn: "The boy is riding his bicycle along the river bank.",
-    scriptZh: "那個男孩正沿著河岸騎腳踏車。",
-    options: [
-      { en: "The boy is riding his bicycle along the river bank.", zh: "那個男孩正沿著河岸騎腳踏車。" },
-      { en: "The boy is running fast in the school gym.", zh: "那個男孩正在學校體育館裡飛快奔跑。" },
-      { en: "The boy is swimming across the lake with his friends.", zh: "那個男孩正和朋友們游泳橫渡湖泊。" }
-    ],
-    answerEn: "The boy is riding his bicycle along the river bank.",
-    explanation: "【考點：動作進行式與地點辨識】關鍵字為 riding his bicycle 與 river bank。"
-  },
-  {
-    year: "113年國中教育會考 聽力測驗", section: "言談理解 第15題",
-    scriptEn: "Attention passengers, the train to Taipei will arrive at platform 2 in five minutes.",
-    scriptZh: "各位旅客請注意，開往台北的列車將在五分鐘後抵達第二月台。",
-    options: [
-      { en: "The train to Taipei will arrive at platform 2 shortly.", zh: "開往台北的列車很快將抵達第二月台。" },
-      { en: "The passengers should leave the train right now.", zh: "乘客們現在應該立即離開列車。" },
-      { en: "The train has been canceled due to heavy rain.", zh: "列車由於大雨已經被取消。" }
-    ],
-    answerEn: "The train to Taipei will arrive at platform 2 shortly.",
-    explanation: "【考點：車站廣播訊息理解】廣播告知列車即將抵達指定月台。"
-  },
-  {
-    year: "110年國中教育會考 聽力測驗", section: "基本問答 第2題",
-    scriptEn: "Excuse me, how can I get to the nearest metro station?",
-    scriptZh: "不好意思，請問我要怎麼去最近的捷運站？",
-    options: [
-      { en: "Go straight and turn right at the corner.", zh: "直走，然後在轉角處右轉。" },
-      { en: "I usually take the train to school.", zh: "我通常搭火車去學校。" },
-      { en: "The ticket is twenty dollars.", zh: "這張票是二十元。" }
-    ],
-    answerEn: "Go straight and turn right at the corner.",
-    explanation: "【考點：問路與方向指引】對方詢問路徑（How can I get to...），應回答具體行進方向。"
-  },
-  {
-    year: "109年國中教育會考 聽力測驗", section: "辨識句意 第3題",
-    scriptEn: "The girl is holding an umbrella because it is raining heavily outside.",
-    scriptZh: "那個女孩正撐著一把雨傘，因為外面正在下著大雨。",
-    options: [
-      { en: "The girl is holding an umbrella in the heavy rain.", zh: "那個女孩正在大雨中撐著一把傘。" },
-      { en: "The girl left her jacket on the yellow bus.", zh: "那個女孩把夾克遺忘在黃色公車上。" },
-      { en: "The girl is playing with water in the yard.", zh: "那個女孩正在院子裡玩水。" }
-    ],
-    answerEn: "The girl is holding an umbrella in the heavy rain.",
-    explanation: "【考點：天氣描述與動作配對】關鍵字 holding an umbrella 與 raining heavily。"
-  }
+  { year: "112年國中教育會考 聽力測驗", section: "基本問答 第5題", scriptEn: "Would you like some more delicious apple pie?", scriptZh: "你想要再來點美味的蘋果派嗎？", options: [{ en: "Yes, please. It tastes wonderful.", zh: "好的，請給我一些。嚐起來太美味了。" }, { en: "I bought it at the bakery yesterday.", zh: "我昨天是在麵包店買的。" }, { en: "Apple pie is my mother's favorite dessert.", zh: "蘋果派是我媽媽最喜歡的甜點。" }], answerEn: "Yes, please. It tastes wonderful.", explanation: "【考點：日常應答與點心款待】" },
+  { year: "111年國中教育會考 聽力測驗", section: "辨識句意 第1題", scriptEn: "The boy is riding his bicycle along the river bank.", scriptZh: "那個男孩正沿著河岸騎腳踏車。", options: [{ en: "The boy is riding his bicycle along the river bank.", zh: "那個男孩正沿著河岸騎腳踏車。" }, { en: "The boy is running fast in the school gym.", zh: "那個男孩正在學校體育館裡飛快奔跑。" }, { en: "The boy is swimming across the lake with his friends.", zh: "那個男孩正和朋友們游泳橫渡湖泊。" }], answerEn: "The boy is riding his bicycle along the river bank.", explanation: "【考點：動作進行式與地點辨識】" }
 ];
 
 const CAP_YEAR_MAPPING = {
   getSource: function(word, level) {
     const clean = word.trim().toLowerCase();
-    if (CAP_EXAM_BANK[clean]) {
-      return `🏛️ 【${CAP_EXAM_BANK[clean].year}】 ${CAP_EXAM_BANK[clean].section}`;
-    }
-    const years = [
-      "113年國中教育會考 閱讀單選", "112年國中教育會考 閱讀單選", "112年國中教育會考補考 閱讀單選",
-      "111年國中教育會考 閱讀單選", "110年國中教育會考 閱讀單選", "109年國中教育會考 閱讀單選", "108年國中教育會考 閱讀單選"
-    ];
+    if (CAP_EXAM_BANK[clean]) return `🏛️ 【${CAP_EXAM_BANK[clean].year}】 ${CAP_EXAM_BANK[clean].section}`;
+    const years = ["113年國中教育會考 閱讀單選", "112年國中教育會考 閱讀單選", "111年國中教育會考 閱讀單選"];
     let hash = 0;
     for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
-    const yearPick = years[hash % years.length];
-    const qNum = (hash % 15) + 1;
-    return `🏛️ 【${yearPick} 第${qNum}題】`;
+    return `🏛️ 【${years[hash % years.length]} 第${(hash % 15) + 1}題】`;
   }
 };
 
-// ========================================================
-// 2. Supabase 雲端同步與最近 14 天每日使用狀況追蹤
-// ========================================================
 const SUPABASE_URL = "https://qdheftossctylaycszfd.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Ylg58I3mARi-3ce9hWaZkw_AcWz_deg";
-
 const ADMIN_EMAIL = "lyu0608@gmail.com";
 
 let supabaseClient = null;
 if (SUPABASE_URL !== "YOUR_SUPABASE_URL") {
   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
 }
 
 let currentUser = null;
 let isGuest = false;
 
-// 取得當日日期字串 (YYYY-MM-DD)
 function getTodayDateString() {
   const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// 記錄或更新當日使用狀況 (最近 14 天每日數據)
 async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
   if (!supabaseClient || isGuest || !currentUser) return;
   const todayStr = getTodayDateString();
   try {
-    let { data: existing, error } = await supabaseClient
+    let { data: existing } = await supabaseClient
       .from('user_daily_activity')
       .select('*')
       .eq('user_id', currentUser.id)
@@ -1066,7 +937,6 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
   }
 }
 
-// 線上活躍心跳計時器（每 1 分鐘自動為當天增加 60 秒使用時間）
 let dailyActivityTimer = null;
 function startDailyActivityTracker() {
   if (dailyActivityTimer) clearInterval(dailyActivityTimer);
@@ -1082,19 +952,11 @@ function getDefaultStore() {
     history: {},
     mistakes: [],
     cycleDays: 30,
-    stats: {
-      totalQ: 0,
-      totalCorrect: 0,
-      wordDef: { total: 0, correct: 0 },
-      cloze: { total: 0, correct: 0 },
-      exam: { total: 0, correct: 0 },
-      listen: { total: 0, correct: 0 }
-    }
+    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } }
   };
 }
 
 let userStore = getDefaultStore();
-
 const KNOWN_USERS_KEY = "known_vocab_users_list";
 
 function getKnownUsers() {
@@ -1105,14 +967,7 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
   if (!userObj || !userObj.email || userObj.email.includes("訪客")) return;
   let list = getKnownUsers();
   const existingIdx = list.findIndex(u => u.id === userObj.id || u.email === userObj.email);
-  const record = {
-    id: userObj.id,
-    email: userObj.email,
-    session: sessionObj || null,
-    store: storeObj || getDefaultStore(),
-    lastActive: new Date().toISOString()
-  };
-
+  const record = { id: userObj.id, email: userObj.email, session: sessionObj || null, store: storeObj || getDefaultStore(), lastActive: new Date().toISOString() };
   if (existingIdx >= 0) list[existingIdx] = record;
   else list.push(record);
   localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
@@ -1122,12 +977,7 @@ async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
   try {
-    const { data } = await supabaseClient
-      .from('user_progress')
-      .select('history, mistakes, stats')
-      .eq('user_id', currentUser.id)
-      .single();
-
+    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, stats').eq('user_id', currentUser.id).single();
     if (data) {
       userStore.history = data.history || {};
       userStore.mistakes = data.mistakes || [];
@@ -1146,32 +996,19 @@ let syncDebounceTimer = null;
 function triggerAutoSync() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   saveKnownUser(currentUser, null, userStore);
-
   if (!supabaseClient || isGuest || !currentUser) return;
   if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-  syncDebounceTimer = setTimeout(() => {
-    syncToCloud();
-  }, 1500);
+  syncDebounceTimer = setTimeout(() => { syncToCloud(); }, 1500);
 }
 
 async function syncToCloud() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   saveKnownUser(currentUser, null, userStore);
-
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
-    const payload = {
-      user_id: currentUser.id,
-      email: currentUser.email,
-      history: userStore.history,
-      mistakes: userStore.mistakes,
-      updated_at: new Date().toISOString()
-    };
+    const payload = { user_id: currentUser.id, email: currentUser.email, history: userStore.history, mistakes: userStore.mistakes, updated_at: new Date().toISOString() };
     if (userStore.stats) payload.stats = userStore.stats;
-
-    await supabaseClient
-      .from('user_progress')
-      .upsert(payload);
+    await supabaseClient.from('user_progress').upsert(payload);
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   } catch (err) {
     document.getElementById("syncStatus").innerText = "⚠️ 本地暫存中";
@@ -1192,10 +1029,7 @@ function switchAuthTab(tab) {
   document.getElementById("tabLogin").classList.toggle("active", tab === "login");
   document.getElementById("tabRegister").classList.toggle("active", tab === "register");
   document.getElementById("authSubmitBtn").innerText = tab === "login" ? "登入並同步進度" : "註冊新帳號並登入";
-  
-  const confirmGroup = document.getElementById("confirmPasswordGroup");
-  if (tab === "register") confirmGroup.classList.remove("hidden");
-  else confirmGroup.classList.add("hidden");
+  document.getElementById("confirmPasswordGroup").classList.toggle("hidden", tab === "login");
 }
 
 async function handleSupabaseAuth() {
@@ -1204,17 +1038,12 @@ async function handleSupabaseAuth() {
   const confirmPassword = document.getElementById("authPasswordConfirm").value.trim();
 
   if (!email || !password) return alert("請輸入完整 Email 與密碼！");
-
   if (authTab === "register") {
-    if (!confirmPassword) return alert("請再次輸入確認密碼！");
-    if (password !== confirmPassword) return alert("兩次輸入的密碼不相符，請重新確認！");
+    if (password !== confirmPassword) return alert("兩次輸入的密碼不相符！");
     if (password.length < 6) return alert("密碼長度至少需 6 個字元！");
   }
 
-  if (!supabaseClient) {
-    alert("尚未填入有效的 Supabase URL 與金鑰，將以本地免登入模式體驗。");
-    return loginAsGuest();
-  }
+  if (!supabaseClient) return loginAsGuest();
 
   if (authTab === "register") {
     const { data, error } = await supabaseClient.auth.signUp({ email, password });
@@ -1234,9 +1063,7 @@ function loginAsGuest() {
   isGuest = true;
   currentUser = { id: "guest", email: "訪客 (免登入)" };
   const local = localStorage.getItem("local_vocab_progress");
-  if (local) {
-    try { userStore = JSON.parse(local); } catch (e) {}
-  }
+  if (local) { try { userStore = JSON.parse(local); } catch (e) {} }
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   enterApp(currentUser);
 }
@@ -1246,14 +1073,7 @@ function enterApp(user) {
   document.getElementById("authSection").classList.add("hidden");
   document.getElementById("quizSection").classList.remove("hidden");
   document.getElementById("displayUsername").innerText = `👤 ${user.email} ▾`;
-
-  const adminBtn = document.getElementById("adminPanelBtn");
-  if (!isGuest && user.email === ADMIN_EMAIL) {
-    adminBtn.classList.remove("hidden");
-  } else {
-    adminBtn.classList.add("hidden");
-  }
-
+  document.getElementById("adminPanelBtn").classList.toggle("hidden", isGuest || user.email !== ADMIN_EMAIL);
   syncFromCloud();
   initDayPlans();
   initDaySelector();
@@ -1263,9 +1083,7 @@ function enterApp(user) {
 
 async function handleLogout() {
   if (dailyActivityTimer) clearInterval(dailyActivityTimer);
-  if (supabaseClient && !isGuest) {
-    await supabaseClient.auth.signOut();
-  }
+  if (supabaseClient && !isGuest) await supabaseClient.auth.signOut();
   isGuest = false;
   currentUser = null;
   document.getElementById("authSection").classList.remove("hidden");
@@ -1273,13 +1091,9 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// ========================================================
-// 管理者後台：讀取全體學員進度與題型統計
-// ========================================================
+// 👑 擴充後的管理者後台 (含 14 天每日使用狀況顯示)
 function toggleAdminModal(show) {
-  const modal = document.getElementById("adminDashboardModal");
-  if (show) modal.classList.remove("hidden");
-  else modal.classList.add("hidden");
+  document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
 
 function openAdminDashboardModal() {
@@ -1290,25 +1104,27 @@ function openAdminDashboardModal() {
 async function fetchAdminAllProgress() {
   const tbody = document.getElementById("adminProgressTableBody");
   const countText = document.getElementById("adminTotalStudents");
-  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px;">讀取雲端學員進度中...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;">讀取雲端學員進度和 14 天紀錄中...</td></tr>`;
 
   try {
-    const { data, error } = await supabaseClient
-      .from('user_progress')
-      .select('*')
-      .order('updated_at', { ascending: false });
+    // 同時撈取 user_progress 與最近 14 天的 user_daily_activity
+    const [progressRes, dailyRes] = await Promise.all([
+      supabaseClient.from('user_progress').select('*').order('updated_at', { ascending: false }),
+      supabaseClient.from('user_daily_activity').select('*').order('activity_date', { ascending: false })
+    ]);
 
-    if (error) throw error;
+    if (progressRes.error) throw progressRes.error;
+    const data = progressRes.data || [];
+    const dailyData = dailyRes.data || [];
 
-    if (!data || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
       countText.innerText = `共 0 位學員`;
       return;
     }
 
     countText.innerText = `共 ${data.length} 位註冊學員`;
     tbody.innerHTML = "";
-
     const localKnownUsers = getKnownUsers();
 
     data.forEach(row => {
@@ -1318,16 +1134,8 @@ async function fetchAdminAllProgress() {
 
       let completedDaysSet = new Set();
       let maxCycleDays = 30;
-
-      const typeStats = {
-        wordDef: { total: 0, correct: 0 },
-        cloze: { total: 0, correct: 0 },
-        exam: { total: 0, correct: 0 },
-        listen: { total: 0, correct: 0 }
-      };
-
-      let overallTotal = 0;
-      let overallCorrect = 0;
+      const typeStats = { wordDef: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } };
+      let overallTotal = 0, overallCorrect = 0;
 
       Object.entries(history).forEach(([key, item]) => {
         if (item.cycleDays) maxCycleDays = item.cycleDays;
@@ -1338,25 +1146,14 @@ async function fetchAdminAllProgress() {
         overallTotal = stats.totalQ || 0;
         overallCorrect = stats.totalCorrect || 0;
         ["wordDef", "cloze", "exam", "listen"].forEach(k => {
-          if (stats[k]) {
-            typeStats[k].total = stats[k].total || 0;
-            typeStats[k].correct = stats[k].correct || 0;
-          }
+          if (stats[k]) { typeStats[k].total = stats[k].total || 0; typeStats[k].correct = stats[k].correct || 0; }
         });
       } else {
         Object.entries(history).forEach(([key, item]) => {
-          const total = item.total || 0;
-          const score = item.score || 0;
-          overallTotal += total;
-          overallCorrect += score;
+          const total = item.total || 0, score = item.score || 0;
+          overallTotal += total; overallCorrect += score;
           const t = item.quizType || "wordDef";
-          if (typeStats[t]) {
-            typeStats[t].total += total;
-            typeStats[t].correct += score;
-          } else {
-            typeStats.wordDef.total += total;
-            typeStats.wordDef.correct += score;
-          }
+          if (typeStats[t]) { typeStats[t].total += total; typeStats[t].correct += score; }
         });
       }
 
@@ -1364,7 +1161,6 @@ async function fetchAdminAllProgress() {
       mistakes.forEach(m => {
         const mt = m.quizType || "wordDef";
         if (mistakeTypeCount[mt] !== undefined) mistakeTypeCount[mt]++;
-        else mistakeTypeCount.wordDef++;
       });
 
       const dayProgressText = `${completedDaysSet.size}/${maxCycleDays} 天`;
@@ -1377,6 +1173,18 @@ async function fetchAdminAllProgress() {
         displayEmail = matched ? matched.email : `${row.user_id.slice(0, 8)}...`;
       }
 
+      // 過濾並組合該使用者的最近 14 天每日狀況
+      const userDailyRecords = dailyData.filter(d => d.user_id === row.user_id);
+      let dailyHtml = `<span style="color:#94a3b8; font-style:italic;">近14天無上線紀錄</span>`;
+      if (userDailyRecords.length > 0) {
+        dailyHtml = `<div class="daily-box">`;
+        userDailyRecords.slice(0, 14).forEach(d => {
+          const mins = Math.round((d.active_seconds || 0) / 60);
+          dailyHtml += `• <b>${d.activity_date}</b>: ${mins}分 / ${d.questions_answered || 0}題<br>`;
+        });
+        dailyHtml += `</div>`;
+      }
+
       const renderTypeBadge = (label, stat, badgeClass) => {
         if (stat.total === 0) return `<span class="mode-badge" style="background:#f1f5f9; color:#94a3b8;">${label}: -</span>`;
         const rate = Math.round((stat.correct / stat.total) * 100);
@@ -1385,120 +1193,74 @@ async function fetchAdminAllProgress() {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:10px;">${displayEmail}</td>
-        <td><b style="color:var(--primary); font-size:13px;">${dayProgressText}</b></td>
-        <td><b style="color:#0f172a; font-size:13px;">${overallTotal}</b> 題</td>
-        <td style="color:${avgRate >= 80 ? 'var(--success)' : avgRate >= 60 ? 'var(--amber)' : 'var(--danger)'}; font-weight:700;">${avgRate}%</td>
-        <td style="text-align:left; padding:6px 8px; line-height:1.7;">
+        <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:8px;">${displayEmail}</td>
+        <td><b style="color:var(--primary);">${dayProgressText}</b></td>
+        <td><b>${overallTotal}</b> 題</td>
+        <td style="color:${avgRate >= 80 ? 'var(--success)' : 'var(--amber)'}; font-weight:700;">${avgRate}%</td>
+        <td style="text-align:left; padding:6px; line-height:1.6;">
           ${renderTypeBadge("🔤識義", typeStats.wordDef, "badge-word")}<br>
           ${renderTypeBadge("📝填空", typeStats.cloze, "badge-cloze")}<br>
           ${renderTypeBadge("🏛️真題", typeStats.exam, "badge-exam")}<br>
           ${renderTypeBadge("🎧聽力", typeStats.listen, "badge-listen")}
         </td>
-        <td style="text-align:left; padding:6px 8px; line-height:1.5;">
-          <b style="color:var(--danger); font-size:13px;">總計: ${mistakes.length} 題</b>
-          ${mistakes.length > 0 ? `
-            <div style="font-size:11px; color:#475569; margin-top:3px;">
-              • 🔤識義: ${mistakeTypeCount.wordDef} 題<br>
-              • 📝填空: ${mistakeTypeCount.cloze} 題<br>
-              • 🏛️真題: ${mistakeTypeCount.exam} 題<br>
-              • 🎧聽力: ${mistakeTypeCount.listen} 題
-            </div>
-          ` : ''}
+        <td style="text-align:left; padding:6px;">
+          <b style="color:var(--danger);">總計: ${mistakes.length} 題</b>
         </td>
+        <td style="text-align:left; padding:6px;">${dailyHtml}</td>
         <td style="font-size:11px; color:var(--muted);">${dateStr}</td>
       `;
       tbody.appendChild(tr);
     });
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}<br><small>請確認是否已在 Supabase 執行開放 SQL</small></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}</td></tr>`;
   }
 }
 
-// PWA 原生安裝支援
 let deferredPwaPrompt = null;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPwaPrompt = e;
-  const installArea = document.getElementById("pwaNativeInstallArea");
-  if (installArea) installArea.classList.remove("hidden");
+  document.getElementById("pwaNativeInstallArea").classList.remove("hidden");
 });
 
-function toggleInstallModal(show) {
-  const modal = document.getElementById("installGuideModal");
-  if (show) modal.classList.remove("hidden");
-  else modal.classList.add("hidden");
-}
-
+function toggleInstallModal(show) { document.getElementById("installGuideModal").classList.toggle("hidden", !show); }
 function triggerPwaPrompt() {
   if (deferredPwaPrompt) {
     deferredPwaPrompt.prompt();
-    deferredPwaPrompt.userChoice.then(() => {
-      deferredPwaPrompt = null;
-      toggleInstallModal(false);
-    });
-  } else {
-    alert("請依照下方各裝置步驟手動新增至主畫面即可！");
-  }
+    deferredPwaPrompt.userChoice.then(() => { deferredPwaPrompt = null; toggleInstallModal(false); });
+  } else { alert("請依照下方各裝置步驟手動新增至主畫面！"); }
 }
 
-// 免密碼快速切換學員
-function toggleSwitchAccountModal(show) {
-  const modal = document.getElementById("switchAccountModal");
-  if (show) modal.classList.remove("hidden");
-  else modal.classList.add("hidden");
-}
-
+function toggleSwitchAccountModal(show) { document.getElementById("switchAccountModal").classList.toggle("hidden", !show); }
 function openSwitchAccountModal() {
   const container = document.getElementById("accountListContainer");
   container.innerHTML = "";
   const users = getKnownUsers();
-
   if (users.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--muted);">本機尚未記錄其他學員。<br>請點選下方「登入其他新帳號」。</div>`;
+    container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--muted);">本機尚未記錄其他學員。</div>`;
   } else {
     users.forEach(u => {
       const isCurrent = currentUser && (currentUser.id === u.id || currentUser.email === u.email);
       const div = document.createElement("div");
       div.className = `account-item ${isCurrent ? 'active' : ''}`;
       div.onclick = () => switchToAccount(u);
-      
-      const firstLetter = (u.email || "S")[0].toUpperCase();
-      div.innerHTML = `
-        <div style="display:flex; align-items:center;">
-          <div class="account-avatar">${firstLetter}</div>
-          <div>
-            <div style="font-size:13.5px; color:#0f172a;">${u.email}</div>
-            <div style="font-size:11px; color:var(--muted);">${isCurrent ? '✅ 當前學習中' : '點擊立即切換'}</div>
-          </div>
-        </div>
-        <span style="font-size:12px; color:var(--primary);">切換 ➔</span>
-      `;
+      div.innerHTML = `<div style="display:flex; align-items:center;"><div class="account-avatar">${(u.email || "S")[0].toUpperCase()}</div><div><div style="font-size:13.5px;">${u.email}</div><div style="font-size:11px; color:var(--muted);">${isCurrent ? '✅ 當前學習中' : '點擊切換'}</div></div></div><span style="font-size:12px; color:var(--primary);">切換 ➔</span>`;
       container.appendChild(div);
     });
   }
   toggleSwitchAccountModal(true);
 }
 
-async function switchToAccount(targetUserRecord) {
-  if (currentUser && currentUser.id === targetUserRecord.id) {
-    toggleSwitchAccountModal(false);
-    return;
-  }
-
+async function switchToAccount(uRecord) {
+  if (currentUser && currentUser.id === uRecord.id) { toggleSwitchAccountModal(false); return; }
   if (!isGuest && currentUser) await syncToCloud();
-
   isGuest = false;
-  currentUser = { id: targetUserRecord.id, email: targetUserRecord.email };
-  userStore = targetUserRecord.store || getDefaultStore();
+  currentUser = { id: uRecord.id, email: uRecord.email };
+  userStore = uRecord.store || getDefaultStore();
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
-
-  if (supabaseClient && targetUserRecord.session) {
-    try { await supabaseClient.auth.setSession(targetUserRecord.session); } catch (e) {}
-  }
-
+  if (supabaseClient && uRecord.session) { try { await supabaseClient.auth.setSession(uRecord.session); } catch (e) {} }
   toggleSwitchAccountModal(false);
   enterApp(currentUser);
 }
@@ -1513,39 +1275,18 @@ function addNewAccountLogin() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-function toggleChangelogModal(show) {
-  const modal = document.getElementById("changelogModal");
-  if (show) modal.classList.remove("hidden");
-  else modal.classList.add("hidden");
-}
-
+function toggleChangelogModal(show) { document.getElementById("changelogModal").classList.toggle("hidden", !show); }
 function toggleClearModal(show) {
-  const modal = document.getElementById("clearConfirmModal");
-  const pwdInput = document.getElementById("clearVerifyPassword");
-  const pwdGroup = document.getElementById("clearPasswordInputGroup");
-  const notice = document.getElementById("clearModalNotice");
-
-  pwdInput.value = "";
-  if (isGuest) {
-    pwdGroup.classList.add("hidden");
-    notice.innerText = "您目前處於訪客模式。確定要清空所有本地練習紀錄與錯題本嗎？此操作無法復原。";
-  } else {
-    pwdGroup.classList.remove("hidden");
-    notice.innerText = "清空後將永久刪除「所有天數作答紀錄」與「所有錯題本」，無法復原。為確保安全，請輸入您的登入密碼：";
-  }
-
-  if (show) modal.classList.remove("hidden");
-  else modal.classList.add("hidden");
+  document.getElementById("clearVerifyPassword").value = "";
+  document.getElementById("clearPasswordInputGroup").classList.toggle("hidden", isGuest);
+  document.getElementById("clearModalNotice").innerText = isGuest ? "確定要清空訪客紀錄嗎？" : "清空將永久刪除雲端與本地的所有作答與 14 天紀錄，請輸入密碼：";
+  document.getElementById("clearConfirmModal").classList.toggle("hidden", !show);
 }
-
-function promptClearRecords() {
-  toggleClearModal(true);
-}
+function promptClearRecords() { toggleClearModal(true); }
 
 async function executeClearRecords() {
   const btn = document.getElementById("confirmClearBtn");
   btn.disabled = true;
-
   if (isGuest) {
     userStore = getDefaultStore();
     localStorage.removeItem("local_vocab_progress");
@@ -1553,82 +1294,30 @@ async function executeClearRecords() {
     initDaySelector();
     toggleClearModal(false);
     btn.disabled = false;
-    alert("✅ 本地紀錄已全數清空！");
+    alert("✅ 紀錄已清空！");
     changeDay(currentDay);
     return;
   }
-
   const pwd = document.getElementById("clearVerifyPassword").value.trim();
-  if (!pwd) {
-    alert("請輸入密碼以驗證身分！");
-    btn.disabled = false;
-    return;
-  }
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: currentUser.email,
-    password: pwd
-  });
-
-  if (error) {
-    alert("❌ 密碼驗證失敗：" + error.message);
-    btn.disabled = false;
-    return;
-  }
-
+  const { error } = await supabaseClient.auth.signInWithPassword({ email: currentUser.email, password: pwd });
+  if (error) { alert("❌ 密碼驗證失敗：" + error.message); btn.disabled = false; return; }
   try {
     userStore = getDefaultStore();
     localStorage.removeItem("local_vocab_progress");
     saveKnownUser(currentUser, null, userStore);
-
-    const payload = {
-      user_id: currentUser.id,
-      email: currentUser.email,
-      history: {},
-      mistakes: [],
-      updated_at: new Date().toISOString()
-    };
-    if (userStore.stats) payload.stats = userStore.stats;
-
-    await supabaseClient
-      .from('user_progress')
-      .upsert(payload);
-
+    await supabaseClient.from('user_progress').upsert({ user_id: currentUser.id, email: currentUser.email, history: {}, mistakes: [], stats: userStore.stats, updated_at: new Date().toISOString() });
     updateMistakeCount();
     initDaySelector();
     toggleClearModal(false);
-    alert("✅ 驗證成功！雲端與本地學習紀錄已全部清空重置。");
+    alert("✅ 雲端與本地紀錄已全部清空重置。");
     changeDay(currentDay);
-  } catch (err) {
-    alert("清空紀錄時發生錯誤：" + err.message);
-  } finally {
-    btn.disabled = false;
-  }
+  } catch (err) { alert("發生錯誤：" + err.message); } finally { btn.disabled = false; }
 }
 
-// ========================================================
-// 3. 測驗引擎核心模組
-// ========================================================
-let FULL_VOCAB = [];
-let DAYS_COUNT = 30;
-let dayPlans = {};
-let isRandomMode = false;
-let currentTestQueue = [];
-let currentIndex = 0;
-let correctCount = 0;
-let wrongCount = 0;
-let hasAnswered = false;
-let currentDay = 1;
-let currentQuizType = "wordDef";
-
-let speechKeepAliveTimer = null;
-
-let VOCAB_MAP_EN = {};
-let VOCAB_MAP_ZH = {};
+let FULL_VOCAB = [], DAYS_COUNT = 30, dayPlans = {}, isRandomMode = false, currentTestQueue = [], currentIndex = 0, correctCount = 0, wrongCount = 0, hasAnswered = false, currentDay = 1, currentQuizType = "wordDef", speechKeepAliveTimer = null, VOCAB_MAP_EN = {}, VOCAB_MAP_ZH = {};
 
 function buildVocabMaps() {
-  VOCAB_MAP_EN = {};
-  VOCAB_MAP_ZH = {};
+  VOCAB_MAP_EN = {}; VOCAB_MAP_ZH = {};
   FULL_VOCAB.forEach(item => {
     if (item.en) VOCAB_MAP_EN[item.en.trim().toLowerCase()] = item;
     if (item.zh) VOCAB_MAP_ZH[item.zh.trim()] = item;
@@ -1638,80 +1327,42 @@ function buildVocabMaps() {
 function getBestUSVoice() {
   if (!('speechSynthesis' in window)) return null;
   const voices = window.speechSynthesis.getVoices();
-  const preferredNames = ["samantha", "ava", "allison", "jenny", "aria", "victoria", "karen", "natural", "zira"];
-  let matched = voices.find(v => {
+  const pNames = ["samantha", "ava", "allison", "jenny", "aria", "victoria", "karen", "natural", "zira"];
+  return voices.find(v => {
     const name = v.name.toLowerCase();
     const lang = (v.lang || "").replace("_", "-");
-    return (lang === "en-US" || lang.startsWith("en")) && preferredNames.some(p => name.includes(p));
-  });
-  if (!matched) {
-    matched = voices.find(v => (v.lang || "").replace("_", "-") === "en-US") ||
-              voices.find(v => (v.lang || "").startsWith("en"));
-  }
-  return matched;
+    return (lang === "en-US" || lang.startsWith("en")) && pNames.some(p => name.includes(p));
+  }) || voices.find(v => (v.lang || "").replace("_", "-") === "en-US") || voices.find(v => (v.lang || "").startsWith("en"));
 }
 
 function stopAllAudio() {
   if (window.speechSynthesis) window.speechSynthesis.cancel();
-  if (speechKeepAliveTimer) {
-    clearInterval(speechKeepAliveTimer);
-    speechKeepAliveTimer = null;
-  }
+  if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
 }
 
-function speakPureUS(text, onCompleteCallback) {
-  if (!('speechSynthesis' in window)) {
-    if (onCompleteCallback) onCompleteCallback(false);
-    return;
-  }
-
+function speakPureUS(text, cb) {
+  if (!('speechSynthesis' in window)) { if (cb) cb(false); return; }
   stopAllAudio();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 0.88;
-  utterance.pitch = 1.0;
-
-  const voice = getBestUSVoice();
-  if (voice) utterance.voice = voice;
-
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "en-US"; utt.rate = 0.88; utt.pitch = 1.0;
+  const v = getBestUSVoice();
+  if (v) utt.voice = v;
   speechKeepAliveTimer = setInterval(() => {
-    if (!window.speechSynthesis.speaking) {
-      clearInterval(speechKeepAliveTimer);
-      speechKeepAliveTimer = null;
-    } else {
-      window.speechSynthesis.pause();
-      window.speechSynthesis.resume();
-    }
+    if (!window.speechSynthesis.speaking) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
+    else { window.speechSynthesis.pause(); window.speechSynthesis.resume(); }
   }, 7000);
-
-  utterance.onend = () => {
-    if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
-    if (onCompleteCallback) onCompleteCallback(true);
-  };
-
-  utterance.onerror = () => {
-    if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; }
-    if (onCompleteCallback) onCompleteCallback(false);
-  };
-
-  window.speechSynthesis.speak(utterance);
+  utt.onend = () => { if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; } if (cb) cb(true); };
+  utt.onerror = () => { if (speechKeepAliveTimer) { clearInterval(speechKeepAliveTimer); speechKeepAliveTimer = null; } if (cb) cb(false); };
+  window.speechSynthesis.speak(utt);
 }
 
 function playCurrentListeningAudio() {
-  const status = document.getElementById("audioStatusText");
-  const btn = document.getElementById("playAudioBtn");
-
   if (currentQuizType !== "listen") return;
-
-  const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
-  status.innerText = "🔊 正在以標準美式發音朗讀考題...";
+  const lData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
+  document.getElementById("audioStatusText").innerText = "🔊 正在以標準美式發音朗讀考題...";
+  const btn = document.getElementById("playAudioBtn");
   btn.disabled = true;
-
-  speakPureUS(listenData.scriptEn, (success) => {
-    btn.disabled = false;
-    if (success) status.innerText = "✅ 考題朗讀完畢，可再次點擊重聽";
-    else status.innerText = "⚠️ 語音播放結束";
-  });
+  speakPureUS(lData.scriptEn, () => { btn.disabled = false; document.getElementById("audioStatusText").innerText = "✅ 考題朗讀完畢"; });
 }
 
 function setQuizType(type) {
@@ -1719,24 +1370,12 @@ function setQuizType(type) {
   currentQuizType = type;
   document.getElementById("typeWordDefBtn").classList.toggle("active", type === "wordDef");
   document.getElementById("typeClozeBtn").classList.toggle("active", type === "cloze");
-  
-  const examBtn = document.getElementById("typeExamBtn");
-  examBtn.classList.toggle("exam-active", type === "exam");
-  examBtn.classList.toggle("active", type === "exam");
-
-  const listenBtn = document.getElementById("typeListenBtn");
-  listenBtn.classList.toggle("listen-active", type === "listen");
-  listenBtn.classList.toggle("active", type === "listen");
-
-  if (!isRandomMode) {
-    changeDay(currentDay);
-  } else {
-    currentTestQueue = shuffle(currentTestQueue);
-    currentIndex = 0;
-    correctCount = 0;
-    wrongCount = 0;
-    renderQuestion();
-  }
+  document.getElementById("typeExamBtn").classList.toggle("exam-active", type === "exam");
+  document.getElementById("typeExamBtn").classList.toggle("active", type === "exam");
+  document.getElementById("typeListenBtn").classList.toggle("listen-active", type === "listen");
+  document.getElementById("typeListenBtn").classList.toggle("active", type === "listen");
+  if (!isRandomMode) changeDay(currentDay);
+  else { currentTestQueue = shuffle(currentTestQueue); currentIndex = 0; correctCount = 0; wrongCount = 0; renderQuestion(); }
 }
 
 function shuffle(arr) {
@@ -1752,11 +1391,8 @@ function initDayPlans() {
   const total = FULL_VOCAB.length;
   dayPlans = {};
   if (total === 0) return;
-  const basePerDay = Math.floor(total / DAYS_COUNT);
-  const remainder = total % DAYS_COUNT;
+  const basePerDay = Math.floor(total / DAYS_COUNT), remainder = total % DAYS_COUNT, shuffledFull = shuffle(FULL_VOCAB);
   let cursor = 0;
-  
-  const shuffledFull = shuffle(FULL_VOCAB);
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const count = d <= remainder ? (basePerDay + 1) : basePerDay;
     dayPlans[d] = shuffledFull.slice(cursor, cursor + count);
@@ -1770,15 +1406,13 @@ function initDaySelector() {
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const opt = document.createElement("option");
     opt.value = d;
-    const isDone = userStore.history[`Day_${d}`] ? "✓ " : "";
-    const count = dayPlans[d]?.length || 0;
-    opt.innerText = `${isDone}第 ${d} 天 (${count} 題)`;
+    opt.innerText = `${userStore.history[`Day_${d}`] ? "✓ " : ""}第 ${d} 天 (${dayPlans[d]?.length || 0} 題)`;
     select.appendChild(opt);
   }
 }
 
 function startRandomQuiz(count) {
-  if (FULL_VOCAB.length === 0) return alert("題庫載入中，請稍候！");
+  if (FULL_VOCAB.length === 0) return alert("題庫載入中！");
   isRandomMode = true;
   document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
   if (count === 100) document.getElementById("btnRand100").classList.add("active");
@@ -1787,11 +1421,8 @@ function startRandomQuiz(count) {
 
   const shuffled = shuffle(FULL_VOCAB);
   currentTestQueue = (count === 'all' || count >= FULL_VOCAB.length) ? shuffled : shuffled.slice(0, count);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
+  currentIndex = 0; correctCount = 0; wrongCount = 0;
   document.getElementById("progressBar").style.background = "var(--purple)";
-  
   document.getElementById("poolInfoText").innerText = `亂數特訓 (${currentTestQueue.length} 題)`;
   renderQuestion();
 }
@@ -1809,16 +1440,13 @@ function changeDay(day) {
   document.querySelectorAll(".random-btn").forEach(b => b.classList.remove("active"));
   document.getElementById("progressBar").style.background = "var(--primary)";
   currentDay = Number(day);
-  
   const scopeType = document.querySelector('input[name="scopeType"]:checked').value;
   const incMistakes = document.getElementById("includeMistakesCheckbox").checked;
 
   let pool = [];
   if (scopeType === "cumulative") {
     for (let d = 1; d <= currentDay; d++) if (dayPlans[d]) pool.push(...dayPlans[d]);
-  } else {
-    pool = (dayPlans[currentDay] || []).slice();
-  }
+  } else { pool = (dayPlans[currentDay] || []).slice(); }
 
   if (incMistakes && userStore.mistakes) {
     userStore.mistakes.forEach(m => {
@@ -1828,47 +1456,28 @@ function changeDay(day) {
   }
 
   currentTestQueue = shuffle(pool);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
-
+  currentIndex = 0; correctCount = 0; wrongCount = 0;
   document.getElementById("poolInfoText").innerText = `本輪共 ${currentTestQueue.length} 題`;
   renderQuestion();
 }
 
-function handleFilterChange() {
-  if (!isRandomMode) changeDay(currentDay);
-}
+function handleFilterChange() { if (!isRandomMode) changeDay(currentDay); }
 
 function createClozeSentence(sentence, targetWord, fallbackZh) {
-  if (!sentence || sentence.trim() === "") {
-    return { 
-      masked: `請選出「<b>${fallbackZh || '此字'}</b>」對應的英文單字：<span class="cloze-blank">_______</span>`, 
-      hasReplaced: false 
-    };
-  }
+  if (!sentence || sentence.trim() === "") return { masked: `請選出「<b>${fallbackZh || '此字'}</b>」對應的英文：<span class="cloze-blank">_______</span>`, hasReplaced: false };
   const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`\\b${escaped}\\b`, 'i');
-  if (regex.test(sentence)) {
-    return { masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
-  }
-  const root = targetWord.length > 4 ? targetWord.slice(0, 4) : targetWord;
-  const looseRegex = new RegExp(`\\b${root}[a-zA-Z]*\\b`, 'i');
-  if (looseRegex.test(sentence)) {
-    return { masked: sentence.replace(looseRegex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
-  }
+  if (regex.test(sentence)) return { masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
   return { masked: `${sentence} (請選出「<span class="cloze-blank">_______</span>」)`, hasReplaced: false };
 }
 
 function lookupWordDetail(text, fromType) {
   if (!text) return { zh: "", en: "", kk: "" };
   if (fromType === "en") {
-    const clean = text.trim().toLowerCase();
-    const item = VOCAB_MAP_EN[clean];
+    const item = VOCAB_MAP_EN[text.trim().toLowerCase()];
     return item ? { zh: item.zh || "", en: item.en || "", kk: item.kk || "" } : { zh: "", en: text, kk: "" };
   } else {
-    const clean = text.trim();
-    const item = VOCAB_MAP_ZH[clean];
+    const item = VOCAB_MAP_ZH[text.trim()];
     return item ? { zh: item.zh || "", en: item.en || "", kk: item.kk || "" } : { zh: text, en: "", kk: "" };
   }
 }
@@ -1877,22 +1486,14 @@ function pickDistractors(correctItem, count = 3) {
   const chosenEn = new Set([correctItem.en.trim().toLowerCase()]);
   const chosenZh = new Set([correctItem.zh.trim()]);
   const result = [];
-  const maxAttempts = 200;
   let attempts = 0;
-
-  while (result.length < count && attempts < maxAttempts) {
+  while (result.length < count && attempts < 200) {
     attempts++;
-    const randIdx = Math.floor(Math.random() * FULL_VOCAB.length);
-    const candidate = FULL_VOCAB[randIdx];
+    const candidate = FULL_VOCAB[Math.floor(Math.random() * FULL_VOCAB.length)];
     if (!candidate || !candidate.en || !candidate.zh) continue;
-
-    const cEn = candidate.en.trim().toLowerCase();
-    const cZh = candidate.zh.trim();
-
+    const cEn = candidate.en.trim().toLowerCase(), cZh = candidate.zh.trim();
     if (!chosenEn.has(cEn) && !chosenZh.has(cZh)) {
-      chosenEn.add(cEn);
-      chosenZh.add(cZh);
-      result.push(candidate);
+      chosenEn.add(cEn); chosenZh.add(cZh); result.push(candidate);
     }
   }
   return result;
@@ -1901,157 +1502,74 @@ function pickDistractors(correctItem, count = 3) {
 function renderQuestion() {
   hasAnswered = false;
   document.getElementById("nextBtn").disabled = true;
-
   const expBox = document.getElementById("explanationBox");
   expBox.className = "explanation-card placeholder";
   expBox.innerHTML = `<span>💡 請選擇答案，作答後解鎖考點解析與會考語境</span>`;
 
   const zhHintEl = document.getElementById("clozeZhHint");
-  zhHintEl.classList.add("hidden");
-  zhHintEl.innerText = "";
-
+  zhHintEl.classList.add("hidden"); zhHintEl.innerText = "";
   const audioBox = document.getElementById("audioPlayerBox");
   const soundBtn = document.getElementById("soundBtn");
 
-  if (currentTestQueue.length === 0) {
-    document.getElementById("wordDisplay").innerText = "暫無單字";
-    return;
-  }
+  if (currentTestQueue.length === 0) { document.getElementById("wordDisplay").innerText = "暫無單字"; return; }
 
   if (currentIndex >= currentTestQueue.length) {
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
-    userStore.history[recordKey] = {
-      score: correctCount,
-      total: currentTestQueue.length,
-      rate: Math.round((correctCount / currentTestQueue.length) * 100),
-      quizType: currentQuizType,
-      cycleDays: DAYS_COUNT,
-      date: new Date().toLocaleDateString()
-    };
+    userStore.history[recordKey] = { score: correctCount, total: currentTestQueue.length, rate: Math.round((correctCount / currentTestQueue.length) * 100), quizType: currentQuizType, cycleDays: DAYS_COUNT, date: new Date().toLocaleDateString() };
     syncToCloud();
 
     document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
     document.getElementById("wordKk").innerText = "";
     document.getElementById("examSourceTag").classList.add("hidden");
-    audioBox.classList.add("hidden");
-    expBox.classList.add("hidden");
-    document.getElementById("optionsGrid").innerHTML = `
-      <div style="text-align:center; padding:18px; color:var(--muted); line-height:1.6;">
-        <b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>
-        正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b> (${correctCount}/${currentTestQueue.length})
-      </div>
-    `;
+    audioBox.classList.add("hidden"); expBox.classList.add("hidden");
+    document.getElementById("optionsGrid").innerHTML = `<div style="text-align:center; padding:18px; color:var(--muted);"><b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b></div>`;
     return;
   }
 
   const cur = currentTestQueue[currentIndex];
   const examTagEl = document.getElementById("examSourceTag");
-
-  let options = [];
-  let answerTarget = "";
+  let options = [], answerTarget = "";
 
   if (currentQuizType === "listen") {
-    const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
+    const lData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
     examTagEl.className = "exam-tag listen-tag";
-    examTagEl.innerHTML = `🎧 <b>【${listenData.year}】</b> ${listenData.section}`;
+    examTagEl.innerHTML = `🎧 <b>【${lData.year}】</b> ${lData.section}`;
     examTagEl.classList.remove("hidden");
-
     document.getElementById("wordDisplay").innerText = "請仔細聆聽題目音訊";
-    document.getElementById("wordKk").innerText = "[ 點擊按鈕標準美音朗讀，作答後解鎖文本 ]";
-    audioBox.classList.remove("hidden");
-    soundBtn.classList.add("hidden");
-    document.getElementById("audioStatusText").innerText = "原生美式語音，點擊即可完整播放";
-
-    answerTarget = listenData.answerEn;
-    options = shuffle(listenData.options.map(opt => ({
-      primaryText: opt.en,
-      subText: opt.zh,
-      subKk: "",
-      targetValue: opt.en
-    })));
-
+    document.getElementById("wordKk").innerText = "[ 點擊按鈕美音朗讀 ]";
+    audioBox.classList.remove("hidden"); soundBtn.classList.add("hidden");
+    answerTarget = lData.answerEn;
+    options = shuffle(lData.options.map(opt => ({ primaryText: opt.en, subText: opt.zh, subKk: "", targetValue: opt.en })));
   } else if (currentQuizType === "exam") {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
+    audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.className = "exam-tag";
-
     const cleanWord = cur.en.trim().toLowerCase();
     const examData = CAP_EXAM_BANK[cleanWord];
-    
-    const sourceLabel = examData 
-      ? `🏛️ 【${examData.year}】 ${examData.section}`
-      : CAP_YEAR_MAPPING.getSource(cur.en, cur.level);
-
-    examTagEl.innerHTML = sourceLabel;
+    examTagEl.innerHTML = examData ? `🏛️ 【${examData.year}】 ${examData.section}` : CAP_YEAR_MAPPING.getSource(cur.en, cur.level);
     examTagEl.classList.remove("hidden");
-
     answerTarget = cur.en;
-    let distStrs = [];
-
-    if (examData) {
-      const clozeObj = createClozeSentence(examData.sentence, cur.en, cur.zh);
-      document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
-      distStrs = examData.distractors;
-    } else {
-      const clozeObj = createClozeSentence(cur.sentenceEn, cur.en, cur.zh);
-      document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
-      distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
-    }
-
-    const fullRawOpts = [cur.en, ...distStrs];
-    options = shuffle(fullRawOpts.map(wordEn => {
-      const detail = lookupWordDetail(wordEn, "en");
-      return {
-        primaryText: wordEn,
-        subText: detail.zh,
-        subKk: detail.kk,
-        targetValue: wordEn
-      };
-    }));
-
+    let distStrs = examData ? examData.distractors : shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
+    const clozeObj = createClozeSentence(examData ? examData.sentence : cur.sentenceEn, cur.en, cur.zh);
+    document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
     document.getElementById("wordKk").innerText = `[/ 歷屆真題語境 /]`;
-
+    options = shuffle([cur.en, ...distStrs].map(w => ({ primaryText: w, subText: lookupWordDetail(w, "en").zh, subKk: lookupWordDetail(w, "en").kk, targetValue: w })));
   } else if (currentQuizType === "cloze") {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
+    audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
-
     const clozeObj = createClozeSentence(cur.sentenceEn, cur.en, cur.zh);
     document.getElementById("wordDisplay").innerHTML = clozeObj.masked;
     document.getElementById("wordKk").innerText = `[/ 文意字彙考點 /]`;
-
     answerTarget = cur.en;
     const distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
-    const fullRawOpts = [cur.en, ...distStrs];
-    
-    options = shuffle(fullRawOpts.map(wordEn => {
-      const detail = lookupWordDetail(wordEn, "en");
-      return {
-        primaryText: wordEn,
-        subText: detail.zh,
-        subKk: detail.kk,
-        targetValue: wordEn
-      };
-    }));
-
+    options = shuffle([cur.en, ...distStrs].map(w => ({ primaryText: w, subText: lookupWordDetail(w, "en").zh, subKk: lookupWordDetail(w, "en").kk, targetValue: w })));
   } else {
-    audioBox.classList.add("hidden");
-    soundBtn.classList.remove("hidden");
+    audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
-
     document.getElementById("wordDisplay").innerText = cur.en;
     document.getElementById("wordKk").innerText = cur.kk || "";
-
     answerTarget = cur.zh;
     const distItems = pickDistractors(cur, 3);
-    const fullItems = [cur, ...distItems];
-
-    options = shuffle(fullItems.map(item => ({
-      primaryText: item.zh,
-      subText: item.en,
-      subKk: item.kk || "",
-      targetValue: item.zh
-    })));
+    options = shuffle([cur, ...distItems].map(item => ({ primaryText: item.zh, subText: item.en, subKk: item.kk || "", targetValue: item.zh })));
   }
 
   document.getElementById("progressText").innerText = `${isRandomMode ? '🎲 亂數 ' : ''}第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
@@ -2067,14 +1585,7 @@ function renderQuestion() {
     btn.dataset.target = optObj.targetValue;
     btn.dataset.sub = optObj.subText || "";
     btn.dataset.kk = optObj.subKk || "";
-
-    btn.innerHTML = `
-      <span class="opt-key">${keys[idx]}</span>
-      <div class="opt-content">
-        <span class="opt-primary-text">${optObj.primaryText}</span>
-        <span class="opt-sub-text hidden"></span>
-      </div>
-    `;
+    btn.innerHTML = `<span class="opt-key">${keys[idx]}</span><div class="opt-content"><span class="opt-primary-text">${optObj.primaryText}</span><span class="opt-sub-text hidden"></span></div>`;
     btn.onclick = () => checkAnswer(btn, optObj.targetValue, cur, answerTarget);
     grid.appendChild(btn);
   });
@@ -2084,74 +1595,49 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   if (hasAnswered) return;
   hasAnswered = true;
 
-  const buttons = document.querySelectorAll(".option-btn");
-  
-  buttons.forEach(b => {
+  document.querySelectorAll(".option-btn").forEach(b => {
     const subEl = b.querySelector(".opt-sub-text");
     if (subEl && (b.dataset.sub || b.dataset.kk)) {
       const isWordDef = (currentQuizType === "wordDef");
       const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
-      
-      const englishTextToSpeak = isWordDef ? b.dataset.sub : b.dataset.target;
-      
-      const soundBtnHtml = englishTextToSpeak 
-        ? `<button class="opt-sound-btn" onclick="event.stopPropagation(); speakPureUS('${englishTextToSpeak.replace(/'/g, "\\'")}')">🔊 發音</button>` 
-        : "";
-
-      if (isWordDef) {
-        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}`;
-      } else if (currentQuizType === "listen") {
-        subEl.innerHTML = `<span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
-      } else {
-        subEl.innerHTML = `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
-      }
+      const engToSpeak = isWordDef ? b.dataset.sub : b.dataset.target;
+      const soundBtnHtml = engToSpeak ? `<button class="opt-sound-btn" onclick="event.stopPropagation(); speakPureUS('${engToSpeak.replace(/'/g, "\\'")}')">🔊 發音</button>` : "";
+      subEl.innerHTML = isWordDef ? `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}` : `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
       subEl.classList.remove("hidden");
     }
-
-    if (b.dataset.target === answerTarget) {
-      b.classList.add("correct");
-    }
+    if (b.dataset.target === answerTarget) b.classList.add("correct");
   });
 
   const isCorrect = (selectedText === answerTarget);
-
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   userStore.stats.totalQ = (userStore.stats.totalQ || 0) + 1;
-  if (!userStore.stats[currentQuizType]) {
-    userStore.stats[currentQuizType] = { total: 0, correct: 0 };
-  }
+  if (!userStore.stats[currentQuizType]) userStore.stats[currentQuizType] = { total: 0, correct: 0 };
   userStore.stats[currentQuizType].total = (userStore.stats[currentQuizType].total || 0) + 1;
 
   if (isCorrect) {
     correctCount++;
     userStore.stats.totalCorrect = (userStore.stats.totalCorrect || 0) + 1;
     userStore.stats[currentQuizType].correct = (userStore.stats[currentQuizType].correct || 0) + 1;
-
-    if (currentQuizType === "cloze" || currentQuizType === "exam") {
+    if (["cloze", "exam"].includes(currentQuizType)) {
       const blank = document.querySelector(".cloze-blank");
       if (blank) { blank.innerText = item.en; blank.style.color = "var(--success)"; }
     }
   } else {
     btn.classList.add("wrong");
     wrongCount++;
-    
-    const mistakeRecord = currentQuizType === "listen" 
-      ? { ...item, quizType: "listen", id: item.scriptEn }
-      : { ...item, quizType: currentQuizType };
-
-    const itemIdentifier = mistakeRecord.en || mistakeRecord.scriptEn;
-    if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === itemIdentifier)) {
+    const mistakeRecord = currentQuizType === "listen" ? { ...item, quizType: "listen", id: item.scriptEn } : { ...item, quizType: currentQuizType };
+    const identifier = mistakeRecord.en || mistakeRecord.scriptEn;
+    if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === identifier)) {
       userStore.mistakes.push(mistakeRecord);
       updateMistakeCount();
     }
-
-    if (currentQuizType === "cloze" || currentQuizType === "exam") {
+    if (["cloze", "exam"].includes(currentQuizType)) {
       const blank = document.querySelector(".cloze-blank");
       if (blank) { blank.innerText = item.en; blank.style.color = "var(--danger)"; }
     }
   }
 
-  // 作答時自動幫當日使用狀況增加 1 題作答數
+  // 作答時自動累積當日使用狀況 (題數 +1)
   updateDailyActivity(0, 1);
   triggerAutoSync();
 
@@ -2160,37 +1646,17 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   expBox.className = "explanation-card";
 
   if (currentQuizType === "listen") {
-    const listenData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
-    zhHintEl.innerText = `聽力原文：${listenData.scriptEn}\n中文翻譯：${listenData.scriptZh}`;
+    const lData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
+    zhHintEl.innerText = `原文：${lData.scriptEn}\n翻譯：${lData.scriptZh}`;
     zhHintEl.classList.remove("hidden");
-
-    expBox.innerHTML = `
-      <div class="explanation-title">💡 考點解析與會考完整語境</div>
-      <span class="sentence-en">• 完整聽力文本：${listenData.scriptEn}</span>
-      <span class="sentence-zh">• 題目中文翻譯：${listenData.scriptZh}</span>
-      <div class="grammar-note">【${listenData.year} ${listenData.section}】 ${listenData.explanation}</div>
-    `;
+    expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${lData.scriptEn}</span><span class="sentence-zh">• ${lData.scriptZh}</span><div class="grammar-note">${lData.explanation}</div>`;
   } else {
-    const cleanWord = item.en.trim().toLowerCase();
-    const examData = CAP_EXAM_BANK[cleanWord];
-    if (currentQuizType === "exam") {
-      zhHintEl.innerText = examData ? `題目中文翻譯：${examData.zh}` : `語意翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.remove("hidden");
-    } else if (currentQuizType === "cloze") {
-      zhHintEl.innerText = `語意翻譯：${item.sentenceZh || item.zh}`;
+    const examData = CAP_EXAM_BANK[item.en.trim().toLowerCase()];
+    if (["exam", "cloze"].includes(currentQuizType)) {
+      zhHintEl.innerText = examData ? `翻譯：${examData.zh}` : `翻譯：${item.sentenceZh || item.zh}`;
       zhHintEl.classList.remove("hidden");
     }
-
-    const sourceLabel = examData 
-      ? `【${examData.year} ${examData.section}】` 
-      : CAP_YEAR_MAPPING.getSource(item.en, item.level);
-
-    expBox.innerHTML = `
-      <div class="explanation-title">💡 考點解析與會考完整語境</div>
-      <span class="sentence-en">• 完整會考語境：${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span>
-      <span class="sentence-zh">• 題目中文翻譯：${examData ? examData.zh : (item.sentenceZh || '')} (核心單字：${item.zh})</span>
-      <div class="grammar-note">${sourceLabel} ${item.grammar || '會考核心重要高頻詞'}</div>
-    `;
+    expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
   }
 
   document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
@@ -2204,18 +1670,12 @@ function nextQuestion() {
   renderQuestion();
 }
 
-function updateMistakeCount() {
-  document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userStore.mistakes.length})`;
-}
-
+function updateMistakeCount() { document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userStore.mistakes.length})`; }
 function reviewMistakes() {
   if (userStore.mistakes.length === 0) return alert("目前無錯題！");
   isRandomMode = false;
   currentTestQueue = shuffle(userStore.mistakes);
-  currentIndex = 0;
-  correctCount = 0;
-  wrongCount = 0;
-  
+  currentIndex = 0; correctCount = 0; wrongCount = 0;
   document.getElementById("poolInfoText").innerText = `純錯題特訓 (${currentTestQueue.length} 題)`;
   renderQuestion();
 }
@@ -2225,25 +1685,14 @@ function toggleHistory() {
   box.classList.toggle("hidden");
   const details = document.getElementById("historyDetails");
   const entries = Object.entries(userStore.history);
-  const typeNames = { wordDef: "單字識義", cloze: "句子填空", exam: "會考真題", listen: "會考聽力" };
-  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date}</div>`).join("");
+  const typeNames = { wordDef: "識義", cloze: "填空", exam: "真題", listen: "聽力" };
+  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%)</div>`).join("");
 }
 
 function speakCurrentWord() {
   if (currentIndex >= currentTestQueue.length) return;
   const cur = currentTestQueue[currentIndex];
-  let textToSpeak = cur.en || cur.scriptEn || "";
-  
-  if (hasAnswered) {
-    if (currentQuizType === "exam") {
-      const examData = CAP_EXAM_BANK[(cur.en || "").trim().toLowerCase()];
-      textToSpeak = examData ? examData.sentence.replace('______', cur.en) : cur.sentenceEn;
-    } else if (currentQuizType === "cloze") {
-      textToSpeak = cur.sentenceEn;
-    }
-  }
-
-  speakPureUS(textToSpeak);
+  speakPureUS(cur.en || cur.scriptEn || "");
 }
 
 window.addEventListener("keydown", (e) => {
@@ -2255,8 +1704,7 @@ window.addEventListener("keydown", (e) => {
     if (["3", "C"].includes(k) && btns[2]) btns[2].click();
     if (["4", "D"].includes(k) && btns[3]) btns[3].click();
   } else if (e.code === "Space" || e.key === "Enter") {
-    e.preventDefault();
-    nextQuestion();
+    e.preventDefault(); nextQuestion();
   }
   if (k === "R") {
     if (currentQuizType === "listen") playCurrentListeningAudio();
@@ -2264,35 +1712,20 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
-}
-
-if (typeof window !== "undefined" && window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => { getBestUSVoice(); };
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); }); }
 
 window.onload = async () => {
   if (window.EXTERNAL_VOCAB && Array.isArray(window.EXTERNAL_VOCAB)) {
     FULL_VOCAB = window.EXTERNAL_VOCAB;
     buildVocabMaps();
     document.getElementById("sourceStatus").innerText = `🟢 題庫就緒 (${FULL_VOCAB.length} 字)`;
-    
-    const btnAll = document.getElementById("btnRandAll");
-    if (btnAll) btnAll.innerText = `🏆 全部(${FULL_VOCAB.length})`;
+    document.getElementById("btnRandAll").innerText = `🏆 全部(${FULL_VOCAB.length})`;
   }
-
   if (supabaseClient) {
     try {
       const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session && session.user) {
-        enterApp(session.user);
-      }
-    } catch (err) {
-      console.log("自動恢復登入狀態失敗");
-    }
+      if (session && session.user) enterApp(session.user);
+    } catch (err) {}
   }
 };
 </script>
