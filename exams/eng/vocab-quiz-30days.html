@@ -774,11 +774,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v4.1.0 - 自動智慧接續次日進度</div>
+        <div class="history-tag">v4.1.2 - 修復後台完成天數計算邏輯</div>
         <div class="history-desc">
           <ul>
-            <li><b>智慧天數記憶：</b>完成某一天（如 Day 1）後，系統會自動幫學員選取並載入下一天（Day 2），重新整理後也會自動定位到最新未完成的進度。</li>
-            <li><b>即時成果與錯題永久鎖定：</b>完成即時刷新學習成果紀錄，且錯題答對後不自動消除。</li>
+            <li><b>精準天數統計：</b>後台監控面板的「完成進度」現在能精確識別所有格式的 Day 紀錄，正確統計學員已完成的天數。</li>
+            <li><b>智慧天數記憶：</b>完成某一天後自動切換至下一天，並自動定位到最新未完成進度。</li>
           </ul>
         </div>
       </div>
@@ -1020,7 +1020,7 @@ async function syncFromCloud() {
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
       refreshHistoryDisplay();
-      autoSelectNextDay(); // 💡 雲端同步完成後自動定位到最新未完成天數
+      autoSelectNextDay();
     }
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
     saveKnownUser(currentUser, null, userStore);
@@ -1119,7 +1119,7 @@ function enterApp(user) {
   changeDay(1);
   startDailyActivityTracker();
   refreshHistoryDisplay();
-  autoSelectNextDay(); // 💡 進入 App 時自動定位到下一個未完成天數
+  autoSelectNextDay();
 }
 
 async function handleLogout() {
@@ -1132,7 +1132,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 擴充後的管理者後台 (含 14 天每日使用狀況顯示)
+// 👑 修復後的管理者後台 (精準統計所有格式的 Day 完工天數)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1177,9 +1177,19 @@ async function fetchAdminAllProgress() {
       const typeStats = { wordDef: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } };
       let overallTotal = 0, overallCorrect = 0;
 
+      // 💡 修正天數計算邏輯：只要 history 的 key 包含 "Day_" 或數字，且有完成紀錄，就精準計入已完成天數
+      Object.keys(history).forEach(key => {
+        if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key)) {
+          // 萃取當中的數字作為天數
+          const matchNum = key.match(/\d+/);
+          if (matchNum) {
+            completedDaysSet.add(parseInt(matchNum[0], 10));
+          }
+        }
+      });
+
       Object.entries(history).forEach(([key, item]) => {
         if (item.cycleDays) maxCycleDays = item.cycleDays;
-        if (key.startsWith("Day_")) completedDaysSet.add(key);
       });
 
       if (stats && stats.totalQ !== undefined) {
@@ -1452,15 +1462,14 @@ function initDaySelector() {
   }
 }
 
-// 💡 智慧檢查並自動選取下一個未完成的天數
 function autoSelectNextDay() {
   if (isRandomMode) return;
   let targetDay = 1;
   for (let d = 1; d <= DAYS_COUNT; d++) {
     if (userStore.history[`Day_${d}`]) {
-      targetDay = d + 1; // 如果這天完成了，預設推進到下一天
+      targetDay = d + 1;
     } else {
-      break; // 遇到第一個未完成的天數就停下來
+      break;
     }
   }
   if (targetDay > DAYS_COUNT) targetDay = DAYS_COUNT;
@@ -1587,7 +1596,6 @@ function renderQuestion() {
     audioBox.classList.add("hidden"); expBox.classList.add("hidden");
     document.getElementById("optionsGrid").innerHTML = `<div style="text-align:center; padding:18px; color:var(--muted);"><b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b></div>`;
     
-    // 💡 順序刷題完成時，自動選取並載入下一天
     if (!isRandomMode && currentDay < DAYS_COUNT) {
       const nextDayNum = currentDay + 1;
       setTimeout(() => {
