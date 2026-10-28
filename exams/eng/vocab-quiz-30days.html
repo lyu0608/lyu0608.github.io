@@ -206,7 +206,7 @@
     }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
 
-    /* 五個題型按鈕分配：支援識義、識義(難)、填空、真題、聽力 */
+    /* 五個獨立題型按鈕 */
     .quiz-type-selector {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -636,10 +636,10 @@
       </div>
     </div>
 
-    <!-- 五個題型按鈕：包含新增的「單字識義(難)」 -->
+    <!-- 五個獨立題型按鈕 -->
     <div class="quiz-type-selector">
-      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 識義</button>
-      <button class="quiz-type-btn" id="typeHardBtn" onclick="setQuizType('hard')">🔥 識義(難)</button>
+      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 單字</button>
+      <button class="quiz-type-btn" id="typeHardBtn" onclick="setQuizType('hard')">🔥 單字(難)</button>
       <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 填空</button>
       <button class="quiz-type-btn" id="typeExamBtn" onclick="setQuizType('exam')">🏛️ 真題</button>
       <button class="quiz-type-btn" id="typeListenBtn" onclick="setQuizType('listen')">🎧 聽力</button>
@@ -657,13 +657,8 @@
     <div class="filter-panel" id="planPanel">
       <div class="filter-row">
         <div>
-          <span><b>背誦週期：</b></span>
-          <select id="cycleDaysSelect" onchange="changeCycleDays(this.value)">
-            <option value="30">30 天計畫</option>
-            <option value="40">40 天計畫</option>
-            <option value="50">50 天計畫</option>
-            <option value="60">60 天計畫</option>
-          </select>
+          <span><b>背誦計畫：</b></span>
+          <span style="font-weight:700; color:var(--primary);">30 天核心計畫</span>
         </div>
         <div>
           <label style="cursor:pointer;"><input type="radio" name="scopeType" value="todayOnly" checked onchange="handleFilterChange()"> 僅今日</label>
@@ -779,27 +774,20 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v4.2.0 - 新增「單字識義(難)」高難度混淆模式</div>
+        <div class="history-tag">v5.0.0 - 五大題型獨立 30 天進度與獨立錯題庫架構</div>
         <div class="history-desc">
           <ul>
-            <li><b>高難度英文混淆選項：</b>新增「單字識義(難)」題型，選項中的英文單字具備高度相似性（拼法接近、長度相近），大幅提升鑑別度。</li>
-            <li><b>後台天數精準統計：</b>全面優化管理者後台，完美識別各格式的 Day 完工天數。</li>
+            <li><b>固定 30 天計畫：</b>專注於最核心的 30 天背誦計畫。</li>
+            <li><b>題型獨立進度：</b>單字、單字(難)、填空、真題、聽力五大題型各自獨立記錄 30 天通關狀態。</li>
+            <li><b>題型獨立錯題庫：</b>各題型擁有專屬的永久鎖定錯題本，提供精準特訓。</li>
           </ul>
         </div>
       </div>
       <div class="history-item">
-        <div class="history-tag">v4.1.2 - 修復後台完成天數計算邏輯</div>
+        <div class="history-tag">v4.2.1 - 更新按鈕名稱與高難度混淆模式</div>
         <div class="history-desc">
           <ul>
-            <li><b>精準天數統計：</b>後台監控面板的「完成進度」能精確識別所有格式的 Day 紀錄。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v3.9.5 - 永久鎖定錯題強化複習</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>永久錯題追蹤：</b>只要曾經答錯過一次的單字，不論後續答對幾次，都會持續保留在錯題庫中。</li>
+            <li><b>單字與單字(難)模式：</b>原單字識義更名為「單字」，並新增選項高度相似的「單字(難)」模式。</li>
           </ul>
         </div>
       </div>
@@ -835,7 +823,7 @@
               <th>完成進度</th>
               <th>總作答題數</th>
               <th>綜合正確率</th>
-              <th>四大題型作答明細</th>
+              <th>五大題型作答明細</th>
               <th>錯題量</th>
               <th style="text-align:left; min-width:200px;">📅 最近 14 天每日使用狀況 (時數/題數)</th>
               <th>最後更新</th>
@@ -942,13 +930,10 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
       .eq('activity_date', todayStr)
       .maybeSingle();
 
-    if (selectError) {
-      console.log("查詢今日活動紀錄錯誤:", selectError);
-      return;
-    }
+    if (selectError) return;
 
     if (existing) {
-      const { error: updateError } = await supabaseClient
+      await supabaseClient
         .from('user_daily_activity')
         .update({
           active_seconds: (existing.active_seconds || 0) + addedSeconds,
@@ -956,10 +941,8 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id);
-
-      if (updateError) console.log("更新每日紀錄失敗:", updateError);
     } else {
-      const { error: insertError } = await supabaseClient
+      await supabaseClient
         .from('user_daily_activity')
         .insert({
           user_id: currentUser.id,
@@ -969,12 +952,8 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
           questions_answered: addedQuestions,
           updated_at: new Date().toISOString()
         });
-
-      if (insertError) console.log("新增每日紀錄失敗:", insertError);
     }
-  } catch (err) {
-    console.log("更新每日使用狀況失敗例外:", err);
-  }
+  } catch (err) {}
 }
 
 let dailyActivityTimer = null;
@@ -987,16 +966,37 @@ function startDailyActivityTracker() {
   }, 60 * 1000);
 }
 
+// 💡 核心資料結構：五大題型各自擁有獨立的 30 天歷史紀錄與獨立錯題庫
 function getDefaultStore() {
   return {
-    history: {},
-    mistakes: [],
-    cycleDays: 30,
-    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } }
+    historyByQuiz: {
+      wordDef: {},
+      hard: {},
+      cloze: {},
+      exam: {},
+      listen: {}
+    },
+    mistakesByQuiz: {
+      wordDef: [],
+      hard: [],
+      cloze: [],
+      exam: [],
+      listen: []
+    },
+    stats: {
+      totalQ: 0,
+      totalCorrect: 0,
+      wordDef: { total: 0, correct: 0 },
+      hard: { total: 0, correct: 0 },
+      cloze: { total: 0, correct: 0 },
+      exam: { total: 0, correct: 0 },
+      listen: { total: 0, correct: 0 }
+    }
   };
 }
 
 let userStore = getDefaultStore();
+const DAYS_COUNT = 30; // 固定 30 天計畫
 const KNOWN_USERS_KEY = "known_vocab_users_list";
 
 function getKnownUsers() {
@@ -1017,13 +1017,24 @@ async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
   try {
-    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, stats').eq('user_id', currentUser.id).single();
+    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats').eq('user_id', currentUser.id).single();
     if (data) {
-      userStore.history = data.history || {};
-      userStore.mistakes = data.mistakes || [];
+      // 相容舊版資料結構轉換
+      if (data.historyByQuiz) {
+        userStore.historyByQuiz = data.historyByQuiz;
+      } else if (data.history) {
+        userStore.historyByQuiz.wordDef = data.history;
+      }
+      if (data.mistakesByQuiz) {
+        userStore.mistakesByQuiz = data.mistakesByQuiz;
+      } else if (data.mistakes) {
+        userStore.mistakesByQuiz.wordDef = data.mistakes;
+      }
       if (data.stats) userStore.stats = data.stats;
+
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
+      initDaySelector();
       refreshHistoryDisplay();
       autoSelectNextDay();
     }
@@ -1038,6 +1049,7 @@ let syncDebounceTimer = null;
 function triggerAutoSync() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   saveKnownUser(currentUser, null, userStore);
+  updateMistakeCount();
   refreshHistoryDisplay();
 
   if (!supabaseClient || isGuest || !currentUser) return;
@@ -1050,8 +1062,14 @@ async function syncToCloud() {
   saveKnownUser(currentUser, null, userStore);
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
-    const payload = { user_id: currentUser.id, email: currentUser.email, history: userStore.history, mistakes: userStore.mistakes, updated_at: new Date().toISOString() };
-    if (userStore.stats) payload.stats = userStore.stats;
+    const payload = {
+      user_id: currentUser.id,
+      email: currentUser.email,
+      historyByQuiz: userStore.historyByQuiz,
+      mistakesByQuiz: userStore.mistakesByQuiz,
+      stats: userStore.stats,
+      updated_at: new Date().toISOString()
+    };
     await supabaseClient.from('user_progress').upsert(payload);
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   } catch (err) {
@@ -1107,7 +1125,13 @@ function loginAsGuest() {
   isGuest = true;
   currentUser = { id: "guest", email: "訪客 (免登入)" };
   const local = localStorage.getItem("local_vocab_progress");
-  if (local) { try { userStore = JSON.parse(local); } catch (e) {} }
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed.historyByQuiz) userStore = parsed;
+      else if (parsed.history) userStore.historyByQuiz.wordDef = parsed.history;
+    } catch (e) {}
+  }
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   enterApp(currentUser);
 }
@@ -1137,7 +1161,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 修正後的管理者後台 (精準統計所有格式的 Day 完工天數)
+// 👑 管理者後台監控
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1173,29 +1197,37 @@ async function fetchAdminAllProgress() {
     const localKnownUsers = getKnownUsers();
 
     data.forEach(row => {
-      const history = row.history || {};
-      const mistakes = row.mistakes || [];
+      const historyByQuiz = row.historyByQuiz || (row.history ? { wordDef: row.history } : {});
+      const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
       const stats = row.stats || null;
 
-      let completedDaysSet = new Set();
-      let maxCycleDays = 30;
-      const typeStats = { wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } };
-      let overallTotal = 0, overallCorrect = 0;
-
-      // 💡 精準識別所有格式的 Day 完工天數
-      Object.keys(history).forEach(key => {
-        if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key)) {
-          const matchNum = key.match(/\d+/);
-          if (matchNum) {
-            completedDaysSet.add(parseInt(matchNum[0], 10));
+      let totalCompletedDays = 0;
+      ["wordDef", "hard", "cloze", "exam", "listen"].forEach(qType => {
+        const qHist = historyByQuiz[qType] || {};
+        let qSet = new Set();
+        Object.keys(qHist).forEach(key => {
+          if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key)) {
+            const m = key.match(/\d+/);
+            if (m) qSet.add(parseInt(m[0], 10));
           }
-        }
+        });
+        totalCompletedDays += qSet.size;
       });
 
-      Object.entries(history).forEach(([key, item]) => {
-        if (item.cycleDays) maxCycleDays = item.cycleDays;
+      let totalMistakesCount = 0;
+      Object.values(mistakesByQuiz).forEach(mList => {
+        if (Array.isArray(mList)) totalMistakesCount += mList.length;
       });
 
+      const typeStats = {
+        wordDef: { total: 0, correct: 0 },
+        hard: { total: 0, correct: 0 },
+        cloze: { total: 0, correct: 0 },
+        exam: { total: 0, correct: 0 },
+        listen: { total: 0, correct: 0 }
+      };
+
+      let overallTotal = 0, overallCorrect = 0;
       if (stats && stats.totalQ !== undefined) {
         overallTotal = stats.totalQ || 0;
         overallCorrect = stats.totalCorrect || 0;
@@ -1203,21 +1235,15 @@ async function fetchAdminAllProgress() {
           if (stats[k]) { typeStats[k].total = stats[k].total || 0; typeStats[k].correct = stats[k].correct || 0; }
         });
       } else {
-        Object.entries(history).forEach(([key, item]) => {
-          const total = item.total || 0, score = item.score || 0;
-          overallTotal += total; overallCorrect += score;
-          const t = item.quizType || "wordDef";
-          if (typeStats[t]) { typeStats[t].total += total; typeStats[t].correct += score; }
+        Object.entries(historyByQuiz).forEach(([qType, hist]) => {
+          Object.values(hist).forEach(item => {
+            const t = item.total || 0, s = item.score || 0;
+            overallTotal += t; overallCorrect += s;
+            if (typeStats[qType]) { typeStats[qType].total += t; typeStats[qType].correct += s; }
+          });
         });
       }
 
-      const mistakeTypeCount = { wordDef: 0, hard: 0, cloze: 0, exam: 0, listen: 0 };
-      mistakes.forEach(m => {
-        const mt = m.quizType || "wordDef";
-        if (mistakeTypeCount[mt] !== undefined) mistakeTypeCount[mt]++;
-      });
-
-      const dayProgressText = `${completedDaysSet.size}/${maxCycleDays} 天`;
       const avgRate = overallTotal > 0 ? Math.round((overallCorrect / overallTotal) * 100) : 0;
       const dateStr = row.updated_at ? new Date(row.updated_at).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
 
@@ -1247,18 +1273,18 @@ async function fetchAdminAllProgress() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:8px;">${displayEmail}</td>
-        <td><b style="color:var(--primary);">${dayProgressText}</b></td>
+        <td><b style="color:var(--primary);">${totalCompletedDays} 項次通關</b></td>
         <td><b>${overallTotal}</b> 題</td>
         <td style="color:${avgRate >= 80 ? 'var(--success)' : 'var(--amber)'}; font-weight:700;">${avgRate}%</td>
         <td style="text-align:left; padding:6px; line-height:1.6;">
-          ${renderTypeBadge("🔤識義", typeStats.wordDef, "badge-word")}<br>
-          ${renderTypeBadge("🔥識義(難)", typeStats.hard, "badge-hard")}<br>
+          ${renderTypeBadge("🔤單字", typeStats.wordDef, "badge-word")}<br>
+          ${renderTypeBadge("🔥單字(難)", typeStats.hard, "badge-hard")}<br>
           ${renderTypeBadge("📝填空", typeStats.cloze, "badge-cloze")}<br>
           ${renderTypeBadge("🏛️真題", typeStats.exam, "badge-exam")}<br>
           ${renderTypeBadge("🎧聽力", typeStats.listen, "badge-listen")}
         </td>
         <td style="text-align:left; padding:6px;">
-          <b style="color:var(--danger);">總計: ${mistakes.length} 題</b>
+          <b style="color:var(--danger);">總計: ${totalMistakesCount} 題</b>
         </td>
         <td style="text-align:left; padding:6px;">${dailyHtml}</td>
         <td style="font-size:11px; color:var(--muted);">${dateStr}</td>
@@ -1312,7 +1338,10 @@ async function switchToAccount(uRecord) {
   isGuest = false;
   currentUser = { id: uRecord.id, email: uRecord.email };
   userStore = uRecord.store || getDefaultStore();
+  if (!userStore.historyByQuiz) userStore.historyByQuiz = getDefaultStore().historyByQuiz;
+  if (!userStore.mistakesByQuiz) userStore.mistakesByQuiz = getDefaultStore().mistakesByQuiz;
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
+
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   if (supabaseClient && uRecord.session) { try { await supabaseClient.auth.setSession(uRecord.session); } catch (e) {} }
   toggleSwitchAccountModal(false);
@@ -1360,7 +1389,14 @@ async function executeClearRecords() {
     userStore = getDefaultStore();
     localStorage.removeItem("local_vocab_progress");
     saveKnownUser(currentUser, null, userStore);
-    await supabaseClient.from('user_progress').upsert({ user_id: currentUser.id, email: currentUser.email, history: {}, mistakes: [], stats: userStore.stats, updated_at: new Date().toISOString() });
+    await supabaseClient.from('user_progress').upsert({
+      user_id: currentUser.id,
+      email: currentUser.email,
+      historyByQuiz: userStore.historyByQuiz,
+      mistakesByQuiz: userStore.mistakesByQuiz,
+      stats: userStore.stats,
+      updated_at: new Date().toISOString()
+    });
     updateMistakeCount();
     initDaySelector();
     refreshHistoryDisplay();
@@ -1370,7 +1406,7 @@ async function executeClearRecords() {
   } catch (err) { alert("發生錯誤：" + err.message); } finally { btn.disabled = false; }
 }
 
-let FULL_VOCAB = [], DAYS_COUNT = 30, dayPlans = {}, isRandomMode = false, currentTestQueue = [], currentIndex = 0, correctCount = 0, wrongCount = 0, hasAnswered = false, currentDay = 1, currentQuizType = "wordDef", speechKeepAliveTimer = null, VOCAB_MAP_EN = {}, VOCAB_MAP_ZH = {};
+let FULL_VOCAB = [], dayPlans = {}, isRandomMode = false, currentTestQueue = [], currentIndex = 0, correctCount = 0, wrongCount = 0, hasAnswered = false, currentDay = 1, currentQuizType = "wordDef", speechKeepAliveTimer = null, VOCAB_MAP_EN = {}, VOCAB_MAP_ZH = {};
 
 function buildVocabMaps() {
   VOCAB_MAP_EN = {}; VOCAB_MAP_ZH = {};
@@ -1421,7 +1457,6 @@ function playCurrentListeningAudio() {
   speakPureUS(lData.scriptEn, () => { btn.disabled = false; document.getElementById("audioStatusText").innerText = "✅ 考題朗讀完畢"; });
 }
 
-// 💡 支援新增的「單字識義(難)」題型切換
 function setQuizType(type) {
   stopAllAudio();
   currentQuizType = type;
@@ -1433,6 +1468,11 @@ function setQuizType(type) {
   document.getElementById("typeExamBtn").classList.toggle("active", type === "exam");
   document.getElementById("typeListenBtn").classList.toggle("listen-active", type === "listen");
   document.getElementById("typeListenBtn").classList.toggle("active", type === "listen");
+
+  updateMistakeCount();
+  initDaySelector();
+  refreshHistoryDisplay();
+
   if (!isRandomMode) changeDay(currentDay);
   else { currentTestQueue = shuffle(currentTestQueue); currentIndex = 0; correctCount = 0; wrongCount = 0; renderQuestion(); }
 }
@@ -1462,10 +1502,11 @@ function initDayPlans() {
 function initDaySelector() {
   const select = document.getElementById("daySelect");
   select.innerHTML = "";
+  const currentHistory = userStore.historyByQuiz[currentQuizType] || {};
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const opt = document.createElement("option");
     opt.value = d;
-    opt.innerText = `${userStore.history[`Day_${d}`] ? "✓ " : ""}第 ${d} 天 (${dayPlans[d]?.length || 0} 題)`;
+    opt.innerText = `${currentHistory[`Day_${d}`] ? "✓ " : ""}第 ${d} 天 (${dayPlans[d]?.length || 0} 題)`;
     select.appendChild(opt);
   }
 }
@@ -1473,8 +1514,9 @@ function initDaySelector() {
 function autoSelectNextDay() {
   if (isRandomMode) return;
   let targetDay = 1;
+  const currentHistory = userStore.historyByQuiz[currentQuizType] || {};
   for (let d = 1; d <= DAYS_COUNT; d++) {
-    if (userStore.history[`Day_${d}`]) {
+    if (currentHistory[`Day_${d}`]) {
       targetDay = d + 1;
     } else {
       break;
@@ -1506,11 +1548,7 @@ function startRandomQuiz(count) {
 }
 
 function changeCycleDays(val) {
-  DAYS_COUNT = parseInt(val, 10) || 30;
-  userStore.cycleDays = DAYS_COUNT;
-  initDayPlans();
-  initDaySelector();
-  changeDay(1);
+  // 固定 30 天計畫
 }
 
 function changeDay(day) {
@@ -1522,12 +1560,14 @@ function changeDay(day) {
   const incMistakes = document.getElementById("includeMistakesCheckbox").checked;
 
   let pool = [];
+  const currentMistakes = userStore.mistakesByQuiz[currentQuizType] || [];
+
   if (scopeType === "cumulative") {
     for (let d = 1; d <= currentDay; d++) if (dayPlans[d]) pool.push(...dayPlans[d]);
   } else { pool = (dayPlans[currentDay] || []).slice(); }
 
-  if (incMistakes && userStore.mistakes) {
-    userStore.mistakes.forEach(m => {
+  if (incMistakes && currentMistakes.length > 0) {
+    currentMistakes.forEach(m => {
       const targetWord = m.en || (m.scriptEn ? m.scriptEn.slice(0, 15) : "");
       if (!pool.some(item => (item.en || "") === targetWord)) pool.push(m);
     });
@@ -1560,7 +1600,6 @@ function lookupWordDetail(text, fromType) {
   }
 }
 
-// 💡 標準干擾選項挑選（用於識義、填空、真題）
 function pickDistractors(correctItem, count = 3) {
   const chosenEn = new Set([correctItem.en.trim().toLowerCase()]);
   const chosenZh = new Set([correctItem.zh.trim()]);
@@ -1578,7 +1617,6 @@ function pickDistractors(correctItem, count = 3) {
   return result;
 }
 
-// 💡 🔥 智慧高難度混淆選項挑選（專為「單字識義(難)」設計：挑選拼法相近或長度相近的英文單字作為干擾項）
 function pickHardDistractors(correctItem, count = 3) {
   const correctEn = correctItem.en.trim().toLowerCase();
   const correctZh = correctItem.zh.trim();
@@ -1586,7 +1624,6 @@ function pickHardDistractors(correctItem, count = 3) {
   const chosenZh = new Set([correctZh]);
   const result = [];
 
-  // 1. 優先挑選長度相近（字元數相差在 2 以內）或開頭相同的單字
   const candidates = FULL_VOCAB.filter(i => {
     if (!i.en || !i.zh) return false;
     const e = i.en.trim().toLowerCase();
@@ -1608,7 +1645,6 @@ function pickHardDistractors(correctItem, count = 3) {
     }
   }
 
-  // 2. 如果候選不夠，用一般標準干擾補足
   if (result.length < count) {
     const fallback = pickDistractors(correctItem, count - result.length);
     result.push(...fallback);
@@ -1633,7 +1669,16 @@ function renderQuestion() {
 
   if (currentIndex >= currentTestQueue.length) {
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
-    userStore.history[recordKey] = { score: correctCount, total: currentTestQueue.length, rate: Math.round((correctCount / currentTestQueue.length) * 100), quizType: currentQuizType, cycleDays: DAYS_COUNT, date: new Date().toLocaleDateString() };
+    if (!userStore.historyByQuiz[currentQuizType]) userStore.historyByQuiz[currentQuizType] = {};
+    
+    userStore.historyByQuiz[currentQuizType][recordKey] = {
+      score: correctCount,
+      total: currentTestQueue.length,
+      rate: Math.round((correctCount / currentTestQueue.length) * 100),
+      quizType: currentQuizType,
+      cycleDays: 30,
+      date: new Date().toLocaleDateString()
+    };
     
     triggerAutoSync();
     initDaySelector();
@@ -1695,7 +1740,6 @@ function renderQuestion() {
     const distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
     options = shuffle([cur.en, ...distStrs].map(w => ({ primaryText: w, subText: lookupWordDetail(w, "en").zh, subKk: lookupWordDetail(w, "en").kk, targetValue: w })));
   } else if (currentQuizType === "hard") {
-    // 💡 🔥 「單字識義(難)」模式：題目顯示中文解釋，四個選項為高度混淆的英文單字
     audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
     
@@ -1713,7 +1757,6 @@ function renderQuestion() {
       targetValue: item.en
     })));
   } else {
-    // 預設標準「單字識義」模式：題目顯示英文，選項為中文
     audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
 
@@ -1791,10 +1834,12 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     btn.classList.add("wrong");
     wrongCount++;
     
+    // 💡 獨立錯題庫記錄 (不論後續答對與否，永久保留在當前題型的錯題庫)
+    if (!userStore.mistakesByQuiz[currentQuizType]) userStore.mistakesByQuiz[currentQuizType] = [];
     const mistakeRecord = currentQuizType === "listen" ? { ...item, quizType: "listen", id: item.scriptEn } : { ...item, quizType: currentQuizType };
     const identifier = mistakeRecord.en || mistakeRecord.scriptEn;
-    if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === identifier)) {
-      userStore.mistakes.push(mistakeRecord);
+    if (!userStore.mistakesByQuiz[currentQuizType].some(m => (m.en || m.scriptEn) === identifier)) {
+      userStore.mistakesByQuiz[currentQuizType].push(mistakeRecord);
       updateMistakeCount();
     }
 
@@ -1838,11 +1883,17 @@ function nextQuestion() {
   renderQuestion();
 }
 
-function updateMistakeCount() { document.getElementById("mistakeLink").innerText = `純錯題特訓 (${userStore.mistakes.length})`; }
+function updateMistakeCount() {
+  const currentMistakes = userStore.mistakesByQuiz[currentQuizType] || [];
+  const typeNames = { wordDef: "單字", hard: "單字(難)", cloze: "填空", exam: "真題", listen: "聽力" };
+  document.getElementById("mistakeLink").innerText = `${typeNames[currentQuizType] || ''}錯題 (${currentMistakes.length})`;
+}
+
 function reviewMistakes() {
-  if (userStore.mistakes.length === 0) return alert("目前無錯題！");
+  const currentMistakes = userStore.mistakesByQuiz[currentQuizType] || [];
+  if (currentMistakes.length === 0) return alert("目前當前題型無錯題！");
   isRandomMode = false;
-  currentTestQueue = shuffle(userStore.mistakes);
+  currentTestQueue = shuffle(currentMistakes);
   currentIndex = 0; correctCount = 0; wrongCount = 0;
   document.getElementById("poolInfoText").innerText = `純錯題特訓 (${currentTestQueue.length} 題)`;
   renderQuestion();
@@ -1851,9 +1902,11 @@ function reviewMistakes() {
 function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
-  const entries = Object.entries(userStore.history);
-  const typeNames = { wordDef: "識義", hard: "識義(難)", cloze: "填空", exam: "真題", listen: "聽力" };
-  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date || ''}</div>`).join("");
+  const currentHistory = userStore.historyByQuiz[currentQuizType] || {};
+  const entries = Object.entries(currentHistory);
+  const typeNames = { wordDef: "單字", hard: "單字(難)", cloze: "填空", exam: "真題", listen: "聽力" };
+  const currentTypeName = typeNames[currentQuizType] || '綜合';
+  details.innerHTML = entries.length === 0 ? `尚無 [${currentTypeName}] 紀錄` : entries.map(([k, v]) => `<div>• <b>${k}</b> [${currentTypeName}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date || ''}</div>`).join("");
 }
 
 function toggleHistory() {
