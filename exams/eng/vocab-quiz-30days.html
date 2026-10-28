@@ -206,26 +206,28 @@
     }
     .logout-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; text-decoration: underline; }
 
+    /* 五個題型按鈕分配：支援識義、識義(難)、填空、真題、聽力 */
     .quiz-type-selector {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
       margin-bottom: 8px;
       flex-shrink: 0;
     }
     .quiz-type-btn {
-      padding: clamp(6px, 1.2vw, 9px) 2px;
+      padding: clamp(6px, 1.2vw, 9px) 1px;
       border-radius: 8px;
       border: 1.5px solid var(--border);
       background: #fff;
       color: var(--muted);
-      font-size: clamp(11px, 2.2vw, 13px);
+      font-size: clamp(10px, 2vw, 12px);
       font-weight: 700;
       cursor: pointer;
       text-align: center;
       transition: all 0.15s;
     }
     .quiz-type-btn.active { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
+    .quiz-type-btn.hard-active { background: #fdf4ff; border-color: #c084fc; color: #7e22ce; }
     .quiz-type-btn.exam-active { background: #fef3c7; border-color: var(--amber); color: #b45309; }
     .quiz-type-btn.listen-active { background: #ecfeff; border-color: var(--cyan); color: #0e7490; }
 
@@ -538,6 +540,7 @@
       margin: 1px 0;
     }
     .badge-word { background: #eff6ff; color: #1d4ed8; }
+    .badge-hard { background: #fdf4ff; color: #7e22ce; }
     .badge-cloze { background: #f0fdf4; color: #15803d; }
     .badge-exam { background: #fef3c7; color: #b45309; }
     .badge-listen { background: #ecfeff; color: #0e7490; }
@@ -633,11 +636,13 @@
       </div>
     </div>
 
+    <!-- 五個題型按鈕：包含新增的「單字識義(難)」 -->
     <div class="quiz-type-selector">
-      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 單字識義</button>
-      <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 句子填空</button>
-      <button class="quiz-type-btn" id="typeExamBtn" onclick="setQuizType('exam')">🏛️ 會考真題</button>
-      <button class="quiz-type-btn" id="typeListenBtn" onclick="setQuizType('listen')">🎧 會考聽力</button>
+      <button class="quiz-type-btn active" id="typeWordDefBtn" onclick="setQuizType('wordDef')">🔤 識義</button>
+      <button class="quiz-type-btn" id="typeHardBtn" onclick="setQuizType('hard')">🔥 識義(難)</button>
+      <button class="quiz-type-btn" id="typeClozeBtn" onclick="setQuizType('cloze')">📝 填空</button>
+      <button class="quiz-type-btn" id="typeExamBtn" onclick="setQuizType('exam')">🏛️ 真題</button>
+      <button class="quiz-type-btn" id="typeListenBtn" onclick="setQuizType('listen')">🎧 聽力</button>
     </div>
 
     <div class="random-panel">
@@ -774,11 +779,19 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v4.2.0 - 新增「單字識義(難)」高難度混淆模式</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>高難度英文混淆選項：</b>新增「單字識義(難)」題型，選項中的英文單字具備高度相似性（拼法接近、長度相近），大幅提升鑑別度。</li>
+            <li><b>後台天數精準統計：</b>全面優化管理者後台，完美識別各格式的 Day 完工天數。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v4.1.2 - 修復後台完成天數計算邏輯</div>
         <div class="history-desc">
           <ul>
-            <li><b>精準天數統計：</b>後台監控面板的「完成進度」現在能精確識別所有格式的 Day 紀錄，正確統計學員已完成的天數。</li>
-            <li><b>智慧天數記憶：</b>完成某一天後自動切換至下一天，並自動定位到最新未完成進度。</li>
+            <li><b>精準天數統計：</b>後台監控面板的「完成進度」能精確識別所有格式的 Day 紀錄。</li>
           </ul>
         </div>
       </div>
@@ -795,14 +808,6 @@
         <div class="history-desc">
           <ul>
             <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援後台 14 天明細檢視。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>雙語即時對照：</b>作答後所有選項即刻展開中英雙語對照、KK 音標與單字發音按鈕。</li>
           </ul>
         </div>
       </div>
@@ -987,7 +992,7 @@ function getDefaultStore() {
     history: {},
     mistakes: [],
     cycleDays: 30,
-    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } }
+    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } }
   };
 }
 
@@ -1132,7 +1137,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 修復後的管理者後台 (精準統計所有格式的 Day 完工天數)
+// 👑 修正後的管理者後台 (精準統計所有格式的 Day 完工天數)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1174,13 +1179,12 @@ async function fetchAdminAllProgress() {
 
       let completedDaysSet = new Set();
       let maxCycleDays = 30;
-      const typeStats = { wordDef: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } };
+      const typeStats = { wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } };
       let overallTotal = 0, overallCorrect = 0;
 
-      // 💡 修正天數計算邏輯：只要 history 的 key 包含 "Day_" 或數字，且有完成紀錄，就精準計入已完成天數
+      // 💡 精準識別所有格式的 Day 完工天數
       Object.keys(history).forEach(key => {
         if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key)) {
-          // 萃取當中的數字作為天數
           const matchNum = key.match(/\d+/);
           if (matchNum) {
             completedDaysSet.add(parseInt(matchNum[0], 10));
@@ -1195,7 +1199,7 @@ async function fetchAdminAllProgress() {
       if (stats && stats.totalQ !== undefined) {
         overallTotal = stats.totalQ || 0;
         overallCorrect = stats.totalCorrect || 0;
-        ["wordDef", "cloze", "exam", "listen"].forEach(k => {
+        ["wordDef", "hard", "cloze", "exam", "listen"].forEach(k => {
           if (stats[k]) { typeStats[k].total = stats[k].total || 0; typeStats[k].correct = stats[k].correct || 0; }
         });
       } else {
@@ -1207,7 +1211,7 @@ async function fetchAdminAllProgress() {
         });
       }
 
-      const mistakeTypeCount = { wordDef: 0, cloze: 0, exam: 0, listen: 0 };
+      const mistakeTypeCount = { wordDef: 0, hard: 0, cloze: 0, exam: 0, listen: 0 };
       mistakes.forEach(m => {
         const mt = m.quizType || "wordDef";
         if (mistakeTypeCount[mt] !== undefined) mistakeTypeCount[mt]++;
@@ -1248,6 +1252,7 @@ async function fetchAdminAllProgress() {
         <td style="color:${avgRate >= 80 ? 'var(--success)' : 'var(--amber)'}; font-weight:700;">${avgRate}%</td>
         <td style="text-align:left; padding:6px; line-height:1.6;">
           ${renderTypeBadge("🔤識義", typeStats.wordDef, "badge-word")}<br>
+          ${renderTypeBadge("🔥識義(難)", typeStats.hard, "badge-hard")}<br>
           ${renderTypeBadge("📝填空", typeStats.cloze, "badge-cloze")}<br>
           ${renderTypeBadge("🏛️真題", typeStats.exam, "badge-exam")}<br>
           ${renderTypeBadge("🎧聽力", typeStats.listen, "badge-listen")}
@@ -1416,10 +1421,13 @@ function playCurrentListeningAudio() {
   speakPureUS(lData.scriptEn, () => { btn.disabled = false; document.getElementById("audioStatusText").innerText = "✅ 考題朗讀完畢"; });
 }
 
+// 💡 支援新增的「單字識義(難)」題型切換
 function setQuizType(type) {
   stopAllAudio();
   currentQuizType = type;
   document.getElementById("typeWordDefBtn").classList.toggle("active", type === "wordDef");
+  document.getElementById("typeHardBtn").classList.toggle("hard-active", type === "hard");
+  document.getElementById("typeHardBtn").classList.toggle("active", type === "hard");
   document.getElementById("typeClozeBtn").classList.toggle("active", type === "cloze");
   document.getElementById("typeExamBtn").classList.toggle("exam-active", type === "exam");
   document.getElementById("typeExamBtn").classList.toggle("active", type === "exam");
@@ -1552,6 +1560,7 @@ function lookupWordDetail(text, fromType) {
   }
 }
 
+// 💡 標準干擾選項挑選（用於識義、填空、真題）
 function pickDistractors(correctItem, count = 3) {
   const chosenEn = new Set([correctItem.en.trim().toLowerCase()]);
   const chosenZh = new Set([correctItem.zh.trim()]);
@@ -1566,6 +1575,45 @@ function pickDistractors(correctItem, count = 3) {
       chosenEn.add(cEn); chosenZh.add(cZh); result.push(candidate);
     }
   }
+  return result;
+}
+
+// 💡 🔥 智慧高難度混淆選項挑選（專為「單字識義(難)」設計：挑選拼法相近或長度相近的英文單字作為干擾項）
+function pickHardDistractors(correctItem, count = 3) {
+  const correctEn = correctItem.en.trim().toLowerCase();
+  const correctZh = correctItem.zh.trim();
+  const chosenEn = new Set([correctEn]);
+  const chosenZh = new Set([correctZh]);
+  const result = [];
+
+  // 1. 優先挑選長度相近（字元數相差在 2 以內）或開頭相同的單字
+  const candidates = FULL_VOCAB.filter(i => {
+    if (!i.en || !i.zh) return false;
+    const e = i.en.trim().toLowerCase();
+    if (e === correctEn) return false;
+    const lenDiff = Math.abs(e.length - correctEn.length);
+    const sameStart = e[0] === correctEn[0];
+    return lenDiff <= 2 || sameStart;
+  });
+
+  const shuffledCandidates = shuffle(candidates);
+  for (let cand of shuffledCandidates) {
+    if (result.length >= count) break;
+    const cEn = cand.en.trim().toLowerCase();
+    const cZh = cand.zh.trim();
+    if (!chosenEn.has(cEn) && !chosenZh.has(cZh)) {
+      chosenEn.add(cEn);
+      chosenZh.add(cZh);
+      result.push(cand);
+    }
+  }
+
+  // 2. 如果候選不夠，用一般標準干擾補足
+  if (result.length < count) {
+    const fallback = pickDistractors(correctItem, count - result.length);
+    result.push(...fallback);
+  }
+
   return result;
 }
 
@@ -1646,14 +1694,42 @@ function renderQuestion() {
     answerTarget = cur.en;
     const distStrs = shuffle(FULL_VOCAB.filter(i => i.en.toLowerCase() !== cur.en.toLowerCase()).map(i => i.en)).slice(0, 3);
     options = shuffle([cur.en, ...distStrs].map(w => ({ primaryText: w, subText: lookupWordDetail(w, "en").zh, subKk: lookupWordDetail(w, "en").kk, targetValue: w })));
-  } else {
+  } else if (currentQuizType === "hard") {
+    // 💡 🔥 「單字識義(難)」模式：題目顯示中文解釋，四個選項為高度混淆的英文單字
     audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
     examTagEl.classList.add("hidden");
+    
+    document.getElementById("wordDisplay").innerText = `請選出「${cur.zh}」的正確英文單字：`;
+    document.getElementById("wordKk").innerText = `[ 🔥 高難度混淆測驗 ]`;
+
+    answerTarget = cur.en;
+    const hardDistractors = pickHardDistractors(cur, 3);
+    const fullItems = [cur, ...hardDistractors];
+
+    options = shuffle(fullItems.map(item => ({
+      primaryText: item.en,
+      subText: item.zh,
+      subKk: item.kk || "",
+      targetValue: item.en
+    })));
+  } else {
+    // 預設標準「單字識義」模式：題目顯示英文，選項為中文
+    audioBox.classList.add("hidden"); soundBtn.classList.remove("hidden");
+    examTagEl.classList.add("hidden");
+
     document.getElementById("wordDisplay").innerText = cur.en;
     document.getElementById("wordKk").innerText = cur.kk || "";
+
     answerTarget = cur.zh;
     const distItems = pickDistractors(cur, 3);
-    options = shuffle([cur, ...distItems].map(item => ({ primaryText: item.zh, subText: item.en, subKk: item.kk || "", targetValue: item.zh })));
+    const fullItems = [cur, ...distItems];
+
+    options = shuffle(fullItems.map(item => ({
+      primaryText: item.zh,
+      subText: item.en,
+      subKk: item.kk || "",
+      targetValue: item.zh
+    })));
   }
 
   document.getElementById("progressText").innerText = `${isRandomMode ? '🎲 亂數 ' : ''}第 ${currentIndex + 1} 題 / 共 ${currentTestQueue.length} 題`;
@@ -1682,11 +1758,16 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   document.querySelectorAll(".option-btn").forEach(b => {
     const subEl = b.querySelector(".opt-sub-text");
     if (subEl && (b.dataset.sub || b.dataset.kk)) {
-      const isWordDef = (currentQuizType === "wordDef");
+      const isWordDef = (currentQuizType === "wordDef" || currentQuizType === "hard");
       const kkFormatted = b.dataset.kk ? `<span class="opt-sub-kk">${b.dataset.kk}</span>` : "";
-      const engToSpeak = isWordDef ? b.dataset.sub : b.dataset.target;
+      const engToSpeak = (currentQuizType === "wordDef") ? b.dataset.sub : ((currentQuizType === "hard") ? b.dataset.target : b.dataset.target);
       const soundBtnHtml = engToSpeak ? `<button class="opt-sound-btn" onclick="event.stopPropagation(); speakPureUS('${engToSpeak.replace(/'/g, "\\'")}')">🔊 發音</button>` : "";
-      subEl.innerHTML = isWordDef ? `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}` : `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
+      
+      if (currentQuizType === "hard") {
+        subEl.innerHTML = `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}`;
+      } else {
+        subEl.innerHTML = isWordDef ? `<span>[ ${b.dataset.sub} ]</span> ${kkFormatted} ${soundBtnHtml}` : `${kkFormatted} <span>( ${b.dataset.sub} )</span> ${soundBtnHtml}`;
+      }
       subEl.classList.remove("hidden");
     }
     if (b.dataset.target === answerTarget) b.classList.add("correct");
@@ -1735,6 +1816,8 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     zhHintEl.innerText = `原文：${lData.scriptEn}\n翻譯：${lData.scriptZh}`;
     zhHintEl.classList.remove("hidden");
     expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${lData.scriptEn}</span><span class="sentence-zh">• ${lData.scriptZh}</span><div class="grammar-note">${lData.explanation}</div>`;
+  } else if (currentQuizType === "hard") {
+    expBox.innerHTML = `<div class="explanation-title">💡 核心單字解析 (高難度混淆特訓)</div><span class="sentence-en">• 英文單字：<b>${item.en}</b> ${item.kk || ''}</span><span class="sentence-zh">• 中文解釋：${item.zh}</span><div class="grammar-note">🔥 高頻易混淆字彙，透過相似拼法強化單字辨識力。</div>`;
   } else {
     const examData = CAP_EXAM_BANK[item.en.trim().toLowerCase()];
     if (["exam", "cloze"].includes(currentQuizType)) {
@@ -1769,7 +1852,7 @@ function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
   const entries = Object.entries(userStore.history);
-  const typeNames = { wordDef: "識義", cloze: "填空", exam: "真題", listen: "聽力" };
+  const typeNames = { wordDef: "識義", hard: "識義(難)", cloze: "填空", exam: "真題", listen: "聽力" };
   details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date || ''}</div>`).join("");
 }
 
