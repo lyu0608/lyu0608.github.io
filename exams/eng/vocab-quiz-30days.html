@@ -777,7 +777,16 @@
         <div class="history-desc">
           <ul>
             <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援最近 14 天數據維護。</li>
-            <li><b>後台 14 天檢視：</b>管理者後台可即時查閱各學員最近 14 天的每日活躍明細。</li>
+            <li><b>後台 14 天檢視：</b>管理者後台可即時查閱各學員最近 14 天的每日活躍明細與刷題數據。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v3.5.0 - 雲端多帳號同步與安全性升級</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>Supabase 雲端備份：</b>全面串接 Supabase 資料庫，支援學員進度與錯題本雲端自動同步。</li>
+            <li><b>安全清空機制：</b>新增清空紀錄時的密碼二次驗證，防止誤刪與資料外洩。</li>
           </ul>
         </div>
       </div>
@@ -785,7 +794,17 @@
         <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
         <div class="history-desc">
           <ul>
-            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照與 KK 音標。</li>
+            <li><b>雙語即時對照：</b>作答後所有選項即刻展開中英雙語對照、KK 音標與單字發音按鈕。</li>
+            <li><b>四大題型完整支援：</b>涵蓋單字識義、句子填空、會考真題與會考聽力測驗。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v2.0.0 - 核心題庫與介面架構重構</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>獨立字庫載入：</b>將 2,277 字國中會考競賽核心題庫獨立拆分至外部字庫，大幅提升載入效能。</li>
+            <li><b>響應式介面：</b>全面優化手機與平板端的觸控體驗，支援 PWA 桌面 App 安裝。</li>
           </ul>
         </div>
       </div>
@@ -913,15 +932,20 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
   if (!supabaseClient || isGuest || !currentUser) return;
   const todayStr = getTodayDateString();
   try {
-    let { data: existing } = await supabaseClient
+    let { data: existing, error: selectError } = await supabaseClient
       .from('user_daily_activity')
       .select('*')
       .eq('user_id', currentUser.id)
       .eq('activity_date', todayStr)
-      .single();
+      .maybeSingle();
+
+    if (selectError) {
+      console.log("查詢今日活動紀錄錯誤:", selectError);
+      return;
+    }
 
     if (existing) {
-      await supabaseClient
+      const { error: updateError } = await supabaseClient
         .from('user_daily_activity')
         .update({
           active_seconds: (existing.active_seconds || 0) + addedSeconds,
@@ -929,8 +953,10 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id);
+
+      if (updateError) console.log("更新每日紀錄失敗:", updateError);
     } else {
-      await supabaseClient
+      const { error: insertError } = await supabaseClient
         .from('user_daily_activity')
         .insert({
           user_id: currentUser.id,
@@ -940,9 +966,11 @@ async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
           questions_answered: addedQuestions,
           updated_at: new Date().toISOString()
         });
+
+      if (insertError) console.log("新增每日紀錄失敗:", insertError);
     }
   } catch (err) {
-    console.log("更新每日使用狀況失敗:", err);
+    console.log("更新每日使用狀況失敗例外:", err);
   }
 }
 
