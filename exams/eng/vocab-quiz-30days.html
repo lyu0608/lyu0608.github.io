@@ -764,6 +764,7 @@
   </div>
 </div>
 
+<!-- 🛠️ 軟體維護歷程彈窗 (完整歷史版本) -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -777,6 +778,14 @@
           <ul>
             <li><b>每日狀況記錄：</b>自動記錄並累積每位使用者每天的活躍時數與刷題量，支援最近 14 天數據維護。</li>
             <li><b>後台 14 天檢視：</b>管理者後台可即時查閱各學員最近 14 天的每日活躍明細。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v3.2.0 - 全選項答題後英中對照強化</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>作答後全選項雙語呈現：</b>答題後所有選項即刻展開中英雙語對照與 KK 音標。</li>
           </ul>
         </div>
       </div>
@@ -1107,7 +1116,6 @@ async function fetchAdminAllProgress() {
   tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;">讀取雲端學員進度和 14 天紀錄中...</td></tr>`;
 
   try {
-    // 同時撈取 user_progress 與最近 14 天的 user_daily_activity
     const [progressRes, dailyRes] = await Promise.all([
       supabaseClient.from('user_progress').select('*').order('updated_at', { ascending: false }),
       supabaseClient.from('user_daily_activity').select('*').order('activity_date', { ascending: false })
@@ -1173,7 +1181,6 @@ async function fetchAdminAllProgress() {
         displayEmail = matched ? matched.email : `${row.user_id.slice(0, 8)}...`;
       }
 
-      // 過濾並組合該使用者的最近 14 天每日狀況
       const userDailyRecords = dailyData.filter(d => d.user_id === row.user_id);
       let dailyHtml = `<span style="color:#94a3b8; font-style:italic;">近14天無上線紀錄</span>`;
       if (userDailyRecords.length > 0) {
@@ -1637,7 +1644,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     }
   }
 
-  // 作答時自動累積當日使用狀況 (題數 +1)
   updateDailyActivity(0, 1);
   triggerAutoSync();
 
