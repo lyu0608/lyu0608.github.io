@@ -673,7 +673,7 @@
       </div>
     </div>
 
-    <!-- 📊 學習成果紀錄面板 (預設展開並即時呈現) -->
+    <!-- 📊 學習成果紀錄面板 -->
     <div id="historyBox" class="explanation-card" style="border:1px solid #bfdbfe; background:#eff6ff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
@@ -774,11 +774,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v4.0.0 - 完成 Day 自動切換與即時紀錄同步</div>
+        <div class="history-tag">v4.1.0 - 自動智慧接續次日進度</div>
         <div class="history-desc">
           <ul>
-            <li><b>自動切換次日：</b>當天任務完成結算後，系統自動幫學員選取並載入下一天的單字測驗。</li>
-            <li><b>即時成果更新：</b>測驗完成時自動重新整理學習成果紀錄面板，同步保存至雲端。</li>
+            <li><b>智慧天數記憶：</b>完成某一天（如 Day 1）後，系統會自動幫學員選取並載入下一天（Day 2），重新整理後也會自動定位到最新未完成的進度。</li>
+            <li><b>即時成果與錯題永久鎖定：</b>完成即時刷新學習成果紀錄，且錯題答對後不自動消除。</li>
           </ul>
         </div>
       </div>
@@ -888,7 +888,7 @@ const CAP_EXAM_BANK = {
   "weather": { year: "108年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "The ______ in Taipei is often rainy and humid in winter.", zh: "台北冬天的氣候經常多雨且潮濕。", distractors: ["season", "holiday", "nature"] },
   "healthy": { year: "110年國中教育會考補考", section: "英語科閱讀單選 第2題", sentence: "Eating fresh fruit and exercising every day helps you stay ______.", zh: "每天吃新鮮水果並保持規律運動能讓你維持健康。", distractors: ["hungry", "heavy", "helpful"] },
   "traffic": { year: "113年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "The morning ______ is always heavy, so you should leave home earlier.", zh: "早晨的交通總是非常擁擠，所以你應該提早出門。", distractors: ["trouble", "travel", "ticket"] },
-  "environment": { year: "111年國中教育會考", section: "英語科閱讀單選 第5題", sentence: "We should use less plastic to protect our natural ______.", zh: "我們應該減少使用塑膠製品，以保護我們的自然環境。", distractors: ["experience", "equipment", "energy"] }
+  "environment": { year: "111年國中教育會考", section: "英語科閱讀單選 第5題", sentence: "We should use less plastic to protect our natural ______.", zh: "We should use less plastic to protect our natural environment.", distractors: ["experience", "equipment", "energy"] }
 };
 
 const CAP_LISTENING_BANK = [
@@ -1020,6 +1020,7 @@ async function syncFromCloud() {
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
       refreshHistoryDisplay();
+      autoSelectNextDay(); // 💡 雲端同步完成後自動定位到最新未完成天數
     }
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
     saveKnownUser(currentUser, null, userStore);
@@ -1118,6 +1119,7 @@ function enterApp(user) {
   changeDay(1);
   startDailyActivityTracker();
   refreshHistoryDisplay();
+  autoSelectNextDay(); // 💡 進入 App 時自動定位到下一個未完成天數
 }
 
 async function handleLogout() {
@@ -1450,6 +1452,26 @@ function initDaySelector() {
   }
 }
 
+// 💡 智慧檢查並自動選取下一個未完成的天數
+function autoSelectNextDay() {
+  if (isRandomMode) return;
+  let targetDay = 1;
+  for (let d = 1; d <= DAYS_COUNT; d++) {
+    if (userStore.history[`Day_${d}`]) {
+      targetDay = d + 1; // 如果這天完成了，預設推進到下一天
+    } else {
+      break; // 遇到第一個未完成的天數就停下來
+    }
+  }
+  if (targetDay > DAYS_COUNT) targetDay = DAYS_COUNT;
+  
+  const daySelectEl = document.getElementById("daySelect");
+  if (daySelectEl) {
+    daySelectEl.value = targetDay;
+    changeDay(targetDay);
+  }
+}
+
 function startRandomQuiz(count) {
   if (FULL_VOCAB.length === 0) return alert("題庫載入中！");
   isRandomMode = true;
@@ -1565,7 +1587,7 @@ function renderQuestion() {
     audioBox.classList.add("hidden"); expBox.classList.add("hidden");
     document.getElementById("optionsGrid").innerHTML = `<div style="text-align:center; padding:18px; color:var(--muted);"><b>${isRandomMode ? '🎲 亂數刷題完成！' : '📅 今日目標達成！'}</b><br>正確率：<b>${Math.round((correctCount / currentTestQueue.length) * 100)}%</b></div>`;
     
-    // 💡 針對順序刷題模式（非亂數），當前天數完成時自動幫忙選取並跳轉至下一天 (Day + 1)
+    // 💡 順序刷題完成時，自動選取並載入下一天
     if (!isRandomMode && currentDay < DAYS_COUNT) {
       const nextDayNum = currentDay + 1;
       setTimeout(() => {
@@ -1574,7 +1596,7 @@ function renderQuestion() {
           daySelectEl.value = nextDayNum;
           changeDay(nextDayNum);
         }
-      }, 1500); // 延遲 1.5 秒讓學員看見完成畫面後自動切換
+      }, 1500);
     }
 
     return;
