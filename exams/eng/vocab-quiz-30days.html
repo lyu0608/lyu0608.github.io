@@ -673,12 +673,13 @@
       </div>
     </div>
 
-    <div id="historyBox" class="explanation-card hidden" style="border:1px solid #bfdbfe; background:#eff6ff;">
+    <!-- 📊 學習成果紀錄面板 (預設展開並即時呈現) -->
+    <div id="historyBox" class="explanation-card" style="border:1px solid #bfdbfe; background:#eff6ff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
         <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
         <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空進度</button>
       </div>
-      <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;"></div>
+      <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;">尚無紀錄</div>
     </div>
 
     <div class="controls">
@@ -764,7 +765,7 @@
   </div>
 </div>
 
-<!-- 🛠️ 軟體維護歷程彈窗 (完整歷史版本) -->
+<!-- 🛠️ 軟體維護歷程彈窗 -->
 <div id="changelogModal" class="modal-overlay hidden" onclick="toggleChangelogModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -772,6 +773,15 @@
       <button class="modal-close" onclick="toggleChangelogModal(false)">&times;</button>
     </div>
     <div class="modal-body">
+      <div class="history-item">
+        <div class="history-tag">v3.9.8 - 成果紀錄即時自動刷新</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>即時成果更新：</b>測驗完成結算時，學習成果紀錄面板自動重新整理並呈現最新成績。</li>
+            <li><b>永久鎖定錯題：</b>只要曾經答錯過一次的單字，即永久鎖定在錯題庫中強化複習。</li>
+          </ul>
+        </div>
+      </div>
       <div class="history-item">
         <div class="history-tag">v3.9.1 - 最近 14 天每日使用狀況追蹤</div>
         <div class="history-desc">
@@ -799,20 +809,11 @@
           </ul>
         </div>
       </div>
-      <div class="history-item">
-        <div class="history-tag">v2.0.0 - 核心題庫與介面架構重構</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>獨立字庫載入：</b>將 2,277 字國中會考競賽核心題庫獨立拆分至外部字庫，大幅提升載入效能。</li>
-            <li><b>響應式介面：</b>全面優化手機與平板端的觸控體驗，支援 PWA 桌面 App 安裝。</li>
-          </ul>
-        </div>
-      </div>
     </div>
   </div>
 </div>
 
-<!-- 👑 管理者後台監控彈窗 (含 14 天每日使用狀況) -->
+<!-- 👑 管理者後台監控彈窗 -->
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -1021,6 +1022,7 @@ async function syncFromCloud() {
       if (data.stats) userStore.stats = data.stats;
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
+      refreshHistoryDisplay(); // 💡 同步完成後自動刷新成果紀錄顯示
     }
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
     saveKnownUser(currentUser, null, userStore);
@@ -1033,6 +1035,8 @@ let syncDebounceTimer = null;
 function triggerAutoSync() {
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   saveKnownUser(currentUser, null, userStore);
+  refreshHistoryDisplay(); // 💡 每次操作觸發同步時自動重新整理成果紀錄顯示
+
   if (!supabaseClient || isGuest || !currentUser) return;
   if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
   syncDebounceTimer = setTimeout(() => { syncToCloud(); }, 1500);
@@ -1116,6 +1120,7 @@ function enterApp(user) {
   initDaySelector();
   changeDay(1);
   startDailyActivityTracker();
+  refreshHistoryDisplay(); // 💡 進入 App 時即時渲染成果紀錄
 }
 
 async function handleLogout() {
@@ -1327,6 +1332,7 @@ async function executeClearRecords() {
     localStorage.removeItem("local_vocab_progress");
     updateMistakeCount();
     initDaySelector();
+    refreshHistoryDisplay();
     toggleClearModal(false);
     btn.disabled = false;
     alert("✅ 紀錄已清空！");
@@ -1343,6 +1349,7 @@ async function executeClearRecords() {
     await supabaseClient.from('user_progress').upsert({ user_id: currentUser.id, email: currentUser.email, history: {}, mistakes: [], stats: userStore.stats, updated_at: new Date().toISOString() });
     updateMistakeCount();
     initDaySelector();
+    refreshHistoryDisplay();
     toggleClearModal(false);
     alert("✅ 雲端與本地紀錄已全部清空重置。");
     changeDay(currentDay);
@@ -1499,7 +1506,7 @@ function changeDay(day) {
 function handleFilterChange() { if (!isRandomMode) changeDay(currentDay); }
 
 function createClozeSentence(sentence, targetWord, fallbackZh) {
-  if (!sentence || sentence.trim() === "") return { masked: `請選出「<b>${fallbackZh || '此字'}</b>」對應的英文：<span class="cloze-blank">_______</span>`, hasReplaced: false };
+  if (!sentence || sentence.trim() === "") return { masked: `請選出<b>「${fallbackZh || '此字'}」</b>對應的英文：<span class="cloze-blank">_______</span>`, hasReplaced: false };
   const escaped = targetWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`\\b${escaped}\\b`, 'i');
   if (regex.test(sentence)) return { masked: sentence.replace(regex, `<span class="cloze-blank">_______</span>`), hasReplaced: true };
@@ -1551,7 +1558,9 @@ function renderQuestion() {
   if (currentIndex >= currentTestQueue.length) {
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
     userStore.history[recordKey] = { score: correctCount, total: currentTestQueue.length, rate: Math.round((correctCount / currentTestQueue.length) * 100), quizType: currentQuizType, cycleDays: DAYS_COUNT, date: new Date().toLocaleDateString() };
-    syncToCloud();
+    
+    triggerAutoSync(); // 💡 測驗完成時自動同步並即時重新整理畫面上的學習成果紀錄
+    initDaySelector(); // 更新天數選單上的已完成勾選狀態
 
     document.getElementById("wordDisplay").innerText = "🎉 測驗完成！";
     document.getElementById("wordKk").innerText = "";
@@ -1660,12 +1669,15 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   } else {
     btn.classList.add("wrong");
     wrongCount++;
+    
+    // 💡 永久鎖定錯題規則：只要曾經答錯過一次，就加入錯題庫中且不再自動移除
     const mistakeRecord = currentQuizType === "listen" ? { ...item, quizType: "listen", id: item.scriptEn } : { ...item, quizType: currentQuizType };
     const identifier = mistakeRecord.en || mistakeRecord.scriptEn;
     if (!userStore.mistakes.some(m => (m.en || m.scriptEn) === identifier)) {
       userStore.mistakes.push(mistakeRecord);
       updateMistakeCount();
     }
+
     if (["cloze", "exam"].includes(currentQuizType)) {
       const blank = document.querySelector(".cloze-blank");
       if (blank) { blank.innerText = item.en; blank.style.color = "var(--danger)"; }
@@ -1714,13 +1726,19 @@ function reviewMistakes() {
   renderQuestion();
 }
 
+// 💡 即時重新整理並渲染學習成果紀錄面板的內容
+function refreshHistoryDisplay() {
+  const details = document.getElementById("historyDetails");
+  if (!details) return;
+  const entries = Object.entries(userStore.history);
+  const typeNames = { wordDef: "識義", cloze: "填空", exam: "真題", listen: "聽力" };
+  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date || ''}</div>`).join("");
+}
+
 function toggleHistory() {
   const box = document.getElementById("historyBox");
   box.classList.toggle("hidden");
-  const details = document.getElementById("historyDetails");
-  const entries = Object.entries(userStore.history);
-  const typeNames = { wordDef: "識義", cloze: "填空", exam: "真題", listen: "聽力" };
-  details.innerHTML = entries.length === 0 ? "尚無紀錄" : entries.map(([k, v]) => `<div>• <b>${k}</b> [${typeNames[v.quizType] || '綜合'}]: ${v.score}/${v.total} (${v.rate}%)</div>`).join("");
+  refreshHistoryDisplay();
 }
 
 function speakCurrentWord() {
@@ -1761,6 +1779,7 @@ window.onload = async () => {
       if (session && session.user) enterApp(session.user);
     } catch (err) {}
   }
+  refreshHistoryDisplay(); // 💡 頁面載入時初始化渲染成果紀錄
 };
 </script>
 </body>
