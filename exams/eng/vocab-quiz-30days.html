@@ -775,11 +775,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.2.0 - 後台五大題型數據完全分類呈現</div>
+        <div class="history-tag">v5.3.0 - 智慧出勤自動補登機制</div>
         <div class="history-desc">
           <ul>
-            <li><b>分類呈現：</b>管理者後台的完成進度、總作答題數與綜合正確率已完整區分為五大獨立題型（單字、單字(難)、填空、真題、聽力）。</li>
-            <li><b>歷史自動歸納：</b>舊版綜合紀錄自動對應至「單字」模式。</li>
+            <li><b>智慧補登今日出勤：</b>當學員進行作答與同步時，系統會自動檢查並確保當天的 14 天出勤紀錄正確寫入，解決部分有作答但無上線紀錄的問題。</li>
+            <li><b>五大題型完全獨立：</b>完成進度、總題數與正確率在後台精確分類。</li>
           </ul>
         </div>
       </div>
@@ -787,7 +787,6 @@
         <div class="history-tag">v5.0.0 - 五大題型獨立 30 天進度與獨立錯題庫架構</div>
         <div class="history-desc">
           <ul>
-            <li><b>固定 30 天計畫：</b>專注於最核心的 30 天背誦計畫。</li>
             <li><b>題型獨立進度與錯題本：</b>各題型擁有專屬的 30 天通關狀態與永久鎖定錯題庫。</li>
           </ul>
         </div>
@@ -868,7 +867,7 @@ const CAP_EXAM_BANK = {
   "abroad": { year: "112年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "Mr. Lin has lived ______ for many years, so he can speak English very well.", zh: "林先生在國外住了許多年，所以他英文說得非常好。", distractors: ["ahead", "almost", "alone"] },
   "accident": { year: "111年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "Be careful when you cross the street. There was a terrible car ______ here yesterday.", zh: "過馬路時要小心。昨天這裡發生了一場嚴重的車禍意外。", distractors: ["action", "activity", "advice"] },
   "convenient": { year: "113年國中教育會考", section: "英語科閱讀單選 第3題", sentence: "Living near the MRT station is very ______. It takes me only five minutes to get to school.", zh: "住在捷運站附近非常便利。我只需要花五分鐘就能到學校。", distractors: ["comfortable", "dangerous", "expensive"] },
-  "borrow": { year: "110年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "I forgot to bring my pen today. Could I please ______ one from you?", zh: "我今天忘記帶筆了。我可以向你借一隻嗎？", distractors: ["lend", "buy", "sell"] },
+  "borrow": { year: "110年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "I forgot to bring my pen today. Could I please ______ one from you?", zh: "I forgot to bring my pen today. Could I please borrow one from you?", distractors: ["lend", "buy", "sell"] },
   "collect": { year: "109年國中教育會考", section: "英語科閱讀單選 第2題", sentence: "My brother likes to ______ stamps from all over the world.", zh: "我的哥哥喜歡收集來自世界各地的郵票。", distractors: ["correct", "connect", "control"] },
   "famous": { year: "112年國中教育會考", section: "英語科閱讀單選 第4題", sentence: "Tainan is ______ for its delicious traditional street food.", zh: "台南以其道地美味的傳統街頭小吃聞名。", distractors: ["foreign", "fresh", "friendly"] },
   "weather": { year: "108年國中教育會考", section: "英語科閱讀單選 第1題", sentence: "The ______ in Taipei is often rainy and humid in winter.", zh: "台北冬天的氣候經常多雨且潮濕。", distractors: ["season", "holiday", "nature"] },
@@ -912,6 +911,7 @@ function getTodayDateString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// 💡 智慧出勤補登：確保每次作答都能確實寫入今日 14 天明細
 async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
   if (!supabaseClient || isGuest || !currentUser) return;
   const todayStr = getTodayDateString();
