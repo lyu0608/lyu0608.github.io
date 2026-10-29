@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (30天動態智慧排程與後台修改日期版)</title>
+  <title>英語單字特訓 App (30天動態智慧排程與後台修改日期連動版)</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -806,11 +806,10 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v6.1.1 - 免改資料庫：啟動日期安全同步機制</div>
+        <div class="history-tag">v6.1.2 - 後台修改啟動日期即時連動做題頁面</div>
         <div class="history-desc">
           <ul>
-            <li><b>免改資料庫結構：</b>將 30 天計畫啟動日期完美整合至現有的 JSON 儲存結構中，徹底解決 Supabase Schema 找不到欄位的問題。</li>
-            <li><b>管理者後台修改：</b>管理者可在後台直接更改學員啟動日期並同步。</li>
+            <li><b>即時連動更新：</b>當管理者在後台修改並儲存學員的啟動日期後，前端頁面會立刻同步更新記憶體與下拉選單，不需要重新登入即可看到最新的排程日期。</li>
           </ul>
         </div>
       </div>
@@ -822,7 +821,7 @@
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (可修改啟動日期)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (即時修改啟動日期)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -1057,7 +1056,7 @@ async function syncToCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
     if (!userStore.stats) userStore.stats = {};
-    userStore.stats.startDate = userStore.startDate; // 💡 將 startDate 存放在 stats 內部，完美避開資料庫結構錯誤
+    userStore.stats.startDate = userStore.startDate;
 
     const payload = {
       user_id: currentUser.id,
@@ -1130,6 +1129,7 @@ function loginAsGuest() {
     } catch (e) {}
   }
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
+  if (userStore.stats && userStore.stats.startDate) userStore.startDate = userStore.stats.startDate;
   enterApp(currentUser);
 }
 
@@ -1158,7 +1158,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (免改資料庫欄位，透過 stats.startDate 讀取與修改)
+// 👑 管理者後台監控
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1312,7 +1312,7 @@ async function fetchAdminAllProgress() {
   }
 }
 
-// 💡 管理者修改學員啟動日期（儲存於 stats 內，無需修改資料庫 Schema）
+// 💡 管理者修改學員啟動日期並「即時連動更新當前做題頁面」
 async function adminUpdateUserStartDate(userId) {
   const inputEl = document.getElementById(`startDate_${userId}`);
   if (!inputEl) return;
@@ -1320,7 +1320,6 @@ async function adminUpdateUserStartDate(userId) {
   if (!newDate) return alert("請選擇有效的日期！");
 
   try {
-    // 先取得該學員目前的資料
     const { data: curRow, error: fetchErr } = await supabaseClient
       .from('user_progress')
       .select('*')
@@ -1340,10 +1339,16 @@ async function adminUpdateUserStartDate(userId) {
     if (updateErr) throw updateErr;
 
     alert("✅ 該學員的 30 天計畫啟動日已成功修改！");
+
+    // 💡 如果修改的是目前登入中的使用者，立刻更新記憶體並刷新做題頁面下拉選單
     if (currentUser && currentUser.id === userId) {
       userStore.startDate = newDate;
+      if (!userStore.stats) userStore.stats = {};
+      userStore.stats.startDate = newDate;
+      localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       initDaySelector();
     }
+
     fetchAdminAllProgress();
   } catch (err) {
     alert("❌ 修改失敗：" + err.message);
