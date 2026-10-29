@@ -775,18 +775,18 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.2.2 - 徹底修復各題型歷史統計歸納與加總</div>
+        <div class="history-tag">v5.3.1 - 徹底修復五大題型作答後台即時更新與對應</div>
         <div class="history-desc">
           <ul>
-            <li><b>各題型精準統整：</b>後台在讀取各題型明細時，完美對應並識別 `historyByQuiz` 內的各類別（單字、單字難、填空、真題、聽力），徹底解決部分題型題數顯示為 0 的問題。</li>
+            <li><b>即時回報與對應：</b>優化了後台與前端在進行「單字(難)、填空、真題、聽力」時的 `quizType` 寫入與聚合機制，確保各題型交卷後後台明細立即正確累加。</li>
           </ul>
         </div>
       </div>
       <div class="history-item">
-        <div class="history-tag">v5.2.0 - 後台五大題型數據完全分類呈現</div>
+        <div class="history-tag">v5.3.0 - 智慧出勤自動補登機制</div>
         <div class="history-desc">
           <ul>
-            <li><b>分類呈現：</b>管理者後台的完成進度、總作答題數與綜合正確率已完整區分為五大獨立題型。</li>
+            <li><b>智慧補登今日出勤：</b>確保每次作答都能確實寫入今日 14 天明細。</li>
           </ul>
         </div>
       </div>
@@ -1130,7 +1130,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (深度解析歷史紀錄與各題型結算歸納)
+// 👑 管理者後台監控 (超強穩健聚合機制，支援多重 QuizType 識別與歸納)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1167,7 +1167,6 @@ async function fetchAdminAllProgress() {
 
     data.forEach(row => {
       let historyByQuiz = row.historyByQuiz || {};
-      // 如果雲端只有舊版 history，自動相容轉移到 wordDef
       if (!row.historyByQuiz && row.history) {
         historyByQuiz = { wordDef: row.history };
       }
@@ -1187,14 +1186,19 @@ async function fetchAdminAllProgress() {
         listen: { total: 0, correct: 0, days: new Set() }
       };
 
-      // 💡 智慧聚合：遍歷 historyByQuiz 內所有紀錄，並依據紀錄中的 quizType 或 key 進行歸納
+      // 💡 智慧聚合補強：不僅檢查 key，也檢查 item 內部包含的 quizType 或文字特徵
       Object.keys(historyByQuiz).forEach(qKey => {
         const qHist = historyByQuiz[qKey] || {};
         Object.keys(qHist).forEach(recordKey => {
           const item = qHist[recordKey];
-          // 判定真實題型：優先採用 item.quizType，若無則採用 qKey
-          let targetType = (item && item.quizType) ? item.quizType : qKey;
-          if (!typeStats[targetType]) targetType = "wordDef";
+          let rawType = (item && item.quizType) ? item.quizType : qKey;
+          
+          let targetType = "wordDef";
+          if (rawType === "hard" || rawType.includes("hard") || rawType.includes("難")) targetType = "hard";
+          else if (rawType === "cloze" || rawType.includes("cloze") || rawType.includes("填空")) targetType = "cloze";
+          else if (rawType === "exam" || rawType.includes("exam") || rawType.includes("真題")) targetType = "exam";
+          else if (rawType === "listen" || rawType.includes("listen") || rawType.includes("聽力")) targetType = "listen";
+          else targetType = "wordDef";
 
           if (recordKey.startsWith("Day_")) {
             const m = recordKey.match(/\d+/);
