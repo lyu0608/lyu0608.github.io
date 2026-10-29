@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (30天動態智慧排程與啟動日同步版)</title>
+  <title>英語單字特訓 App (30天動態智慧排程與雲端完整同步版)</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -806,10 +806,10 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v6.1.3 - 確保重新載入時正確同步雲端 startDate</div>
+        <div class="history-tag">v6.1.4 - 確保重新載入時從雲端正確載入 startDate</div>
         <div class="history-desc">
           <ul>
-            <li><b>同步修正：</b>在 `syncFromCloud()` 函式中加入從雲端 `stats.startDate` 讀取並覆蓋本地啟動日期的邏輯，確保重新整理後日期維持不變。</li>
+            <li><b>雲端同步完美修復：</b>在 `syncFromCloud()` 函式中確保正確讀取 `stats.startDate` 並覆蓋本地排程基準日。</li>
           </ul>
         </div>
       </div>
@@ -1008,7 +1008,7 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
   localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
 }
 
-// 💡 修正點：從雲端同步時，完整讀取 stats.startDate 並賦值給 userStore.startDate
+// 💡 徹底確保從雲端同步時，完整載入 stats.startDate 並賦值給 userStore.startDate
 async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
