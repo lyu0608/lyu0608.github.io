@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (30天動態智慧排程與後台修改日期連動版)</title>
+  <title>英語單字特訓 App (30天動態智慧排程與啟動日同步版)</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -806,10 +806,10 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v6.1.2 - 後台修改啟動日期即時連動做題頁面</div>
+        <div class="history-tag">v6.1.3 - 確保重新載入時正確同步雲端 startDate</div>
         <div class="history-desc">
           <ul>
-            <li><b>即時連動更新：</b>當管理者在後台修改並儲存學員的啟動日期後，前端頁面會立刻同步更新記憶體與下拉選單，不需要重新登入即可看到最新的排程日期。</li>
+            <li><b>同步修正：</b>在 `syncFromCloud()` 函式中加入從雲端 `stats.startDate` 讀取並覆蓋本地啟動日期的邏輯，確保重新整理後日期維持不變。</li>
           </ul>
         </div>
       </div>
@@ -1008,6 +1008,7 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
   localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
 }
 
+// 💡 修正點：從雲端同步時，完整讀取 stats.startDate 並賦值給 userStore.startDate
 async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
@@ -1022,7 +1023,9 @@ async function syncFromCloud() {
 
       if (data.stats) {
         userStore.stats = data.stats;
-        if (data.stats.startDate) userStore.startDate = data.stats.startDate;
+        if (data.stats.startDate) {
+          userStore.startDate = data.stats.startDate; // 💡 確保雲端修改的 startDate 被正確同步
+        }
       }
 
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
@@ -1312,7 +1315,6 @@ async function fetchAdminAllProgress() {
   }
 }
 
-// 💡 管理者修改學員啟動日期並「即時連動更新當前做題頁面」
 async function adminUpdateUserStartDate(userId) {
   const inputEl = document.getElementById(`startDate_${userId}`);
   if (!inputEl) return;
@@ -1340,7 +1342,6 @@ async function adminUpdateUserStartDate(userId) {
 
     alert("✅ 該學員的 30 天計畫啟動日已成功修改！");
 
-    // 💡 如果修改的是目前登入中的使用者，立刻更新記憶體並刷新做題頁面下拉選單
     if (currentUser && currentUser.id === userId) {
       userStore.startDate = newDate;
       if (!userStore.stats) userStore.stats = {};
@@ -2010,7 +2011,6 @@ function reviewMistakes() {
   renderQuestion();
 }
 
-// 💡 完整保留詳細的歷史紀錄（History），絕對不精簡
 function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
