@@ -775,19 +775,18 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.3.0 - 智慧出勤自動補登機制</div>
+        <div class="history-tag">v5.2.1 - 後台五大題型總題數精準聚合修復</div>
         <div class="history-desc">
           <ul>
-            <li><b>智慧補登今日出勤：</b>當學員進行作答與同步時，系統會自動檢查並確保當天的 14 天出勤紀錄正確寫入，解決部分有作答但無上線紀錄的問題。</li>
-            <li><b>五大題型完全獨立：</b>完成進度、總題數與正確率在後台精確分類。</li>
+            <li><b>動態聚合統計：</b>後台總作答題數與各題型明細直接由歷史紀錄（historyByQuiz）動態加總，確保「單字(難)」與各題型作答後題數立即正確更新。</li>
           </ul>
         </div>
       </div>
       <div class="history-item">
-        <div class="history-tag">v5.0.0 - 五大題型獨立 30 天進度與獨立錯題庫架構</div>
+        <div class="history-tag">v5.2.0 - 後台五大題型數據完全分類呈現</div>
         <div class="history-desc">
           <ul>
-            <li><b>題型獨立進度與錯題本：</b>各題型擁有專屬的 30 天通關狀態與永久鎖定錯題庫。</li>
+            <li><b>分類呈現：</b>管理者後台的完成進度、總作答題數與綜合正確率已完整區分為五大獨立題型。</li>
           </ul>
         </div>
       </div>
@@ -911,7 +910,6 @@ function getTodayDateString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-// 💡 智慧出勤補登：確保每次作答都能確實寫入今日 14 天明細
 async function updateDailyActivity(addedSeconds = 0, addedQuestions = 0) {
   if (!supabaseClient || isGuest || !currentUser) return;
   const todayStr = getTodayDateString();
@@ -1132,7 +1130,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (五大題型完全分類顯示)
+// 👑 管理者後台監控 (透過動態聚合 historyByQuiz 計算精準總題數)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1170,7 +1168,6 @@ async function fetchAdminAllProgress() {
     data.forEach(row => {
       const historyByQuiz = row.historyByQuiz || (row.history ? { wordDef: row.history } : {});
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
-      const stats = row.stats || null;
 
       let totalMistakesCount = 0;
       Object.values(mistakesByQuiz).forEach(mList => {
@@ -1188,9 +1185,9 @@ async function fetchAdminAllProgress() {
       Object.keys(typeStats).forEach(qType => {
         const qHist = historyByQuiz[qType] || {};
         Object.keys(qHist).forEach(key => {
-          if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key)) {
+          if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key) || key.startsWith("Random_")) {
             const m = key.match(/\d+/);
-            if (m) typeStats[qType].days.add(parseInt(m[0], 10));
+            if (m && key.startsWith("Day_")) typeStats[qType].days.add(parseInt(m[0], 10));
           }
           const item = qHist[key];
           if (item && item.total !== undefined) {
@@ -1199,15 +1196,6 @@ async function fetchAdminAllProgress() {
           }
         });
       });
-
-      if (stats) {
-        ["wordDef", "hard", "cloze", "exam", "listen"].forEach(k => {
-          if (stats[k]) {
-            typeStats[k].total = stats[k].total || 0;
-            typeStats[k].correct = stats[k].correct || 0;
-          }
-        });
-      }
 
       let overallTotal = 0, overallCorrect = 0;
       Object.values(typeStats).forEach(st => {
@@ -1825,7 +1813,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   if (currentQuizType === "listen") {
     const lData = CAP_LISTENING_BANK[currentIndex % CAP_LISTENING_BANK.length];
     zhHintEl.innerText = `原文：${lData.scriptEn}\n翻譯：${lData.scriptZh}`;
-    zhHintEl.classList.remove("hidden");
+    zhHintEl.classList.add("hidden");
     expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${lData.scriptEn}</span><span class="sentence-zh">• ${lData.scriptZh}</span><div class="grammar-note">${lData.explanation}</div>`;
   } else if (currentQuizType === "hard") {
     expBox.innerHTML = `<div class="explanation-title">💡 核心單字解析 (高難度混淆特訓)</div><span class="sentence-en">• 英文單字：<b>${item.en}</b> ${item.kk || ''}</span><span class="sentence-zh">• 中文解釋：${item.zh}</span><div class="grammar-note">🔥 高頻易混淆字彙，透過相似拼法強化單字辨識力。</div>`;
