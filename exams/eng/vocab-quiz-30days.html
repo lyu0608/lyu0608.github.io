@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (純淨美音聽力與會考真題版)</title>
+  <title>英語單字特訓 App (30天動態智慧排程版)</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -23,7 +23,6 @@
       --danger: #dc2626;
       --danger-bg: #fee2e2;
       --purple: #7c3aed;
-      --purple-hover: #6d28d9;
       --amber: #d97706;
       --cyan: #0891b2;
       --bg: #f8fafc;
@@ -279,6 +278,18 @@
       background: #fff;
       outline: none;
       cursor: pointer;
+    }
+
+    /* 💡 未做題閃爍提醒文字特效 */
+    @keyframes blinkAlert {
+      0% { opacity: 1; color: var(--danger); }
+      50% { opacity: 0.3; color: var(--amber); }
+      100% { opacity: 1; color: var(--danger); }
+    }
+    .schedule-alert-blink {
+      font-weight: 800;
+      animation: blinkAlert 1s infinite ease-in-out;
+      margin-left: 6px;
     }
 
     .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
@@ -659,7 +670,7 @@
       <div class="filter-row">
         <div>
           <span><b>背誦計畫：</b></span>
-          <span style="font-weight:700; color:var(--primary);">30 天核心計畫</span>
+          <span style="font-weight:700; color:var(--primary);">30 天動態智慧排程</span>
         </div>
         <div>
           <label style="cursor:pointer;"><input type="radio" name="scopeType" value="todayOnly" checked onchange="handleFilterChange()"> 僅今日</label>
@@ -775,18 +786,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.4.0 - 雙向強固同步：stats 與 historyByQuiz 完美連動</div>
+        <div class="history-tag">v6.0.0 - 30天動態智慧排程與未做題閃爍 Alert 提醒</div>
         <div class="history-desc">
           <ul>
-            <li><b>雙軌計數更新：</b>每次作答結算時，系統會同時向 `historyByQuiz` 以及 `stats`（總題數與各題型統計）寫入正確數值，確保後台在讀取時無論抓取哪個欄位都能 100% 正確顯示題數。</li>
-          </ul>
-        </div>
-      </div>
-      <div class="history-item">
-        <div class="history-tag">v5.3.0 - 智慧出勤自動補登機制</div>
-        <div class="history-desc">
-          <ul>
-            <li><b>智慧補登今日出勤：</b>確保每次作答都能確實寫入今日 14 天明細。</li>
+            <li><b>動態基準日與超進度：</b>以首次作答日為 Day 1 自動向後推算；支援超進度提前做題，後續排程自動連動更新。</li>
+            <li><b>未做題閃爍 Alert：</b>超過應完成日期卻尚未作答的天數，選單會自動出現閃爍提醒文字。</li>
           </ul>
         </div>
       </div>
@@ -798,7 +802,7 @@
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (五大題型分類明細)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (動態排程與五大題型明細)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -961,7 +965,8 @@ function getDefaultStore() {
   return {
     historyByQuiz: { wordDef: {}, hard: {}, cloze: {}, exam: {}, listen: {} },
     mistakesByQuiz: { wordDef: [], hard: [], cloze: [], exam: [], listen: [] },
-    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } }
+    stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } },
+    startDate: null // 💡 記錄 30 天計畫的第一天基準日期
   };
 }
 
@@ -987,19 +992,16 @@ async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
   try {
-    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats').eq('user_id', currentUser.id).single();
+    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats, startDate').eq('user_id', currentUser.id).single();
     if (data) {
-      if (data.historyByQuiz) {
-        userStore.historyByQuiz = data.historyByQuiz;
-      } else if (data.history) {
-        userStore.historyByQuiz.wordDef = data.history;
-      }
-      if (data.mistakesByQuiz) {
-        userStore.mistakesByQuiz = data.mistakesByQuiz;
-      } else if (data.mistakes) {
-        userStore.mistakesByQuiz.wordDef = data.mistakes;
-      }
+      if (data.historyByQuiz) userStore.historyByQuiz = data.historyByQuiz;
+      else if (data.history) userStore.historyByQuiz.wordDef = data.history;
+
+      if (data.mistakesByQuiz) userStore.mistakesByQuiz = data.mistakesByQuiz;
+      else if (data.mistakes) userStore.mistakesByQuiz.wordDef = data.mistakes;
+
       if (data.stats) userStore.stats = data.stats;
+      if (data.startDate) userStore.startDate = data.startDate;
 
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
@@ -1037,6 +1039,7 @@ async function syncToCloud() {
       historyByQuiz: userStore.historyByQuiz,
       mistakesByQuiz: userStore.mistakesByQuiz,
       stats: userStore.stats,
+      startDate: userStore.startDate,
       updated_at: new Date().toISOString()
     };
     await supabaseClient.from('user_progress').upsert(payload);
@@ -1130,7 +1133,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (雙軌解析：同時聚合 stats 與 historyByQuiz 確保數據百分之百精準)
+// 👑 管理者後台監控
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1167,9 +1170,7 @@ async function fetchAdminAllProgress() {
 
     data.forEach(row => {
       let historyByQuiz = row.historyByQuiz || {};
-      if (!row.historyByQuiz && row.history) {
-        historyByQuiz = { wordDef: row.history };
-      }
+      if (!row.historyByQuiz && row.history) historyByQuiz = { wordDef: row.history };
 
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
       const cloudStats = row.stats || {};
@@ -1187,7 +1188,6 @@ async function fetchAdminAllProgress() {
         listen: { total: 0, correct: 0, days: new Set() }
       };
 
-      // 1. 從 cloudStats 優先讀取各題型已累積的總題數與正確數
       Object.keys(typeStats).forEach(qType => {
         if (cloudStats[qType]) {
           typeStats[qType].total = cloudStats[qType].total || 0;
@@ -1195,7 +1195,6 @@ async function fetchAdminAllProgress() {
         }
       });
 
-      // 2. 深度遍歷 historyByQuiz 補足總題數、計算正確數與 30 天通關狀態
       Object.keys(historyByQuiz).forEach(qKey => {
         const qHist = historyByQuiz[qKey] || {};
         Object.keys(qHist).forEach(recordKey => {
@@ -1207,19 +1206,15 @@ async function fetchAdminAllProgress() {
           else if (rawType === "cloze" || rawType.includes("cloze") || rawType.includes("填空")) targetType = "cloze";
           else if (rawType === "exam" || rawType.includes("exam") || rawType.includes("真題")) targetType = "exam";
           else if (rawType === "listen" || rawType.includes("listen") || rawType.includes("聽力")) targetType = "listen";
-          else targetType = "wordDef";
 
           if (recordKey.startsWith("Day_")) {
             const m = recordKey.match(/\d+/);
             if (m) typeStats[targetType].days.add(parseInt(m[0], 10));
           }
 
-          if (item && item.total !== undefined) {
-            // 如果 stats 裡面該題型 total 為 0，則從 history 補上
-            if (!cloudStats[targetType] || cloudStats[targetType].total === 0) {
-              typeStats[targetType].total += (item.total || 0);
-              typeStats[targetType].correct += (item.score || 0);
-            }
+          if (item && item.total !== undefined && typeStats[targetType].total < (item.total || 0)) {
+            typeStats[targetType].total = item.total || 0;
+            typeStats[targetType].correct = item.score || 0;
           }
         });
       });
@@ -1230,7 +1225,6 @@ async function fetchAdminAllProgress() {
         overallCorrect += st.correct;
       });
 
-      // 如果 stats 有總數，優先用 stats 的總數
       if (cloudStats.totalQ !== undefined && cloudStats.totalQ > overallTotal) {
         overallTotal = cloudStats.totalQ;
         overallCorrect = cloudStats.totalCorrect || overallCorrect;
@@ -1386,6 +1380,7 @@ async function executeClearRecords() {
       historyByQuiz: userStore.historyByQuiz,
       mistakesByQuiz: userStore.mistakesByQuiz,
       stats: userStore.stats,
+      startDate: userStore.startDate,
       updated_at: new Date().toISOString()
     });
     updateMistakeCount();
@@ -1490,14 +1485,57 @@ function initDayPlans() {
   }
 }
 
+// 💡 核心功能：計算動態基準日與日期的天數差
+function getBaseStartDate() {
+  if (!userStore.startDate) {
+    userStore.startDate = getTodayDateString();
+  }
+  return new Date(userStore.startDate);
+}
+
+function getExpectedDayForDate(targetDateStr) {
+  const base = getBaseStartDate();
+  const target = new Date(targetDateStr);
+  const diffTime = target - base;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1;
+}
+
+// 💡 動態初始化 30 天排程選單（支援超進度與未做題閃爍 Alert 提醒）
 function initDaySelector() {
   const select = document.getElementById("daySelect");
   select.innerHTML = "";
   const currentHistory = userStore.historyByQuiz[currentQuizType] || {};
+  const todayStr = getTodayDateString();
+  const todayNum = getExpectedDayForDate(todayStr);
+
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const opt = document.createElement("option");
     opt.value = d;
-    opt.innerText = `${currentHistory[`Day_${d}`] ? "✓ " : ""}第 ${d} 天 (${dayPlans[d]?.length || 0} 題)`;
+    
+    const isCompleted = !!currentHistory[`Day_${d}`];
+    const checkSymbol = isCompleted ? "✓ " : "";
+    
+    // 計算該 Day 理論上應該完成的日期
+    const base = getBaseStartDate();
+    const targetDate = new Date(base);
+    targetDate.setDate(base.getDate() + (d - 1));
+    const targetDateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+
+    // 💡 判斷是否需要閃爍 Alert：若該天數小於等於今天，且尚未完成測驗
+    let alertText = "";
+    if (!isCompleted && d <= todayNum) {
+      alertText = " ⚠️【未做題】";
+    }
+
+    opt.innerText = `${checkSymbol}第 ${d} 天 (${targetDateStr})${alertText} (${dayPlans[d]?.length || 0} 題)`;
+    
+    // 如果未完成且逾期，替選項加註特別顏色或樣式
+    if (!isCompleted && d < todayNum) {
+      opt.style.color = "var(--danger)";
+      opt.style.fontWeight = "bold";
+    }
+
     select.appendChild(opt);
   }
 }
@@ -1657,6 +1695,11 @@ function renderQuestion() {
   if (currentTestQueue.length === 0) { document.getElementById("wordDisplay").innerText = "暫無單字"; return; }
 
   if (currentIndex >= currentTestQueue.length) {
+    // 💡 確保第一次做題時自動設定基準日
+    if (!userStore.startDate) {
+      userStore.startDate = getTodayDateString();
+    }
+
     const recordKey = isRandomMode ? `Random_${Date.now()}` : `Day_${currentDay}`;
     if (!userStore.historyByQuiz[currentQuizType]) userStore.historyByQuiz[currentQuizType] = {};
     
@@ -1669,6 +1712,18 @@ function renderQuestion() {
       date: new Date().toLocaleDateString()
     };
     
+    // 💡 支援超進度：若使用者提前完成後續天數，自動將 startDate 向前微調讓排程自動變動
+    if (!isRandomMode) {
+      const base = getBaseStartDate();
+      const expectedDayForToday = getExpectedDayForDate(getTodayDateString());
+      if (currentDay > expectedDayForToday) {
+        // 提前完成，超前幾天就把基準日往前調幾天，使後續天數自動遞進
+        const diffDays = currentDay - expectedDayForToday;
+        base.setDate(base.getDate() - diffDays);
+        userStore.startDate = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
+      }
+    }
+
     triggerAutoSync();
     initDaySelector();
 
@@ -1806,8 +1861,6 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   });
 
   const isCorrect = (selectedText === answerTarget);
-  
-  // 💡 雙軌計數更新：作答當下立即累加到 userStore.stats 與各題型統計
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   userStore.stats.totalQ = (userStore.stats.totalQ || 0) + 1;
   if (!userStore.stats[currentQuizType]) userStore.stats[currentQuizType] = { total: 0, correct: 0 };
