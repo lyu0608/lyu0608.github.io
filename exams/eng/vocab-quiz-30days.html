@@ -806,11 +806,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v6.1.0 - 管理者後台支援直接修改學員啟動日期</div>
+        <div class="history-tag">v6.1.1 - 免改資料庫：啟動日期安全同步機制</div>
         <div class="history-desc">
           <ul>
-            <li><b>後台修改啟動日期：</b>管理者可在監控後台直接檢視並修改任一學員的 30 天計畫基準啟動日期（startDate），修改後自動更新雲端排程。</li>
-            <li><b>歷史紀錄完整保留：</b>所有測驗細節、得分率與日期紀錄完整保留。</li>
+            <li><b>免改資料庫結構：</b>將 30 天計畫啟動日期完美整合至現有的 JSON 儲存結構中，徹底解決 Supabase Schema 找不到欄位的問題。</li>
+            <li><b>管理者後台修改：</b>管理者可在後台直接更改學員啟動日期並同步。</li>
           </ul>
         </div>
       </div>
@@ -1013,7 +1013,7 @@ async function syncFromCloud() {
   if (!supabaseClient || isGuest || !currentUser) return;
   document.getElementById("syncStatus").innerText = "☁️ 正在同步中...";
   try {
-    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats, startDate').eq('user_id', currentUser.id).single();
+    const { data } = await supabaseClient.from('user_progress').select('history, mistakes, historyByQuiz, mistakesByQuiz, stats').eq('user_id', currentUser.id).single();
     if (data) {
       if (data.historyByQuiz) userStore.historyByQuiz = data.historyByQuiz;
       else if (data.history) userStore.historyByQuiz.wordDef = data.history;
@@ -1021,8 +1021,10 @@ async function syncFromCloud() {
       if (data.mistakesByQuiz) userStore.mistakesByQuiz = data.mistakesByQuiz;
       else if (data.mistakes) userStore.mistakesByQuiz.wordDef = data.mistakes;
 
-      if (data.stats) userStore.stats = data.stats;
-      if (data.startDate) userStore.startDate = data.startDate;
+      if (data.stats) {
+        userStore.stats = data.stats;
+        if (data.stats.startDate) userStore.startDate = data.stats.startDate;
+      }
 
       localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
       updateMistakeCount();
@@ -1054,13 +1056,15 @@ async function syncToCloud() {
   saveKnownUser(currentUser, null, userStore);
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
+    if (!userStore.stats) userStore.stats = {};
+    userStore.stats.startDate = userStore.startDate; // 💡 將 startDate 存放在 stats 內部，完美避開資料庫結構錯誤
+
     const payload = {
       user_id: currentUser.id,
       email: currentUser.email,
       historyByQuiz: userStore.historyByQuiz,
       mistakesByQuiz: userStore.mistakesByQuiz,
       stats: userStore.stats,
-      startDate: userStore.startDate,
       updated_at: new Date().toISOString()
     };
     await supabaseClient.from('user_progress').upsert(payload);
@@ -1154,7 +1158,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (支援直接修改學員啟動日期)
+// 👑 管理者後台監控 (免改資料庫欄位，透過 stats.startDate 讀取與修改)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1195,7 +1199,7 @@ async function fetchAdminAllProgress() {
 
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
       const cloudStats = row.stats || {};
-      const userStartDate = row.startDate || getTodayDateString();
+      const userStartDate = cloudStats.startDate || getTodayDateString();
 
       let totalMistakesCount = 0;
       Object.values(mistakesByQuiz).forEach(mList => {
@@ -1308,7 +1312,7 @@ async function fetchAdminAllProgress() {
   }
 }
 
-// 💡 管理者直接修改學員啟動日期並同步雲端
+// 💡 管理者修改學員啟動日期（儲存於 stats 內，無需修改資料庫 Schema）
 async function adminUpdateUserStartDate(userId) {
   const inputEl = document.getElementById(`startDate_${userId}`);
   if (!inputEl) return;
@@ -1316,12 +1320,25 @@ async function adminUpdateUserStartDate(userId) {
   if (!newDate) return alert("請選擇有效的日期！");
 
   try {
-    const { error } = await supabaseClient
+    // 先取得該學員目前的資料
+    const { data: curRow, error: fetchErr } = await supabaseClient
       .from('user_progress')
-      .update({ startDate: newDate, updated_at: new Date().toISOString() })
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchErr) throw fetchErr;
+
+    let statsObj = curRow.stats || {};
+    statsObj.startDate = newDate;
+
+    const { error: updateErr } = await supabaseClient
+      .from('user_progress')
+      .update({ stats: statsObj, updated_at: new Date().toISOString() })
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (updateErr) throw updateErr;
+
     alert("✅ 該學員的 30 天計畫啟動日已成功修改！");
     if (currentUser && currentUser.id === userId) {
       userStore.startDate = newDate;
@@ -1377,6 +1394,7 @@ async function switchToAccount(uRecord) {
   if (!userStore.historyByQuiz) userStore.historyByQuiz = getDefaultStore().historyByQuiz;
   if (!userStore.mistakesByQuiz) userStore.mistakesByQuiz = getDefaultStore().mistakesByQuiz;
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
+  if (userStore.stats && userStore.stats.startDate) userStore.startDate = userStore.stats.startDate;
 
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
   if (supabaseClient && uRecord.session) { try { await supabaseClient.auth.setSession(uRecord.session); } catch (e) {} }
@@ -1425,13 +1443,15 @@ async function executeClearRecords() {
     userStore = getDefaultStore();
     localStorage.removeItem("local_vocab_progress");
     saveKnownUser(currentUser, null, userStore);
+    if (!userStore.stats) userStore.stats = {};
+    userStore.stats.startDate = userStore.startDate;
+
     await supabaseClient.from('user_progress').upsert({
       user_id: currentUser.id,
       email: currentUser.email,
       historyByQuiz: userStore.historyByQuiz,
       mistakesByQuiz: userStore.mistakesByQuiz,
       stats: userStore.stats,
-      startDate: userStore.startDate,
       updated_at: new Date().toISOString()
     });
     updateMistakeCount();
@@ -1536,7 +1556,6 @@ function initDayPlans() {
   }
 }
 
-// 💡 完整保留動態起始日計算
 function getBaseStartDate() {
   if (!userStore.startDate) {
     userStore.startDate = getTodayDateString();
@@ -1954,7 +1973,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     const examData = CAP_EXAM_BANK[item.en.trim().toLowerCase()];
     if (["exam", "cloze"].includes(currentQuizType)) {
       zhHintEl.innerText = examData ? `翻譯：${examData.zh}` : `翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.remove("hidden");
+      zhHintEl.classList.add("hidden");
     }
     expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
   }
@@ -1986,7 +2005,7 @@ function reviewMistakes() {
   renderQuestion();
 }
 
-// 💡 完整保留詳細的歷史紀錄（History），絕不精簡
+// 💡 完整保留詳細的歷史紀錄（History），絕對不精簡
 function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
