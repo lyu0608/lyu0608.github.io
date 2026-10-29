@@ -775,10 +775,10 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.3.1 - 徹底修復五大題型作答後台即時更新與對應</div>
+        <div class="history-tag">v5.4.0 - 雙向強固同步：stats 與 historyByQuiz 完美連動</div>
         <div class="history-desc">
           <ul>
-            <li><b>即時回報與對應：</b>優化了後台與前端在進行「單字(難)、填空、真題、聽力」時的 `quizType` 寫入與聚合機制，確保各題型交卷後後台明細立即正確累加。</li>
+            <li><b>雙軌計數更新：</b>每次作答結算時，系統會同時向 `historyByQuiz` 以及 `stats`（總題數與各題型統計）寫入正確數值，確保後台在讀取時無論抓取哪個欄位都能 100% 正確顯示題數。</li>
           </ul>
         </div>
       </div>
@@ -1130,7 +1130,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (超強穩健聚合機制，支援多重 QuizType 識別與歸納)
+// 👑 管理者後台監控 (雙軌解析：同時聚合 stats 與 historyByQuiz 確保數據百分之百精準)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1172,6 +1172,7 @@ async function fetchAdminAllProgress() {
       }
 
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
+      const cloudStats = row.stats || {};
 
       let totalMistakesCount = 0;
       Object.values(mistakesByQuiz).forEach(mList => {
@@ -1186,7 +1187,15 @@ async function fetchAdminAllProgress() {
         listen: { total: 0, correct: 0, days: new Set() }
       };
 
-      // 💡 智慧聚合補強：不僅檢查 key，也檢查 item 內部包含的 quizType 或文字特徵
+      // 1. 從 cloudStats 優先讀取各題型已累積的總題數與正確數
+      Object.keys(typeStats).forEach(qType => {
+        if (cloudStats[qType]) {
+          typeStats[qType].total = cloudStats[qType].total || 0;
+          typeStats[qType].correct = cloudStats[qType].correct || 0;
+        }
+      });
+
+      // 2. 深度遍歷 historyByQuiz 補足總題數、計算正確數與 30 天通關狀態
       Object.keys(historyByQuiz).forEach(qKey => {
         const qHist = historyByQuiz[qKey] || {};
         Object.keys(qHist).forEach(recordKey => {
@@ -1206,8 +1215,11 @@ async function fetchAdminAllProgress() {
           }
 
           if (item && item.total !== undefined) {
-            typeStats[targetType].total += (item.total || 0);
-            typeStats[targetType].correct += (item.score || 0);
+            // 如果 stats 裡面該題型 total 為 0，則從 history 補上
+            if (!cloudStats[targetType] || cloudStats[targetType].total === 0) {
+              typeStats[targetType].total += (item.total || 0);
+              typeStats[targetType].correct += (item.score || 0);
+            }
           }
         });
       });
@@ -1217,6 +1229,13 @@ async function fetchAdminAllProgress() {
         overallTotal += st.total;
         overallCorrect += st.correct;
       });
+
+      // 如果 stats 有總數，優先用 stats 的總數
+      if (cloudStats.totalQ !== undefined && cloudStats.totalQ > overallTotal) {
+        overallTotal = cloudStats.totalQ;
+        overallCorrect = cloudStats.totalCorrect || overallCorrect;
+      }
+
       const avgRate = overallTotal > 0 ? Math.round((overallCorrect / overallTotal) * 100) : 0;
       const dateStr = row.updated_at ? new Date(row.updated_at).toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
 
@@ -1787,6 +1806,8 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
   });
 
   const isCorrect = (selectedText === answerTarget);
+  
+  // 💡 雙軌計數更新：作答當下立即累加到 userStore.stats 與各題型統計
   if (!userStore.stats) userStore.stats = getDefaultStore().stats;
   userStore.stats.totalQ = (userStore.stats.totalQ || 0) + 1;
   if (!userStore.stats[currentQuizType]) userStore.stats[currentQuizType] = { total: 0, correct: 0 };
