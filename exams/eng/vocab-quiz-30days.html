@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>英語單字特訓 App (30天動態智慧排程版)</title>
+  <title>英語單字特訓 App (30天動態智慧排程與後台修改日期版)</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
@@ -280,7 +280,6 @@
       cursor: pointer;
     }
 
-    /* 💡 未做題閃爍提醒文字特效 */
     @keyframes blinkAlert {
       0% { opacity: 1; color: var(--danger); }
       50% { opacity: 0.3; color: var(--amber); }
@@ -512,7 +511,7 @@
       z-index: 9999; padding: 16px;
     }
     .modal-card {
-      width: 100%; max-width: 860px;
+      width: 100%; max-width: 880px;
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 10px 35px rgba(0,0,0,0.2);
@@ -533,7 +532,7 @@
       border-collapse: collapse;
       font-size: 11.5px;
       margin-top: 8px;
-      min-width: 840px;
+      min-width: 900px;
     }
     .admin-table th, .admin-table td {
       border: 1px solid var(--border);
@@ -567,6 +566,27 @@
       text-align: left;
       max-height: 75px;
       overflow-y: auto;
+    }
+
+    .date-edit-input {
+      padding: 3px 6px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 11.5px;
+      background: #fff;
+      outline: none;
+      width: 115px;
+    }
+    .date-save-btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 4px;
     }
 
     .account-item {
@@ -685,13 +705,13 @@
       </div>
     </div>
 
-    <!-- 📊 學習成果紀錄面板 -->
+    <!-- 📊 學習成果紀錄面板 (完整保留歷史明細) -->
     <div id="historyBox" class="explanation-card" style="border:1px solid #bfdbfe; background:#eff6ff;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄</div>
+        <div class="explanation-title" style="margin-bottom:0; border-bottom:none;">📊 學習成果紀錄 (History)</div>
         <button class="link-btn" onclick="promptClearRecords()" style="color:var(--danger); border:none; background:none;">⚠️ 清空進度</button>
       </div>
-      <div id="historyDetails" style="max-height:110px; overflow-y:auto; font-size:12px;">尚無紀錄</div>
+      <div id="historyDetails" style="max-height:120px; overflow-y:auto; font-size:12px; line-height:1.6;">尚無紀錄</div>
     </div>
 
     <div class="controls">
@@ -786,11 +806,11 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v6.0.0 - 30天動態智慧排程與未做題閃爍 Alert 提醒</div>
+        <div class="history-tag">v6.1.0 - 管理者後台支援直接修改學員啟動日期</div>
         <div class="history-desc">
           <ul>
-            <li><b>動態基準日與超進度：</b>以首次作答日為 Day 1 自動向後推算；支援超進度提前做題，後續排程自動連動更新。</li>
-            <li><b>未做題閃爍 Alert：</b>超過應完成日期卻尚未作答的天數，選單會自動出現閃爍提醒文字。</li>
+            <li><b>後台修改啟動日期：</b>管理者可在監控後台直接檢視並修改任一學員的 30 天計畫基準啟動日期（startDate），修改後自動更新雲端排程。</li>
+            <li><b>歷史紀錄完整保留：</b>所有測驗細節、得分率與日期紀錄完整保留。</li>
           </ul>
         </div>
       </div>
@@ -802,7 +822,7 @@
 <div id="adminDashboardModal" class="modal-overlay hidden" onclick="toggleAdminModal(false)">
   <div class="modal-card" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">👑 全體學員學習進度監控後台 (動態排程與五大題型明細)</div>
+      <div class="modal-title">👑 全體學員學習進度監控後台 (可修改啟動日期)</div>
       <button class="modal-close" onclick="toggleAdminModal(false)">&times;</button>
     </div>
     <div class="modal-body">
@@ -815,9 +835,10 @@
           <thead>
             <tr>
               <th style="text-align:left; padding-left:8px;">學員 Email</th>
-              <th>五大題型完成進度 (30天)</th>
-              <th>五大題型總作答題數</th>
-              <th>五大題型正確率</th>
+              <th>30天計畫啟動日</th>
+              <th>完成進度</th>
+              <th>總作答題數</th>
+              <th>綜合正確率</th>
               <th>五大題型詳細明細</th>
               <th>錯題量</th>
               <th style="text-align:left; min-width:200px;">📅 最近 14 天每日使用狀況 (時數/題數)</th>
@@ -825,7 +846,7 @@
             </tr>
           </thead>
           <tbody id="adminProgressTableBody">
-            <tr><td colspan="8" style="text-align:center; padding:15px;">讀取中...</td></tr>
+            <tr><td colspan="9" style="text-align:center; padding:15px;">讀取中...</td></tr>
           </tbody>
         </table>
       </div>
@@ -966,7 +987,7 @@ function getDefaultStore() {
     historyByQuiz: { wordDef: {}, hard: {}, cloze: {}, exam: {}, listen: {} },
     mistakesByQuiz: { wordDef: [], hard: [], cloze: [], exam: [], listen: [] },
     stats: { totalQ: 0, totalCorrect: 0, wordDef: { total: 0, correct: 0 }, hard: { total: 0, correct: 0 }, cloze: { total: 0, correct: 0 }, exam: { total: 0, correct: 0 }, listen: { total: 0, correct: 0 } },
-    startDate: null // 💡 記錄 30 天計畫的第一天基準日期
+    startDate: null
   };
 }
 
@@ -1133,7 +1154,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控
+// 👑 管理者後台監控 (支援直接修改學員啟動日期)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1146,7 +1167,7 @@ function openAdminDashboardModal() {
 async function fetchAdminAllProgress() {
   const tbody = document.getElementById("adminProgressTableBody");
   const countText = document.getElementById("adminTotalStudents");
-  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;">讀取雲端學員進度和 14 天紀錄中...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:15px;">讀取雲端學員進度和 14 天紀錄中...</td></tr>`;
 
   try {
     const [progressRes, dailyRes] = await Promise.all([
@@ -1159,7 +1180,7 @@ async function fetchAdminAllProgress() {
     const dailyData = dailyRes.data || [];
 
     if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:15px; color:var(--muted);">目前尚無任何學員進度紀錄。</td></tr>`;
       countText.innerText = `共 0 位學員`;
       return;
     }
@@ -1174,6 +1195,7 @@ async function fetchAdminAllProgress() {
 
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
       const cloudStats = row.stats || {};
+      const userStartDate = row.startDate || getTodayDateString();
 
       let totalMistakesCount = 0;
       Object.values(mistakesByQuiz).forEach(mList => {
@@ -1258,6 +1280,10 @@ async function fetchAdminAllProgress() {
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="text-align:left; font-weight:600; color:#0f172a; padding-left:8px;">${displayEmail}</td>
+        <td>
+          <input type="date" class="date-edit-input" id="startDate_${row.user_id}" value="${userStartDate}">
+          <button class="date-save-btn" onclick="adminUpdateUserStartDate('${row.user_id}')">儲存</button>
+        </td>
         <td><b>五大題型獨立區分</b></td>
         <td><b>${overallTotal}</b> 題</td>
         <td style="color:${avgRate >= 80 ? 'var(--success)' : 'var(--amber)'}; font-weight:700;">${avgRate}%</td>
@@ -1278,7 +1304,32 @@ async function fetchAdminAllProgress() {
     });
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:15px; color:var(--danger);">讀取失敗：${err.message}</td></tr>`;
+  }
+}
+
+// 💡 管理者直接修改學員啟動日期並同步雲端
+async function adminUpdateUserStartDate(userId) {
+  const inputEl = document.getElementById(`startDate_${userId}`);
+  if (!inputEl) return;
+  const newDate = inputEl.value;
+  if (!newDate) return alert("請選擇有效的日期！");
+
+  try {
+    const { error } = await supabaseClient
+      .from('user_progress')
+      .update({ startDate: newDate, updated_at: new Date().toISOString() })
+      .eq('user_id', userId);
+
+    if (error) throw error;
+    alert("✅ 該學員的 30 天計畫啟動日已成功修改！");
+    if (currentUser && currentUser.id === userId) {
+      userStore.startDate = newDate;
+      initDaySelector();
+    }
+    fetchAdminAllProgress();
+  } catch (err) {
+    alert("❌ 修改失敗：" + err.message);
   }
 }
 
@@ -1485,7 +1536,7 @@ function initDayPlans() {
   }
 }
 
-// 💡 核心功能：計算動態基準日與日期的天數差
+// 💡 完整保留動態起始日計算
 function getBaseStartDate() {
   if (!userStore.startDate) {
     userStore.startDate = getTodayDateString();
@@ -1501,7 +1552,6 @@ function getExpectedDayForDate(targetDateStr) {
   return diffDays + 1;
 }
 
-// 💡 動態初始化 30 天排程選單（支援超進度與未做題閃爍 Alert 提醒）
 function initDaySelector() {
   const select = document.getElementById("daySelect");
   select.innerHTML = "";
@@ -1516,13 +1566,11 @@ function initDaySelector() {
     const isCompleted = !!currentHistory[`Day_${d}`];
     const checkSymbol = isCompleted ? "✓ " : "";
     
-    // 計算該 Day 理論上應該完成的日期
     const base = getBaseStartDate();
     const targetDate = new Date(base);
     targetDate.setDate(base.getDate() + (d - 1));
     const targetDateStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
 
-    // 💡 判斷是否需要閃爍 Alert：若該天數小於等於今天，且尚未完成測驗
     let alertText = "";
     if (!isCompleted && d <= todayNum) {
       alertText = " ⚠️【未做題】";
@@ -1530,7 +1578,6 @@ function initDaySelector() {
 
     opt.innerText = `${checkSymbol}第 ${d} 天 (${targetDateStr})${alertText} (${dayPlans[d]?.length || 0} 題)`;
     
-    // 如果未完成且逾期，替選項加註特別顏色或樣式
     if (!isCompleted && d < todayNum) {
       opt.style.color = "var(--danger)";
       opt.style.fontWeight = "bold";
@@ -1695,7 +1742,6 @@ function renderQuestion() {
   if (currentTestQueue.length === 0) { document.getElementById("wordDisplay").innerText = "暫無單字"; return; }
 
   if (currentIndex >= currentTestQueue.length) {
-    // 💡 確保第一次做題時自動設定基準日
     if (!userStore.startDate) {
       userStore.startDate = getTodayDateString();
     }
@@ -1712,12 +1758,10 @@ function renderQuestion() {
       date: new Date().toLocaleDateString()
     };
     
-    // 💡 支援超進度：若使用者提前完成後續天數，自動將 startDate 向前微調讓排程自動變動
     if (!isRandomMode) {
       const base = getBaseStartDate();
       const expectedDayForToday = getExpectedDayForDate(getTodayDateString());
       if (currentDay > expectedDayForToday) {
-        // 提前完成，超前幾天就把基準日往前調幾天，使後續天數自動遞進
         const diffDays = currentDay - expectedDayForToday;
         base.setDate(base.getDate() - diffDays);
         userStore.startDate = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, '0')}-${String(base.getDate()).padStart(2, '0')}`;
@@ -1910,7 +1954,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     const examData = CAP_EXAM_BANK[item.en.trim().toLowerCase()];
     if (["exam", "cloze"].includes(currentQuizType)) {
       zhHintEl.innerText = examData ? `翻譯：${examData.zh}` : `翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.add("hidden");
+      zhHintEl.classList.remove("hidden");
     }
     expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
   }
@@ -1942,6 +1986,7 @@ function reviewMistakes() {
   renderQuestion();
 }
 
+// 💡 完整保留詳細的歷史紀錄（History），絕不精簡
 function refreshHistoryDisplay() {
   const details = document.getElementById("historyDetails");
   if (!details) return;
@@ -1949,7 +1994,17 @@ function refreshHistoryDisplay() {
   const entries = Object.entries(currentHistory);
   const typeNames = { wordDef: "單字", hard: "單字(難)", cloze: "填空", exam: "真題", listen: "聽力" };
   const currentTypeName = typeNames[currentQuizType] || '綜合';
-  details.innerHTML = entries.length === 0 ? `尚無 [${currentTypeName}] 紀錄` : entries.map(([k, v]) => `<div>• <b>${k}</b> [${currentTypeName}]: ${v.score}/${v.total} (${v.rate}%) - ${v.date || ''}</div>`).join("");
+  
+  if (entries.length === 0) {
+    details.innerHTML = `尚無 [${currentTypeName}] 歷史紀錄`;
+    return;
+  }
+
+  details.innerHTML = entries.map(([k, v]) => `
+    <div style="border-bottom: 1px dashed #e2e8f0; padding: 4px 0;">
+      • <b>${k}</b> [${currentTypeName}] ➔ 得分: <b>${v.score}/${v.total}</b> | 正確率: <b>${v.rate}%</b> | 完成日期: ${v.date || ''}
+    </div>
+  `).join("");
 }
 
 function toggleHistory() {
