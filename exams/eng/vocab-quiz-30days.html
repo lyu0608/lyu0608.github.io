@@ -775,10 +775,10 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
-        <div class="history-tag">v5.2.1 - 後台五大題型總題數精準聚合修復</div>
+        <div class="history-tag">v5.2.2 - 徹底修復各題型歷史統計歸納與加總</div>
         <div class="history-desc">
           <ul>
-            <li><b>動態聚合統計：</b>後台總作答題數與各題型明細直接由歷史紀錄（historyByQuiz）動態加總，確保「單字(難)」與各題型作答後題數立即正確更新。</li>
+            <li><b>各題型精準統整：</b>後台在讀取各題型明細時，完美對應並識別 `historyByQuiz` 內的各類別（單字、單字難、填空、真題、聽力），徹底解決部分題型題數顯示為 0 的問題。</li>
           </ul>
         </div>
       </div>
@@ -1130,7 +1130,7 @@ async function handleLogout() {
   document.getElementById("syncStatus").innerText = "☁️ 本地模式";
 }
 
-// 👑 管理者後台監控 (透過動態聚合 historyByQuiz 計算精準總題數)
+// 👑 管理者後台監控 (深度解析歷史紀錄與各題型結算歸納)
 function toggleAdminModal(show) {
   document.getElementById("adminDashboardModal").classList.toggle("hidden", !show);
 }
@@ -1166,7 +1166,12 @@ async function fetchAdminAllProgress() {
     const localKnownUsers = getKnownUsers();
 
     data.forEach(row => {
-      const historyByQuiz = row.historyByQuiz || (row.history ? { wordDef: row.history } : {});
+      let historyByQuiz = row.historyByQuiz || {};
+      // 如果雲端只有舊版 history，自動相容轉移到 wordDef
+      if (!row.historyByQuiz && row.history) {
+        historyByQuiz = { wordDef: row.history };
+      }
+
       const mistakesByQuiz = row.mistakesByQuiz || (row.mistakes ? { wordDef: row.mistakes } : {});
 
       let totalMistakesCount = 0;
@@ -1182,17 +1187,23 @@ async function fetchAdminAllProgress() {
         listen: { total: 0, correct: 0, days: new Set() }
       };
 
-      Object.keys(typeStats).forEach(qType => {
-        const qHist = historyByQuiz[qType] || {};
-        Object.keys(qHist).forEach(key => {
-          if (key.includes("Day_") || /^d\d+$/i.test(key) || /^\d+$/.test(key) || key.startsWith("Random_")) {
-            const m = key.match(/\d+/);
-            if (m && key.startsWith("Day_")) typeStats[qType].days.add(parseInt(m[0], 10));
+      // 💡 智慧聚合：遍歷 historyByQuiz 內所有紀錄，並依據紀錄中的 quizType 或 key 進行歸納
+      Object.keys(historyByQuiz).forEach(qKey => {
+        const qHist = historyByQuiz[qKey] || {};
+        Object.keys(qHist).forEach(recordKey => {
+          const item = qHist[recordKey];
+          // 判定真實題型：優先採用 item.quizType，若無則採用 qKey
+          let targetType = (item && item.quizType) ? item.quizType : qKey;
+          if (!typeStats[targetType]) targetType = "wordDef";
+
+          if (recordKey.startsWith("Day_")) {
+            const m = recordKey.match(/\d+/);
+            if (m) typeStats[targetType].days.add(parseInt(m[0], 10));
           }
-          const item = qHist[key];
+
           if (item && item.total !== undefined) {
-            typeStats[qType].total += (item.total || 0);
-            typeStats[qType].correct += (item.score || 0);
+            typeStats[targetType].total += (item.total || 0);
+            typeStats[targetType].correct += (item.score || 0);
           }
         });
       });
@@ -1821,7 +1832,7 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
     const examData = CAP_EXAM_BANK[item.en.trim().toLowerCase()];
     if (["exam", "cloze"].includes(currentQuizType)) {
       zhHintEl.innerText = examData ? `翻譯：${examData.zh}` : `翻譯：${item.sentenceZh || item.zh}`;
-      zhHintEl.classList.remove("hidden");
+      zhHintEl.classList.add("hidden");
     }
     expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
   }
