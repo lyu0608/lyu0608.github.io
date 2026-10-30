@@ -9,6 +9,8 @@
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- v6.2.3 by Claude：iOS「加入主畫面」使用的圖示 (與網站 exams/eng 內 2000words.html 共用同一組圖示) -->
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- 引用外部 Supabase 函式庫與本機 2277 競賽字庫 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -806,6 +808,47 @@
     </div>
     <div class="modal-body">
       <div class="history-item">
+        <div class="history-tag">v6.2.3 by Claude - 離線快取與 App 安裝修正</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>離線快取清單修正：</b>`sw.js` 原本漏了主程式 `vocab-quiz-30days.html`；已補上，並保留同資料夾 `2000words.html`、`vocab.html` 的快取。快取版本升為 `wb2000-v4`。</li>
+            <li><b>題庫自動更新：</b>本機檔案改為「網路優先、離線才用快取」，之後更新題庫或網頁，學員重新整理即可取得新版，不必再手動改快取版本號。</li>
+            <li><b>App 安裝圖示：</b>`manifest.json` 加入 `icon-512-maskable.png`，並在網頁加上 iOS 主畫面圖示連結；圖示沿用網站上既有的 `Aa 2000` 圖示組。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v6.2.2 by Claude - 每日題目固定、帳號切換與後台存檔修正</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>每日題目固定：</b>30 天計畫原本每次開啟都重新洗牌，第 N 天的單字每次都不同；改用固定種子洗牌 (`seededShuffle`)，每台裝置、每次開啟都相同。</li>
+            <li><b>免密碼切換修正：</b>同步時不再把已存的登入 session 清成空值，並在 token 換發時自動更新；切換前先確認登入身分正確，失效時改為要求重新輸入密碼，避免以錯誤身分讀寫雲端。</li>
+            <li><b>同步狀態正確化：</b>雲端寫入失敗或登入身分不符時，改顯示「本地暫存中」，不再誤顯示「已同步雲端」。</li>
+            <li><b>後台修改啟動日期：</b>確認資料庫真的有更新才顯示成功，否則顯示失敗原因。</li>
+            <li><b>解析框修正：</b>沒有例句的單字作答後，改顯示單字、詞性與中文解釋，不再出現「undefined」。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v6.2.1 by Claude - Supabase 資料庫權限 (RLS) 修正</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>學員隱私修正：</b>`user_daily_activity` 的「Admin can read all daily activity」原設定為 `USING true`，未登入者也能讀取全體學員 email 與上線紀錄；已改為僅管理者帳號可讀取全部。</li>
+            <li><b>後台修改啟動日期修正：</b>新增「Admin can update all progress」policy，管理者修改學員 30 天計畫啟動日才會真正寫入雲端 (先前被 RLS 擋下卻仍顯示成功)。</li>
+            <li>SQL 紀錄保存於 `tools/supabase_policies_v6.2.1.sql`。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
+        <div class="history-tag">v6.2.0 by Claude - 題庫依三份官方/教材 PDF 重建為 2,486 字</div>
+        <div class="history-desc">
+          <ul>
+            <li><b>題庫重建：</b>`vocab2000.js` 原僅 47 字，改由 `tools/build.py` 自動從 PDF 抽字產生：114年版國中單字王 2000 題庫表 (1,932 字，同字多詞性已合併)、國中基礎 1200 單字補入 383 字、均一 2000 講義補入 171 字 (講義無中文，解釋另行撰寫於 `tools/junyi_zh.json`)。</li>
+            <li><b>離線快取更新：</b>`sw.js` 快取版本升為 `wb2000-v3`，確保已安裝 App 的裝置會抓取新題庫。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="history-item">
         <div class="history-tag">v6.1.4 - 確保重新載入時從雲端正確載入 startDate</div>
         <div class="history-desc">
           <ul>
@@ -1002,10 +1045,40 @@ function saveKnownUser(userObj, sessionObj, storeObj) {
   if (!userObj || !userObj.email || userObj.email.includes("訪客")) return;
   let list = getKnownUsers();
   const existingIdx = list.findIndex(u => u.id === userObj.id || u.email === userObj.email);
-  const record = { id: userObj.id, email: userObj.email, session: sessionObj || null, store: storeObj || getDefaultStore(), lastActive: new Date().toISOString() };
+  // v6.2.2 by Claude：同步時多半以 sessionObj = null 呼叫，原本會把已存的 session 覆蓋成 null，
+  // 造成「免密碼切換」失效；改為沒有傳入新 session 時保留原本的 session
+  const prevSession = existingIdx >= 0 ? list[existingIdx].session : null;
+  const record = { id: userObj.id, email: userObj.email, session: sessionObj || prevSession || null, store: storeObj || getDefaultStore(), lastActive: new Date().toISOString() };
   if (existingIdx >= 0) list[existingIdx] = record;
   else list.push(record);
   localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
+}
+
+// v6.2.2 by Claude：清除某帳號在本機保存的 session (登出後 token 已失效，不可再用於免密碼切換)
+function clearKnownUserSession(userId) {
+  const list = getKnownUsers();
+  const rec = list.find(u => u.id === userId);
+  if (!rec) return;
+  rec.session = null;
+  localStorage.setItem(KNOWN_USERS_KEY, JSON.stringify(list));
+}
+
+// v6.2.2 by Claude：Supabase 會輪替 refresh token，舊 token 換發後即失效；
+// 每次登入或換發 token 時，把最新 session 存回本機帳號清單，免密碼切換才能用到有效的 token
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (!session || !session.user) return;
+    if (event !== "SIGNED_IN" && event !== "TOKEN_REFRESHED") return;
+    const known = getKnownUsers().find(u => u.id === session.user.id);
+    saveKnownUser(session.user, session, known ? known.store : undefined);
+  });
+}
+
+// v6.2.2 by Claude：確認 Supabase 目前登入的帳號就是畫面上的學員，避免切換帳號後用錯誤的身分寫入雲端
+async function isAuthSessionForCurrentUser() {
+  if (!supabaseClient || !currentUser) return false;
+  const { data } = await supabaseClient.auth.getSession();
+  return !!(data && data.session && data.session.user && data.session.user.id === currentUser.id);
 }
 
 // 💡 徹底確保從雲端同步時，完整載入 stats.startDate 並賦值給 userStore.startDate
@@ -1058,6 +1131,11 @@ async function syncToCloud() {
   saveKnownUser(currentUser, null, userStore);
   if (!supabaseClient || isGuest || !currentUser) return;
   try {
+    // v6.2.2 by Claude：登入身分與畫面學員不一致時不上傳 (資料庫 RLS 也會擋)，只保留本地暫存
+    if (!(await isAuthSessionForCurrentUser())) {
+      document.getElementById("syncStatus").innerText = "⚠️ 登入狀態失效，本地暫存中";
+      return;
+    }
     if (!userStore.stats) userStore.stats = {};
     userStore.stats.startDate = userStore.startDate;
 
@@ -1069,7 +1147,9 @@ async function syncToCloud() {
       stats: userStore.stats,
       updated_at: new Date().toISOString()
     };
-    await supabaseClient.from('user_progress').upsert(payload);
+    // v6.2.2 by Claude：supabase-js 失敗時不會丟出例外而是回傳 error，原本未檢查，失敗也顯示「已同步」
+    const { error } = await supabaseClient.from('user_progress').upsert(payload);
+    if (error) throw error;
     document.getElementById("syncStatus").innerText = "☁️ 已同步雲端";
   } catch (err) {
     document.getElementById("syncStatus").innerText = "⚠️ 本地暫存中";
@@ -1153,6 +1233,8 @@ function enterApp(user) {
 
 async function handleLogout() {
   if (dailyActivityTimer) clearInterval(dailyActivityTimer);
+  // v6.2.2 by Claude：登出會讓該帳號的 token 失效，一併清掉本機保存的 session，下次切換時改為要求輸入密碼
+  if (supabaseClient && !isGuest && currentUser) clearKnownUserSession(currentUser.id);
   if (supabaseClient && !isGuest) await supabaseClient.auth.signOut();
   isGuest = false;
   currentUser = null;
@@ -1333,12 +1415,16 @@ async function adminUpdateUserStartDate(userId) {
     let statsObj = curRow.stats || {};
     statsObj.startDate = newDate;
 
-    const { error: updateErr } = await supabaseClient
+    // v6.2.2 by Claude：加上 .select() 取回實際被更新的資料列。被 RLS 擋下時 Supabase 不回傳錯誤、
+    // 只是更新 0 筆，原本仍顯示「成功」；現在更新 0 筆就視為失敗
+    const { data: updatedRows, error: updateErr } = await supabaseClient
       .from('user_progress')
       .update({ stats: statsObj, updated_at: new Date().toISOString() })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .select('user_id');
 
     if (updateErr) throw updateErr;
+    if (!updatedRows || updatedRows.length === 0) throw new Error("資料庫沒有更新任何資料 (可能是權限不足，請確認以管理者帳號登入)");
 
     alert("✅ 該學員的 30 天計畫啟動日已成功修改！");
 
@@ -1394,6 +1480,26 @@ function openSwitchAccountModal() {
 async function switchToAccount(uRecord) {
   if (currentUser && currentUser.id === uRecord.id) { toggleSwitchAccountModal(false); return; }
   if (!isGuest && currentUser) await syncToCloud();
+
+  // v6.2.2 by Claude：先切換 Supabase 登入身分並確認成功，再切換畫面上的學員。
+  // 原本 setSession 失敗會被忽略，畫面顯示 B 學員、實際卻以 A 的身分讀寫雲端。
+  if (supabaseClient) {
+    let switched = false;
+    if (uRecord.session) {
+      try {
+        const { data, error } = await supabaseClient.auth.setSession(uRecord.session);
+        switched = !error && data && data.session && data.session.user.id === uRecord.id;
+      } catch (e) {}
+    }
+    if (!switched) {
+      clearKnownUserSession(uRecord.id);
+      alert(`「${uRecord.email}」的登入已過期，請重新輸入密碼登入。`);
+      addNewAccountLogin();
+      document.getElementById("authEmail").value = uRecord.email;
+      return;
+    }
+  }
+
   isGuest = false;
   currentUser = { id: uRecord.id, email: uRecord.email };
   userStore = uRecord.store || getDefaultStore();
@@ -1403,7 +1509,7 @@ async function switchToAccount(uRecord) {
   if (userStore.stats && userStore.stats.startDate) userStore.startDate = userStore.stats.startDate;
 
   localStorage.setItem("local_vocab_progress", JSON.stringify(userStore));
-  if (supabaseClient && uRecord.session) { try { await supabaseClient.auth.setSession(uRecord.session); } catch (e) {} }
+  // v6.2.2 by Claude：setSession 已移到前面並檢查結果，這裡不再重複呼叫
   toggleSwitchAccountModal(false);
   enterApp(currentUser);
 }
@@ -1549,11 +1655,33 @@ function shuffle(arr) {
   return list;
 }
 
+// v6.2.2 by Claude：固定種子的洗牌 (mulberry32)。原本每次載入都用 Math.random 重新洗牌，
+// 導致「第 N 天」的單字在每次開啟、每台裝置都不同，完成紀錄與實際題目對不上。
+// 注意：若更換 DAY_PLAN_SEED 或題庫內容，每天分配到的單字也會跟著改變。
+const DAY_PLAN_SEED = 20261030;
+function seededShuffle(arr, seed) {
+  const list = arr.slice();
+  let s = seed >>> 0;
+  const rand = () => {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
 function initDayPlans() {
   const total = FULL_VOCAB.length;
   dayPlans = {};
   if (total === 0) return;
-  const basePerDay = Math.floor(total / DAYS_COUNT), remainder = total % DAYS_COUNT, shuffledFull = shuffle(FULL_VOCAB);
+  // v6.2.2 by Claude：改用 seededShuffle，每天的單字分配固定不變
+  const basePerDay = Math.floor(total / DAYS_COUNT), remainder = total % DAYS_COUNT, shuffledFull = seededShuffle(FULL_VOCAB, DAY_PLAN_SEED);
   let cursor = 0;
   for (let d = 1; d <= DAYS_COUNT; d++) {
     const count = d <= remainder ? (basePerDay + 1) : basePerDay;
@@ -1981,7 +2109,13 @@ function checkAnswer(btn, selectedText, item, answerTarget) {
       zhHintEl.innerText = examData ? `翻譯：${examData.zh}` : `翻譯：${item.sentenceZh || item.zh}`;
       zhHintEl.classList.add("hidden");
     }
-    expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
+    if (examData || item.sentenceEn) {
+      expBox.innerHTML = `<div class="explanation-title">💡 考點解析</div><span class="sentence-en">• ${examData ? examData.sentence.replace('______', item.en) : item.sentenceEn}</span><span class="sentence-zh">• ${examData ? examData.zh : (item.sentenceZh || '')}</span><div class="grammar-note">${examData ? `【${examData.year}】` : ''} 會考核心高頻詞</div>`;
+    } else {
+      // v6.2.2 by Claude：v6.2.0 重建的題庫多數單字沒有例句 (PDF 來源無例句)，原本會顯示「• undefined」；
+      // 沒有例句時改顯示單字、音標、詞性與中文解釋
+      expBox.innerHTML = `<div class="explanation-title">💡 單字解析</div><span class="sentence-en">• 英文單字：<b>${item.en}</b> ${item.kk || ''}</span><span class="sentence-zh">• 中文解釋：${item.pos ? `(${item.pos}) ` : ''}${item.zh}</span><div class="grammar-note">會考核心高頻詞</div>`;
+    }
   }
 
   document.getElementById("scoreText").innerText = `正確: ${correctCount} | 錯誤: ${wrongCount}`;
