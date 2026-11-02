@@ -329,6 +329,9 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.11.1", date: "2026-11-02", scope: "儀表板",
+      changes: ["即時報價偶發失敗 (證交所約 1 成機率拒絕 Cloudflare) 時先顯示「重試中…」，連續失敗 3 次 (約 15 秒) 才顯示「連線失敗」"],
+      services: [] },
     { ver: "v2.11.0", date: "2026-11-02", scope: "儀表板",
       changes: ["低檔死亡交叉 (K < 20 且 K 向下跌破 D) 決策改為「觀望（低檔死亡交叉，等黃金交叉）」，不再提示買進",
                 "此時紅色買進閃爍改為橘色警示「暫緩買進，等黃金交叉」；沙盒新增「K17 低檔死亡交叉」情境"],
@@ -767,6 +770,7 @@ function isMarketOpen() {
 let realtimeTimer = null;
 let realtimeFailures = 0;
 const REALTIME_RETRY_MS = 5000, REALTIME_MAX_RETRIES = 5;  // 證交所偶爾拒絕中繼請求，失敗時快速重試
+const REALTIME_ERROR_AFTER = 3;  // 連續失敗幾次才顯示「連線失敗」
 
 // force：無論是否盤中都抓一次 (載入或切換股票時，取得今日收盤價)
 async function pollRealtime(force = false) {
@@ -783,7 +787,9 @@ async function pollRealtime(force = false) {
             Object.assign(state.realtime, body.quotes || {});
             state.realtimeError = null;
         } catch (e) {
-            state.realtimeError = "即時報價連線失敗，稍後重試";
+            // 證交所約有 1 成機率拒絕來自 Cloudflare 的請求，偶發失敗只在背景重試；
+            // 連續失敗達 REALTIME_ERROR_AFTER 次 (約 15 秒) 才顯示錯誤
+            state.realtimeError = realtimeFailures + 1 >= REALTIME_ERROR_AFTER ? "即時報價連線失敗，稍後重試" : "即時報價重試中…";
             failed = true;
         }
         rebuild();
