@@ -363,6 +363,9 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.12.2", date: "2026-11-02", scope: "儀表板",
+      changes: ["0050 當日走勢圖標示當日最高點 (紅色▼) 與最低點 (綠色▲)，顯示價格與時間；價格取即時報價的全日最高 / 最低 (1 分鐘線看不到分鐘內極值，此時不標時間)"],
+      services: [] },
     { ver: "v2.12.1", date: "2026-11-02", scope: "儀表板",
       changes: ["版面調整：0050 交易資訊移到決策引擎正下方 (左欄)，0050 當日走勢圖移到加權指數 KD 正下方 (右欄)，同列卡片上下對齊、走勢圖填滿卡片高度"],
       services: [] },
@@ -1615,11 +1618,12 @@ function renderEtfPanel() {
     document.getElementById("etfNote").textContent = q && q.time
         ? `證交所即時 ${q.time}${isMarketOpen() ? "（盤中）" : ""} · 走勢線 Yahoo 約延遲 20 分鐘，末端接即時價`
         : "";
-    drawIntradayChart(document.getElementById("etfIntraday"), intradayPoints(series, q), prevClose);
+    drawIntradayChart(document.getElementById("etfIntraday"), intradayPoints(series, q), prevClose, q);
 }
 
-// 當日走勢大圖：X 軸 09:00 ~ 13:30、右側價格刻度、昨收虛線、滑鼠十字線與時間價格
-function drawIntradayChart(canvas, points, prevClose) {
+// 當日走勢大圖：X 軸 09:00 ~ 13:30、右側價格刻度、昨收虛線、最高 / 最低點標示、滑鼠十字線與時間價格
+// quote：證交所即時報價 (提供當日真正的最高 / 最低價；1 分鐘收盤價會漏掉分鐘內的極值)
+function drawIntradayChart(canvas, points, prevClose, quote) {
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.clientWidth, H = canvas.clientHeight;
     canvas.width = W * dpr;
@@ -1642,10 +1646,14 @@ function drawIntradayChart(canvas, points, prevClose) {
     if (pts.length < 2) return;
 
     const pad = { l: 8, r: 58, t: 10, b: 22 };
-    const prices = pts.map(x => x.p).concat(prevClose ? [prevClose] : []);
+    // 當日最高 / 最低：位置取走勢線上的極值點，價格優先用證交所的當日高低 (較準確)
+    const maxPt = pts.reduce((a, b) => (b.p > a.p ? b : a)), minPt = pts.reduce((a, b) => (b.p < a.p ? b : a));
+    const dayHigh = quote && quote.high ? Math.max(quote.high, maxPt.p) : maxPt.p;
+    const dayLow = quote && quote.low ? Math.min(quote.low, minPt.p) : minPt.p;
+    const prices = pts.map(x => x.p).concat([dayHigh, dayLow], prevClose ? [prevClose] : []);
     let hi = Math.max(...prices), lo = Math.min(...prices);
     const span = (hi - lo) || hi * 0.005;
-    hi += span * 0.08; lo -= span * 0.08;
+    hi += span * 0.16; lo -= span * 0.16;  // 上下留空間放最高 / 最低標籤
     const x = t => pad.l + (Math.min(Math.max(t, open), close) - open) / (close - open) * (W - pad.l - pad.r);
     const y = p => pad.t + (hi - p) / (hi - lo) * (H - pad.t - pad.b);
     const css = getComputedStyle(document.documentElement);
@@ -1691,6 +1699,35 @@ function drawIntradayChart(canvas, points, prevClose) {
     // 最新價圓點
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x(pts[pts.length - 1].t), y(last), 3.5, 0, Math.PI * 2); ctx.fill();
+
+    // 最高點 (紅、三角朝下、標籤在上) / 最低點 (綠、三角朝上、標籤在下)
+    const upColor = css.getPropertyValue("--up").trim(), downColor = css.getPropertyValue("--down").trim();
+    const hhmm = t => new Date((t + 8 * 3600) * 1000).toISOString().slice(11, 16);
+    const marker = (pt, price, label, markColor, above) => {
+        const mx = x(pt.t), my = y(price);
+        ctx.fillStyle = markColor;
+        ctx.beginPath();
+        if (above) { ctx.moveTo(mx - 5, my - 9); ctx.lineTo(mx + 5, my - 9); ctx.lineTo(mx, my - 3); }
+        else { ctx.moveTo(mx - 5, my + 9); ctx.lineTo(mx + 5, my + 9); ctx.lineTo(mx, my + 3); }
+        ctx.closePath(); ctx.fill();
+        // 1 分鐘線只有收盤價，全日高低價 (即時報價) 與線上極值不同時無法得知發生時間，不標時間
+        const text = price === pt.p ? `${label} ${fmt(price)}  ${hhmm(pt.t)}` : `${label} ${fmt(price)}`;
+        ctx.font = "bold 11px sans-serif";
+        const tw = ctx.measureText(text).width;
+        // 靠近左右邊界時標籤往內側放
+        const tx = Math.min(Math.max(mx - tw / 2, pad.l + 2), W - pad.r - tw - 4);
+        const ty = above ? my - 14 : my + 22;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+        ctx.fillRect(tx - 4, ty - 11, tw + 8, 15);
+        ctx.fillStyle = markColor;
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(text, tx, ty);
+        ctx.font = "11px sans-serif";
+    };
+    if (dayHigh !== dayLow) {
+        marker(maxPt, dayHigh, "最高", upColor, true);
+        marker(minPt, dayLow, "最低", downColor, false);
+    }
 
     // 十字線：找最接近滑鼠的點
     canvas._chart = { pts, x };
