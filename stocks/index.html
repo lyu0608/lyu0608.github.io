@@ -128,10 +128,10 @@
     .stock-kd-box { height: 200px; }
 
     /* 0050 當日走勢與交易價格 */
-    .etf-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
-    @media (min-width: 760px) { .etf-grid { grid-template-columns: 1fr 300px; } }
-    .etf-chart-box { min-width: 0; }
-    #etfIntraday { width: 100%; height: 260px; display: block; cursor: crosshair; }
+    /* 走勢圖卡片與左欄交易資訊同一列 (grid 預設拉伸成同高)，圖表填滿卡片剩餘高度 */
+    .etf-chart-card { display: flex; flex-direction: column; }
+    .etf-chart-box { position: relative; flex: 1; min-height: 260px; min-width: 0; }
+    #etfIntraday { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
     .etf-price { font-size: 28px; font-weight: 800; line-height: 1.2; }
     .etf-price small { font-size: 14px; font-weight: 600; margin-left: 8px; }
     .etf-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; margin: 10px 0; font-size: 13px; }
@@ -260,18 +260,19 @@
         <div class="kd-chart-box"><canvas id="kdChart"></canvas></div>
     </section>
 
-    <!-- 0050 當日走勢與交易價格 -->
-    <section class="card span-2" id="etfPanel">
-        <h2>📈 0050 元大台灣50 當日走勢 <small id="etfNote"></small></h2>
-        <div class="etf-grid">
-            <div class="etf-chart-box"><canvas id="etfIntraday"></canvas></div>
-            <div class="etf-side">
-                <div class="etf-price" id="etfPrice">—</div>
-                <div class="etf-stats" id="etfStats"></div>
-                <div class="book-title">五檔委買 / 委賣 <small>(張)</small></div>
-                <div class="book" id="etfBook"></div>
-            </div>
-        </div>
+    <!-- 0050 交易資訊 (左欄，決策引擎正下方) -->
+    <section class="card" id="etfInfo">
+        <h2>💹 0050 交易資訊 <small>元大台灣50</small></h2>
+        <div class="etf-price" id="etfPrice">—</div>
+        <div class="etf-stats" id="etfStats"></div>
+        <div class="book-title">五檔委買 / 委賣 <small>(張)</small></div>
+        <div class="book" id="etfBook"></div>
+    </section>
+
+    <!-- 0050 當日走勢 (右欄，加權指數 KD 正下方；與左欄同高) -->
+    <section class="card etf-chart-card" id="etfPanel">
+        <h2>📈 0050 當日走勢 <small id="etfNote"></small></h2>
+        <div class="etf-chart-box"><canvas id="etfIntraday"></canvas></div>
     </section>
 
     <!-- 個股 K 線 -->
@@ -362,6 +363,9 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.12.1", date: "2026-11-02", scope: "儀表板",
+      changes: ["版面調整：0050 交易資訊移到決策引擎正下方 (左欄)，0050 當日走勢圖移到加權指數 KD 正下方 (右欄)，同列卡片上下對齊、走勢圖填滿卡片高度"],
+      services: [] },
     { ver: "v2.12.0", date: "2026-11-02", scope: "儀表板",
       changes: ["加權指數 KD 圖下方新增 0050 區塊：當日走勢大圖 (09:00 ~ 13:30、昨收虛線、價格刻度、滑鼠十字線)",
                 "顯示成交價、漲跌、開高低、昨收、成交量、漲跌停價，以及五檔委買 / 委賣價與張數",
