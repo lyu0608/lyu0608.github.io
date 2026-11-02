@@ -126,6 +126,25 @@
     .detail-title { font-size: 13px; margin: 10px 0 4px; }
     .detail-title small { color: var(--sub); font-weight: normal; margin-left: 6px; }
     .stock-kd-box { height: 200px; }
+
+    /* 0050 當日走勢與交易價格 */
+    .etf-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width: 760px) { .etf-grid { grid-template-columns: 1fr 300px; } }
+    .etf-chart-box { min-width: 0; }
+    #etfIntraday { width: 100%; height: 260px; display: block; cursor: crosshair; }
+    .etf-price { font-size: 28px; font-weight: 800; line-height: 1.2; }
+    .etf-price small { font-size: 14px; font-weight: 600; margin-left: 8px; }
+    .etf-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; margin: 10px 0; font-size: 13px; }
+    .etf-stats span { color: var(--sub); margin-right: 6px; }
+    .book-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .book-title small { color: var(--sub); font-weight: normal; }
+    .book { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+    .book .row { display: flex; justify-content: space-between; padding: 2px 6px; border-radius: 4px; }
+    .book .bid { background: rgba(239, 68, 68, 0.08); }
+    .book .ask { background: rgba(34, 197, 94, 0.08); }
+    .book .head { color: var(--sub); font-size: 12px; background: none; }
+    .book .vol { color: var(--sub); }
+    .book-empty { grid-column: 1 / -1; color: var(--sub); font-size: 12px; }
     .watchlist { display: flex; flex-wrap: wrap; gap: 6px; }
     .watchlist .chip { display: inline-flex; align-items: center; padding: 0; overflow: hidden; }
     .watchlist .chip button { background: none; border: none; color: inherit; font: inherit; cursor: pointer; }
@@ -241,6 +260,20 @@
         <div class="kd-chart-box"><canvas id="kdChart"></canvas></div>
     </section>
 
+    <!-- 0050 當日走勢與交易價格 -->
+    <section class="card span-2" id="etfPanel">
+        <h2>📈 0050 元大台灣50 當日走勢 <small id="etfNote"></small></h2>
+        <div class="etf-grid">
+            <div class="etf-chart-box"><canvas id="etfIntraday"></canvas></div>
+            <div class="etf-side">
+                <div class="etf-price" id="etfPrice">—</div>
+                <div class="etf-stats" id="etfStats"></div>
+                <div class="book-title">五檔委買 / 委賣 <small>(張)</small></div>
+                <div class="book" id="etfBook"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- 個股 K 線 -->
     <section class="card span-2">
         <h2>🕯️ 個股看盤 <small>自選顯示當日走勢 · 點擊卡片看 KD 與日 K 線</small></h2>
@@ -329,6 +362,11 @@ const realtimeUrl = () => (apiAvailable ? "/api/realtime" : REALTIME_WORKER_URL 
 // ===================== 版本紀錄 (每次改版在最前面新增一筆) =====================
 // services：該版本新增或相關的第三方服務；沒有時留空陣列
 const VERSION_HISTORY = [
+    { ver: "v2.12.0", date: "2026-11-02", scope: "儀表板",
+      changes: ["加權指數 KD 圖下方新增 0050 區塊：當日走勢大圖 (09:00 ~ 13:30、昨收虛線、價格刻度、滑鼠十字線)",
+                "顯示成交價、漲跌、開高低、昨收、成交量、漲跌停價，以及五檔委買 / 委賣價與張數",
+                "即時報價中繼 (本機 /api/realtime 與 Worker) 新增五檔與漲跌停欄位"],
+      services: ["證交所即時報價 (mis.twse.com.tw) 五檔委買委賣欄位"] },
     { ver: "v2.11.1", date: "2026-11-02", scope: "儀表板",
       changes: ["即時報價偶發失敗 (證交所約 1 成機率拒絕 Cloudflare) 時先顯示「重試中…」，連續失敗 3 次 (約 15 秒) 才顯示「連線失敗」"],
       services: [] },
@@ -810,7 +848,7 @@ let intradayTimer = null, intradayError = null;
 async function pollIntraday() {
     clearTimeout(intradayTimer);
     const url = intradayUrl();
-    const codes = watchlist.map(w => w.code).slice(0, 20);
+    const codes = [...new Set(["0050", ...watchlist.map(w => w.code)])].slice(0, 20);  // 0050 區塊固定需要
     if (url && codes.length && state.source !== "sim") {
         try {
             const res = await fetch(`${url}?codes=${codes.join(",")}`);
@@ -823,6 +861,7 @@ async function pollIntraday() {
             intradayError = "當日走勢暫時無法取得，卡片只顯示即時價";
         }
         renderWatchlist();
+        renderEtfPanel();
     }
     document.getElementById("intradayNote").textContent = !url || state.source === "sim" ? ""
         : intradayError || "小圖為當日 1 分鐘走勢 (Yahoo，約延遲 20 分鐘)，末端接上證交所即時價；虛線為昨收";
@@ -874,6 +913,7 @@ function renderAll() {
     renderHeader();
     renderDecision();
     renderKdChart();
+    renderEtfPanel();
     renderWatchlist();
     renderStock();
 }
@@ -1517,6 +1557,164 @@ function updateWatchCard(w, els) {
     drawSparkline(els.spark, series, q, prevClose);
 }
 
+// ----- 0050 區塊：當日走勢大圖 + 成交價、開高低、成交量、五檔委買委賣 -----
+const ETF_CODE = "0050";
+let etfHoverX = null;
+
+// 當日走勢的點：Yahoo 1 分鐘資料，末端接上較新的證交所即時價
+function intradayPoints(series, quote) {
+    const points = series ? series.points.slice() : [];
+    if (quote && quote.price && quote.date && quote.time) {
+        const t = Date.parse(`${quote.date.slice(0, 4)}-${quote.date.slice(4, 6)}-${quote.date.slice(6, 8)}T${quote.time}+08:00`) / 1000;
+        if (!points.length || t > points[points.length - 1].t) points.push({ t, p: quote.price });
+    }
+    return points;
+}
+
+function renderEtfPanel() {
+    const q = state.realtime[ETF_CODE];
+    const series = state.intraday[ETF_CODE];
+    const daily = state.stocks[ETF_CODE];
+    const prevClose = (q && q.prevClose) || (series && series.prevClose) || null;
+    const price = (q && q.price) || (daily && daily.price) || null;
+    const change = price != null && prevClose ? price - prevClose : null;
+
+    const priceEl = document.getElementById("etfPrice");
+    priceEl.className = `etf-price ${colorOf(change || 0)}`;
+    priceEl.textContent = price != null ? fmt(price) : "—";
+    if (change != null) {
+        const small = document.createElement("small");
+        small.textContent = `${signed(change)} (${signed(change / prevClose * 100)}%)`;
+        priceEl.appendChild(small);
+    }
+
+    const stat = (label, value, cls = "") => `<div><span>${label}</span><b class="${cls}">${value}</b></div>`;
+    const tone = v => (v == null || !prevClose ? "" : colorOf(v - prevClose));
+    document.getElementById("etfStats").innerHTML = q ? [
+        stat("開盤", fmt(q.open), tone(q.open)), stat("昨收", fmt(prevClose)),
+        stat("最高", fmt(q.high), tone(q.high)), stat("最低", fmt(q.low), tone(q.low)),
+        stat("成交量", q.volumeLots != null ? `${fmt(q.volumeLots, 0)} 張` : "—"), stat("時間", q.time || "—"),
+        stat("漲停", fmt(q.limitUp), "up"), stat("跌停", fmt(q.limitDown), "down"),
+    ].join("") : `<div style="grid-column: 1 / -1; color: var(--sub)">尚無即時報價</div>`;
+
+    // 五檔：左委買 (紅底)、右委賣 (綠底)；中繼未更新時沒有 bids / asks 欄位
+    const book = document.getElementById("etfBook");
+    if (q && Array.isArray(q.bids) && Array.isArray(q.asks) && (q.bids.length || q.asks.length)) {
+        const row = (cls, x) => `<div class="row ${cls}"><b class="${tone(x && x.p)}">${x ? fmt(x.p) : "—"}</b><span class="vol">${x ? fmt(x.v, 0) : ""}</span></div>`;
+        let html = `<div class="row head"><span>委買價</span><span>張數</span></div><div class="row head"><span>委賣價</span><span>張數</span></div>`;
+        for (let i = 0; i < 5; i++) html += row("bid", q.bids[i]) + row("ask", q.asks[i]);
+        book.innerHTML = html;
+    } else {
+        book.innerHTML = `<div class="book-empty">${q ? "五檔資料暫無 (網頁版需更新即時報價中繼)" : "尚無即時報價"}</div>`;
+    }
+
+    document.getElementById("etfNote").textContent = q && q.time
+        ? `證交所即時 ${q.time}${isMarketOpen() ? "（盤中）" : ""} · 走勢線 Yahoo 約延遲 20 分鐘，末端接即時價`
+        : "";
+    drawIntradayChart(document.getElementById("etfIntraday"), intradayPoints(series, q), prevClose);
+}
+
+// 當日走勢大圖：X 軸 09:00 ~ 13:30、右側價格刻度、昨收虛線、滑鼠十字線與時間價格
+function drawIntradayChart(canvas, points, prevClose) {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.font = "11px sans-serif";
+    canvas._chart = null;
+    if (points.length < 2) {
+        ctx.fillStyle = "#64748b";
+        ctx.textBaseline = "middle";
+        ctx.fillText(points.length ? "盤中走勢累積中…" : "尚無當日走勢", 12, H / 2);
+        return;
+    }
+
+    const lastT = points[points.length - 1].t;
+    const day = new Date((lastT + 8 * 3600) * 1000).toISOString().slice(0, 10);
+    const open = Date.parse(`${day}T09:00:00+08:00`) / 1000, close = Date.parse(`${day}T13:30:00+08:00`) / 1000;
+    const pts = points.filter(x => x.t >= open - 60);
+    if (pts.length < 2) return;
+
+    const pad = { l: 8, r: 58, t: 10, b: 22 };
+    const prices = pts.map(x => x.p).concat(prevClose ? [prevClose] : []);
+    let hi = Math.max(...prices), lo = Math.min(...prices);
+    const span = (hi - lo) || hi * 0.005;
+    hi += span * 0.08; lo -= span * 0.08;
+    const x = t => pad.l + (Math.min(Math.max(t, open), close) - open) / (close - open) * (W - pad.l - pad.r);
+    const y = p => pad.t + (hi - p) / (hi - lo) * (H - pad.t - pad.b);
+    const css = getComputedStyle(document.documentElement);
+    const last = pts[pts.length - 1].p, base = prevClose || pts[0].p;
+    const color = last > base ? css.getPropertyValue("--up").trim() : last < base ? css.getPropertyValue("--down").trim() : "#94a3b8";
+
+    // 價格格線與刻度
+    ctx.textBaseline = "middle";
+    for (let i = 0; i <= 4; i++) {
+        const p = lo + (hi - lo) * i / 4, yy = y(p);
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.12)";
+        ctx.beginPath(); ctx.moveTo(pad.l, yy); ctx.lineTo(W - pad.r, yy); ctx.stroke();
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText(fmt(p), W - pad.r + 6, yy);
+    }
+    // 時間刻度
+    ctx.textBaseline = "alphabetic";
+    ["09:00", "10:00", "11:00", "12:00", "13:00", "13:30"].forEach(label => {
+        const t = Date.parse(`${day}T${label}:00+08:00`) / 1000;
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText(label, Math.min(x(t) - 14, W - pad.r - 30), H - 6);
+    });
+    // 昨收虛線
+    if (prevClose) {
+        ctx.strokeStyle = "rgba(148, 163, 184, 0.7)";
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(pad.l, y(prevClose)); ctx.lineTo(W - pad.r, y(prevClose)); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillText(`昨收 ${fmt(prevClose)}`, pad.l + 4, y(prevClose) - 4);
+    }
+    // 走勢線與填色
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach((pt, i) => (i ? ctx.lineTo(x(pt.t), y(pt.p)) : ctx.moveTo(x(pt.t), y(pt.p))));
+    ctx.stroke();
+    ctx.lineTo(x(pts[pts.length - 1].t), H - pad.b);
+    ctx.lineTo(x(pts[0].t), H - pad.b);
+    ctx.closePath();
+    ctx.globalAlpha = 0.12; ctx.fillStyle = color; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+    // 最新價圓點
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x(pts[pts.length - 1].t), y(last), 3.5, 0, Math.PI * 2); ctx.fill();
+
+    // 十字線：找最接近滑鼠的點
+    canvas._chart = { pts, x };
+    if (etfHoverX != null) {
+        const near = pts.reduce((a, b) => (Math.abs(x(b.t) - etfHoverX) < Math.abs(x(a.t) - etfHoverX) ? b : a));
+        const cx = x(near.t), cy = y(near.p);
+        ctx.strokeStyle = "rgba(226, 232, 240, 0.45)";
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(cx, pad.t); ctx.lineTo(cx, H - pad.b); ctx.moveTo(pad.l, cy); ctx.lineTo(W - pad.r, cy); ctx.stroke();
+        ctx.setLineDash([]);
+        const time = new Date((near.t + 8 * 3600) * 1000).toISOString().slice(11, 16);
+        const label = `${time}  ${fmt(near.p)}${prevClose ? `  ${signed(near.p - prevClose)}` : ""}`;
+        const bw = ctx.measureText(label).width + 14;
+        const bx = cx + bw + 10 > W - pad.r ? cx - bw - 8 : cx + 8;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.fillRect(bx, pad.t + 2, bw, 20);
+        ctx.fillStyle = "#e2e8f0";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, bx + 7, pad.t + 12);
+    }
+}
+
+document.getElementById("etfIntraday").addEventListener("mousemove", e => {
+    etfHoverX = e.clientX - e.currentTarget.getBoundingClientRect().left;
+    renderEtfPanel();
+});
+document.getElementById("etfIntraday").addEventListener("mouseleave", () => { etfHoverX = null; renderEtfPanel(); });
+
 // 當日走勢小圖：X 軸固定 09:00 ~ 13:30 (盤中只畫到目前)，昨收為虛線；末端接上證交所即時價
 function drawSparkline(canvas, series, quote, prevClose) {
     const dpr = window.devicePixelRatio || 1;
@@ -1747,6 +1945,7 @@ window.addEventListener("resize", () => {
     const s = state.stocks[state.selected];
     if (s) drawCandles(s.candles.slice(-CANDLE_DAYS));
     renderWatchlist();  // 重畫自選卡片的走勢小圖
+    renderEtfPanel();   // 重畫 0050 當日走勢
 });
 
 function renderVersionHistory() {
