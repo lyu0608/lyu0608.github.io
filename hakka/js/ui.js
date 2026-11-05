@@ -187,7 +187,50 @@
   const playLbl = playBtn.querySelector('span');
   const ICON_PLAY = '<path d="M8 5l11 7-11 7z"/>', ICON_STOP = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
   let single = null;   // 正在用 ▶ 播單一項時的編號
+  // ---------- 卡拉 OK 逐字變色 ----------
+  const SYL = art.syl || {};
+  const sylOf = u => (u === 0 ? SYL.title : u === 1 ? SYL.author : (SYL.sentences || [])[u - 2]) || null;
+  let karaU = null, karaToks = [], karaSyl = null, karaRaf = 0;
+  function karaStart(u) {
+    karaStop();
+    karaSyl = sylOf(u);
+    if (!karaSyl) return;               // 這句還沒有逐字時間
+    karaU = u;
+    const el = unitEl(u);
+    el.classList.add('kara');
+    // 只取有讀音的字；標點跟著前一個字
+    karaToks = [];
+    el.querySelectorAll('.tokens .tk').forEach(tk => {
+      if (tk.classList.contains('pu')) { if (karaToks.length) karaToks[karaToks.length - 1].pu.push(tk); }
+      else karaToks.push({ tk, pu: [] });
+    });
+    if (karaToks.length !== karaSyl.length) { karaStop(); return; }
+    const loop = () => {
+      const t = P.time;
+      karaToks.forEach(({ tk, pu }, i) => {
+        const [a, b] = karaSyl[i];
+        const p = t >= b ? 100 : t <= a ? 0 : (t - a) / (b - a) * 100;
+        tk.style.setProperty('--p', p.toFixed(1) + '%');
+        tk.classList.toggle('k-now', p > 0 && p < 100);
+        tk.classList.toggle('k-done', p >= 100);
+        pu.forEach(x => x.classList.toggle('k-done', p >= 100));
+      });
+      karaRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+  function karaStop() {
+    cancelAnimationFrame(karaRaf);
+    if (karaU != null) {
+      const el = unitEl(karaU);
+      el.classList.remove('kara');
+      el.querySelectorAll('.tk').forEach(tk => { tk.classList.remove('k-now', 'k-done'); tk.style.removeProperty('--p'); });
+    }
+    karaU = null; karaToks = []; karaSyl = null;
+  }
+
   function clearPlayUI() {
+    karaStop();
     document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
     document.querySelectorAll('.mini-play.on').forEach(b => { b.classList.remove('on'); b.querySelector('svg').innerHTML = ICON_PLAY; });
     playBtn.classList.remove('on'); playBtn.querySelector('svg').innerHTML = ICON_PLAY; playLbl.textContent = '播放範本';
@@ -198,6 +241,7 @@
     document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
     const el = unitEl(u);
     el.classList.add('playing');
+    karaStart(u);
     const box = el.getBoundingClientRect();
     if (box.top < 110 || box.bottom > innerHeight - 150) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (total != null) playLbl.textContent = `停止 ${k}/${total}` + (of > 1 ? `（第 ${r} 遍）` : '');

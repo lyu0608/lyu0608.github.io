@@ -130,16 +130,19 @@
   }
 
   // ---------- 播放 ----------
+  let playToken = 0;
   function play(a, b) {
     stop();
-    audio.currentTime = Math.max(0, a);
+    const my = ++playToken;
     stopAt = b;
-    const p = audio.play();
-    if (p && p.catch) p.catch(() => UI().toast('無法播放音檔'));
     $('#calPlay').classList.add('on');
-    tick();
+    window.HakkaStartAt(audio, Math.max(0, a)).then(() => {
+      if (my !== playToken || stopAt == null) { audio.pause(); return; }
+      tick();
+    }).catch(() => { if (my === playToken) { stop(); UI().toast('無法播放音檔'); } });
   }
   function stop() {
+    playToken++;
     if (stopAt != null) lastPos = audio.currentTime;
     if (!audio.paused) audio.pause();
     stopAt = null; cancelAnimationFrame(raf);

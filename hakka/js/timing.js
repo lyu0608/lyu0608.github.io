@@ -44,3 +44,30 @@
   };
   window.HakkaTiming = T;
 })();
+
+/* 播放器共用：確定音檔已載入、真的跳到 t 秒之後才開始播放。
+ * 第一次播放時音檔還沒載入，直接設定 currentTime 會被忽略而從頭播，所以要等 loadedmetadata 與 seeked。
+ * iOS 必須在按鈕事件當下呼叫 play() 才會開始載入，因此先靜音播放再跳轉。 */
+window.HakkaStartAt = async function (audio, t) {
+  if (audio.readyState < 1) {
+    audio.muted = true;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => {});
+    if (audio.readyState < 1) {
+      await new Promise(res => {
+        const done = () => { clearTimeout(to); audio.removeEventListener('loadedmetadata', done); res(); };
+        const to = setTimeout(done, 8000);
+        audio.addEventListener('loadedmetadata', done);
+      });
+    }
+  }
+  await new Promise(res => {
+    let to = 0;
+    const done = () => { clearTimeout(to); audio.removeEventListener('seeked', done); res(); };
+    to = setTimeout(done, 2000);
+    audio.addEventListener('seeked', done);
+    audio.currentTime = t;
+  });
+  audio.muted = false;
+  return audio.play();
+};

@@ -379,3 +379,22 @@ dialog .toast { position: fixed; bottom: 140px; }
   .sheet-head { padding: 8px 16px; }
   .cal-foot { padding: 6px 16px; }
 }
+
+/* ---------- 卡拉 OK 逐字變色 ---------- */
+:root { --kara: #d23a2f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --kara: #ff8a7a; } }
+:root[data-theme="dark"] { --kara: #ff8a7a; }
+.sent.kara .tk .c {
+  background-image: linear-gradient(90deg, var(--kara) 0 var(--p, 0%), var(--ink) var(--p, 0%) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+}
+.sent.kara .tk.pu .c { background: none; -webkit-text-fill-color: var(--ink-3); color: var(--ink-3); }
+.sent.kara .tk.pu.k-done .c { -webkit-text-fill-color: var(--kara); color: var(--kara); }
+.sent.kara .tk.k-now { transform: translateY(-2px); transition: transform .08s; }
+.sent.kara .tk.k-now .z, .sent.kara .tk.k-now .p,
+.sent.kara .tk.k-done .z, .sent.kara .tk.k-done .p { color: var(--kara); }
+.sent.kara .tk.k-now .z, .sent.kara .tk.k-now .p { font-weight: 700; }
+/* 播放卡拉 OK 時暫時收起校正音的紅色，避免和已唱過的紅色混淆 */
+.sent.kara .tk.fix:not(.k-now):not(.k-done) .z { color: var(--ink-2); font-weight: 400; }
+.sent.kara .tk.fix:not(.k-now):not(.k-done) .p { color: var(--indigo-2); font-weight: 400; }

@@ -40,9 +40,6 @@
       const [a, b] = rangeOf(item.u);
       onUnit(item.u, item.r, item.of);
       endAt = b;
-      audio.currentTime = a;
-      const p = audio.play();
-      if (p && p.catch) p.catch(() => { if (my === token) finish(); });
       const watch = () => {
         if (my !== token) return;
         if (audio.currentTime >= endAt || audio.ended) {
@@ -53,7 +50,10 @@
         }
         raf = requestAnimationFrame(watch);
       };
-      raf = requestAnimationFrame(watch);
+      window.HakkaStartAt(audio, a).then(() => {
+        if (my !== token) { audio.pause(); return; }
+        raf = requestAnimationFrame(watch);
+      }).catch(() => { if (my === token) finish(); });
     };
     next();
   }
@@ -78,5 +78,7 @@
     /** 停止並觸發 onDone */
     stop() { if (active) finish(); },
     get active() { return active; },
+    /** 目前播放到的秒數（範本錄音的絕對時間） */
+    get time() { return audio.currentTime; },
   };
 })();
