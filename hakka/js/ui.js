@@ -207,19 +207,26 @@
     // 只取有讀音的字；標點跟著前一個字
     karaToks = [];
     el.querySelectorAll('.tokens .tk').forEach(tk => {
-      if (tk.classList.contains('pu')) { if (karaToks.length) karaToks[karaToks.length - 1].pu.push(tk); }
-      else karaToks.push({ tk, pu: [] });
+      if (tk.classList.contains('pu')) { if (karaToks.length) karaToks[karaToks.length - 1].pu.push(tk); return; }
+      // 在字上疊一層紅色同字，用寬度控制露出多少
+      const c = tk.querySelector('.c');
+      const kf = document.createElement('span');
+      kf.className = 'kf'; kf.textContent = c.textContent; kf.setAttribute('aria-hidden', 'true');
+      c.appendChild(kf);
+      karaToks.push({ tk, kf, pu: [], last: -1 });
     });
     if (karaToks.length !== karaSyl.length) { karaStop(); return; }
     const loop = () => {
       const t = P.time;
-      karaToks.forEach(({ tk, pu }, i) => {
+      karaToks.forEach((k, i) => {
         const [a, b] = karaSyl[i];
-        const p = t >= b ? 100 : t <= a ? 0 : (t - a) / (b - a) * 100;
-        tk.style.setProperty('--p', p.toFixed(1) + '%');
-        tk.classList.toggle('k-now', p > 0 && p < 100);
-        tk.classList.toggle('k-done', p >= 100);
-        pu.forEach(x => x.classList.toggle('k-done', p >= 100));
+        const p = t >= b ? 100 : t <= a ? 0 : Math.round((t - a) / (b - a) * 100);
+        if (p === k.last) return;
+        k.last = p;
+        k.kf.style.width = p + '%';
+        k.tk.classList.toggle('k-now', p > 0 && p < 100);
+        k.tk.classList.toggle('k-done', p >= 100);
+        k.pu.forEach(x => x.classList.toggle('k-done', p >= 100));
       });
       karaRaf = requestAnimationFrame(loop);
     };
@@ -230,7 +237,8 @@
     if (karaU != null) {
       const el = unitEl(karaU);
       el.classList.remove('kara');
-      el.querySelectorAll('.tk').forEach(tk => { tk.classList.remove('k-now', 'k-done'); tk.style.removeProperty('--p'); });
+      el.querySelectorAll('.tk').forEach(tk => tk.classList.remove('k-now', 'k-done'));
+      el.querySelectorAll('.kf').forEach(kf => kf.remove());
     }
     karaU = null; karaToks = []; karaSyl = null;
   }
