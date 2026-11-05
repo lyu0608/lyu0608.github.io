@@ -49,11 +49,14 @@
     if (el) el.el.classList.toggle('has-rec', on);
   }
   async function loadKeys() {
-    try { (await R.store.keys()).forEach(k => { if (/^u\d+$/.test(k)) markHave(+k.slice(1), true); }); }
+    try { (await R.store.keys()).forEach(k => { if (/^u\d+$/.test(k)) markHave(+k.slice(1), true); else if (k === 'whole') have.add('whole'); }); }
     catch (_) { /* 無痕模式可能不能用 IndexedDB */ }
     refreshMine();
   }
-  function refreshMine() { mineBtn.dataset.has = have.size ? '1' : ''; }
+  function refreshMine() {
+    mineBtn.dataset.has = have.size ? '1' : '';
+    const w = $('#btnDelWhole'); if (w) w.hidden = !have.has('whole');
+  }
 
   // ---------- 檢查環境 ----------
   function preflight() {
@@ -256,6 +259,20 @@
     stopMine(); P.stop(); UI().clearPlayUI();
     playOneMine(u, btn, () => stopMine());
   }
+  /** 刪除單句的錄音 */
+  async function deleteOne(u) {
+    stopMine();
+    await R.store.del('u' + u).catch(() => {});
+    markHave(u, false); refreshMine();
+    UI().toast(`已刪除${labelOf(u)}的錄音`);
+  }
+  /** 刪除連續朗讀的錄音 */
+  async function deleteWhole() {
+    stopMine();
+    await R.store.del('whole').catch(() => {});
+    have.delete('whole'); refreshMine();
+    UI().toast('已刪除連續朗讀的錄音');
+  }
   async function clearAll() {
     await R.store.clear().catch(() => {});
     [...have].forEach(u => typeof u === 'number' && markHave(u, false));
@@ -263,6 +280,6 @@
     UI().toast('已清除這台裝置上的所有錄音');
   }
 
-  window.HakkaPractice = { start, quit, playMine, toggleOneMine, clearAll, get active() { return !!session; } };
+  window.HakkaPractice = { start, quit, playMine, toggleOneMine, deleteOne, deleteWhole, clearAll, get active() { return !!session; } };
   loadKeys();
 })();

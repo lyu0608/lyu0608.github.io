@@ -38,6 +38,7 @@
   const sideHTML = label => `<div class="sent-side">
           <button class="mini-play" aria-label="播放${label}"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
           <button class="my-play" aria-label="播放我錄的${label}" title="我的錄音"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+          <button class="del-rec" aria-label="刪除我錄的${label}" title="刪除這句錄音"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span>確定？</span></button>
           <span class="dur"></span>
           <span class="best" title="最佳分數">—</span>
         </div>`;
@@ -150,6 +151,19 @@
   });
   // 點句子文字也可勾選
   document.querySelector('.page').addEventListener('click', e => {
+    // 刪除單句錄音：按一下變「確定？」，3 秒內再按一次才刪
+    const del = e.target.closest('.del-rec');
+    if (del) {
+      if (!del.classList.contains('armed')) {
+        document.querySelectorAll('.del-rec.armed').forEach(x => x.classList.remove('armed'));
+        del.classList.add('armed');
+        clearTimeout(del._t); del._t = setTimeout(() => del.classList.remove('armed'), 3000);
+      } else {
+        del.classList.remove('armed');
+        window.HakkaPractice.deleteOne(+del.closest('.sent').dataset.u);
+      }
+      return;
+    }
     const my = e.target.closest('.my-play');
     if (my) { window.HakkaPractice.toggleOneMine(+my.closest('.sent').dataset.u, my); return; }
     const mp = e.target.closest('.mini-play');
@@ -352,6 +366,12 @@
     clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800);
   }
   // 清除這台裝置上的錄音（按兩次確認）
+  let wArmed = false;
+  $('#btnDelWhole').onclick = e => {
+    if (!wArmed) { wArmed = true; e.target.textContent = '確定刪除？'; setTimeout(() => { wArmed = false; e.target.textContent = '刪除連續朗讀錄音'; }, 3000); return; }
+    wArmed = false; e.target.textContent = '刪除連續朗讀錄音';
+    window.HakkaPractice.deleteWhole();
+  };
   let clrArmed = false;
   $('#btnClearRec').onclick = e => {
     if (!clrArmed) { clrArmed = true; e.target.textContent = '確定清除？'; setTimeout(() => { clrArmed = false; e.target.textContent = '清除我的錄音'; }, 3000); return; }
