@@ -446,3 +446,52 @@ button, select, .check, .tokens { touch-action: manipulation; }   /* 取消連�
 .sent.kara-hl .tk.pu.k-done .c { color: var(--ink-3); }
 .sent.kara-hl .tk.k-done .z, .sent.kara-hl .tk.k-done .p,
 .sent.kara-hl .tk.k-now .z, .sent.kara-hl .tk.k-now .p { color: var(--kt); }
+
+/* ---------- 錄音 ---------- */
+.my-play { display: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--red); background: var(--paper); color: var(--red); place-items: center; }
+.my-play svg { width: 15px; height: 15px; }
+.sent.has-rec .my-play { display: grid; }
+.my-play.on, .sent.mine-playing .my-play { background: var(--red); color: #fff; }
+.sent.mine-playing { background: var(--red-soft); }
+.sent.recording { background: var(--red-soft); box-shadow: inset 0 0 0 2px var(--red); }
+.sent.recording::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--red); animation: recpulse 1s infinite; }
+@keyframes recpulse { 50% { opacity: .3; } }
+.act.rec.on { background: #8f2a24; border-color: #8f2a24; }
+.act.mine.on { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+body.rec-session .mini-play, body.rec-session .my-play, body.rec-session .grp-play,
+body.rec-session .dock .act.play, body.rec-session .dock .act.mine, body.rec-session .dock .act.ana,
+body.rec-session #btnCalib { pointer-events: none; opacity: .35; }
+.chip-btn.danger { border-color: rgba(255,180,173,.6); color: #ffd4cf; }
+
+.rec-bar { border-bottom: 1px solid var(--line); background: var(--paper); padding: 8px max(16px, env(safe-area-inset-left)) 8px; display: grid; gap: 6px; max-width: 1040px; margin: 0 auto; }
+.rec-bar[hidden] { display: none; }
+.rec-info { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.rec-bar[data-state="rec"] .rec-dot { background: var(--red); animation: recpulse 1s infinite; }
+.rec-bar[data-state="ref"] .rec-dot { background: var(--indigo); }
+.rec-bar[data-state="saved"] .rec-dot { background: var(--good); }
+.rec-bar[data-state="warn"] .rec-dot { background: var(--mid); }
+.rec-state { flex: 1; min-width: 0; }
+.rec-time { font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 400; }
+.rec-meter { height: 6px; border-radius: 3px; background: var(--line-2); overflow: hidden; display: none; }
+.rec-bar[data-state="rec"] .rec-meter { display: block; }
+.rec-meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--good), var(--mid), var(--red)); transition: width .05s linear; }
+.rec-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.rec-btns button { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; padding: 7px 14px; font-size: 14px; font-weight: 700; color: var(--ink); }
+.rec-btns button.primary { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+.rec-bar[data-state="rec"] .rec-btns button.primary { background: var(--red); border-color: var(--red); }
+:root:not([data-theme="light"]) .rec-btns button.primary { color: #10141c; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .rec-btns button.primary { color: #fff; } }
+@media (max-width: 640px) {
+  .sent-side .my-play { width: 30px; height: 30px; }
+  .rec-btns button { flex: 1; padding: 8px 6px; font-size: 13.5px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .rec-bar { grid-template-columns: 1fr auto; align-items: center; padding-top: 5px; padding-bottom: 5px; }
+  .rec-meter { grid-column: 1 / -1; }
+}
+.rec-bar[data-state="ready"] .rec-dot { background: var(--red); }
+.rec-btns button.rec-go { background: var(--red); border-color: var(--red); }
+.rec-btns button.rec-go::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
+.sent.ready { box-shadow: inset 0 0 0 2px var(--red); }
+body.rec-session { padding-bottom: 290px; }

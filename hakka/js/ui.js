@@ -1,4 +1,4 @@
-/* 客語朗讀練習 — 介面（目前：外觀、選取、播放範本、校正切句；錄音／分析尚未接上） */
+/* 客語朗讀練習 — 介面（選取、播放範本、卡拉 OK、校正切句、錄音入口；分析尚未接上） */
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
@@ -37,6 +37,7 @@
   $('#contest').textContent = art.contest;
   const sideHTML = label => `<div class="sent-side">
           <button class="mini-play" aria-label="播放${label}"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
+          <button class="my-play" aria-label="播放我錄的${label}" title="我的錄音"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <span class="dur"></span>
           <span class="best" title="最佳分數">—</span>
         </div>`;
@@ -122,7 +123,7 @@
       ? `已選 <b>${ids.length}</b> 項 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
       : '尚未選取<span class="hint-long"> — 勾選句子或段落開始練習</span>';
     $('#btnClear').hidden = !ids.length;
-    document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length; });
+    document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length && !b.classList.contains('on'); });
   }
   function rangeText(ids) {
     const head = [];
@@ -150,6 +151,8 @@
   });
   // 點句子文字也可勾選
   document.querySelector('.page').addEventListener('click', e => {
+    const my = e.target.closest('.my-play');
+    if (my) { window.HakkaPractice.toggleOneMine(+my.closest('.sent').dataset.u, my); return; }
     const mp = e.target.closest('.mini-play');
     if (mp) { playOne(+mp.closest('.sent').dataset.u); return; }
     const tk = e.target.closest('.sent > .tokens');
@@ -194,8 +197,10 @@
   });
   document.querySelectorAll('.dock .act').forEach(b => b.onclick = () => {
     if (b.dataset.act === 'play') { playSelected(); return; }
+    if (b.dataset.act === 'rec') { window.HakkaPractice.start(); return; }
+    if (b.dataset.act === 'mine') { window.HakkaPractice.playMine(); return; }
     if (b.dataset.act === 'ana') { const a = $('#analysis'); a.hidden = false; a.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    toast({ rec: '錄音', mine: '播放我的錄音' }[b.dataset.act] + '功能開發中');
+
   });
   $('#btnCloseAna').onclick = () => { $('#analysis').hidden = true; };
   $('#btnCalib').onclick = () => { P.stop(); window.HakkaCalib.open(selected.size ? Math.min(...selected) : 0); };
@@ -347,6 +352,17 @@
     t.textContent = msg; t.classList.add('show');
     clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800);
   }
-  window.HakkaUI = { tokHTML, toast };
+  // 清除這台裝置上的錄音（按兩次確認）
+  let clrArmed = false;
+  $('#btnClearRec').onclick = e => {
+    if (!clrArmed) { clrArmed = true; e.target.textContent = '確定清除？'; setTimeout(() => { clrArmed = false; e.target.textContent = '清除我的錄音'; }, 3000); return; }
+    clrArmed = false; e.target.textContent = '清除我的錄音';
+    window.HakkaPractice.clearAll();
+  };
+
+  window.HakkaUI = {
+    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, rate, reps, mode,
+    selectedList: () => [...selected].sort((a, b) => a - b),
+  };
   refresh();
 })();
