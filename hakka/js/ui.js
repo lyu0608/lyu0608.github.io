@@ -228,7 +228,8 @@
   // 逐字時間：預設來自 data/03-syl.json，使用者在校正切句微調過的優先
   const sylOf = u => { const S = window.HakkaTiming.get().syl || {}; return (u === 0 ? S.title : u === 1 ? S.author : (S.sentences || [])[u - 2]) || null; };
   let karaU = null, karaToks = [], karaSyl = null, karaRaf = 0;
-  function karaStart(u) {
+  /** getTime：回傳「範本錄音上的秒數」；播放時用播放器時間，錄音時用虛擬時鐘 */
+  function karaStart(u, getTime = () => P.time) {
     karaStop();
     karaSyl = sylOf(u);
     if (!karaSyl) return;               // 這句還沒有逐字時間
@@ -258,7 +259,7 @@
       });
     }
     const loop = () => {
-      const t = P.time;
+      const t = getTime();
       karaToks.forEach((k, i) => {
         const [a, b] = karaSyl[i];
         const p = t >= b ? 100 : t <= a ? 0 : Math.round((t - a) / (b - a) * 100);
@@ -296,14 +297,47 @@
     playing = null;
   }
   const unitEl = u => units.find(x => x.u === u).el;
-  function markUnit(u, r, of, total, k) {
+  function markUnit(u, r, of, total, k, getTime) {
     document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
     const el = unitEl(u);
     el.classList.add('playing');
-    karaStart(u);
+    karaStart(u, getTime);
     const box = el.getBoundingClientRect();
     if (box.top < 110 || box.bottom > innerHeight - 150) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (total != null) playLbl.textContent = `停止 ${k}/${total}` + (of > 1 ? `（第 ${r} 遍）` : '');
+  }
+  /**
+   * 不出聲的卡拉 OK（錄音時用）：照範本的時間與速度跑字幕，不播聲音。
+   * list 依序跑，句與句之間停 gap 秒（與播放範本相同）；回傳 { stop(), done: Promise, total 秒 }
+   */
+  function karaokeRun(list, speed, gap) {
+    const T = window.HakkaTiming.get();
+    const rng = u => u === 0 ? T.title : u === 1 ? T.author : T.sentences[u - 2];
+    const sched = []; let off = 0;
+    list.forEach(u => { const [a, b] = rng(u); const d = (b - a) / speed; sched.push({ u, a, start: off, end: off + d }); off += d + gap / speed; });
+    const total = sched.length ? sched[sched.length - 1].end : 0;
+    const t0 = performance.now();
+    const now = () => (performance.now() - t0) / 1000;
+    let idx = -1, timer = 0, finish;
+    const done = new Promise(r => { finish = r; });
+    const tick = () => {
+      const t = now();
+      let k = idx < 0 ? 0 : idx;
+      while (k + 1 < sched.length && t >= sched[k + 1].start) k++;
+      if (k !== idx) {
+        idx = k;
+        const it = sched[k];
+        markUnit(it.u, 1, 1, null, null, () => it.a + Math.max(0, now() - it.start) * speed);
+      }
+      if (t >= total) { clearInterval(timer); finish(true); }
+    };
+    timer = setInterval(tick, 50);
+    tick();
+    return {
+      total,
+      done,
+      stop() { clearInterval(timer); clearPlayUI(); finish(false); },
+    };
   }
   const rate = () => parseFloat($('#speed').value) || 1;
   const reps = () => parseInt($('#repeat').value, 10) || 1;
@@ -411,7 +445,7 @@
 
   window.HakkaUI = {
     needSelection,
-    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, rate, reps, mode,
+    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, karaokeRun, rate, reps, mode,
     selectedList: () => [...selected].sort((a, b) => a - b),
   };
   refresh();

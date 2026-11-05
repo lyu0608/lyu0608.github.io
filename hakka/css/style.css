@@ -509,3 +509,6 @@ body.rec-session { padding-bottom: 290px; }
 body.rec-session .del-rec { pointer-events: none; opacity: .35; }
 .chip-btn[hidden] { display: none; }
 @media (max-width: 640px) { .del-rec { height: 30px; min-width: 30px; } }
+/* 倒數 */
+.rec-bar[data-state="count"] .rec-dot { background: var(--mid); animation: recpulse .8s infinite; }
+.rec-bar[data-state="count"] .rec-state { font-size: 16px; }

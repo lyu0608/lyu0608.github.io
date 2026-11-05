@@ -96,22 +96,48 @@
     return true;
   }
 
+  // ---------- 倒數：嗶三聲（最後一聲較高），第三聲後開始錄 ----------
+  async function countdown(text) {
+    bar.dataset.state = 'count';
+    for (let n = 3; n >= 1; n--) {
+      if (!session || session.quit) return false;
+      stateEl.textContent = `${n}… 準備（嗶三聲後開始錄音）`;
+      bar.dataset.count = n;
+      R.beep(n === 1 ? 1046 : 784, 0.15);
+      await new Promise(res => setTimeout(res, 800));
+    }
+    if (!session || session.quit) return false;
+    bar.dataset.state = 'rec'; delete bar.dataset.count;
+    stateEl.textContent = text;
+    return true;
+  }
+
   // ---------- 錄一段 ----------
   async function recordOnce(text, opt) {
     showBar('rec', text, [['完成', () => session.cur && session.cur.stop(), 'primary'], ['結束', quit]]);
     let r;
     try {
-      await R.beep();
-      if (session.quit) return null;
       r = await R.record(Object.assign({
         onLevel: (v, t) => { lvl.style.width = Math.round(v * 100) + '%'; timeEl.textContent = fmt(t); },
+        before: () => countdown(text),
       }, opt));
+      if (!r) return null;
+      stateEl.textContent = text;
     } catch (e) {
       UI().toast(e && e.name === 'NotAllowedError' ? '麥克風權限被拒絕：請在瀏覽器設定允許本網站使用麥克風' : '無法開啟麥克風');
       return 'error';
     }
     session.cur = r;
+    // 錄音開始後跑不出聲的卡拉 OK；字幕跑完（再留一點尾音）就自動結束錄音
+    let kara = null, endTimer = 0;
+    if (opt.karaoke) {
+      const k = opt.karaoke;
+      kara = UI().karaokeRun(k.list, k.rate, k.gap);
+      kara.done.then(ok => { if (ok) endTimer = setTimeout(() => r.stop(), (k.tail || 0.5) * 1000); });
+    }
     const res = await r.done;
+    clearTimeout(endTimer);
+    if (kara) kara.stop();
     session.cur = null;
     return res;
   }
@@ -148,7 +174,10 @@
           if (c !== 'rec') break;
           // 3. 嗶一聲後錄音，唸完按「完成」
           UI().unitEl(u).classList.add('recording');
-          res = await recordOnce(`● 錄音中：${name}（唸完按「完成」）`, { maxSec: (b - a) / rate * 3 + 10, autoStop: false });
+          res = await recordOnce(`● 錄音中：${name}（跟著字幕唸，跑完自動結束）`, {
+            maxSec: (b - a) / rate * 3 + 10, autoStop: false,
+            karaoke: { list: [u], rate, gap: 0, tail: 0.5 },
+          });
           UI().unitEl(u).classList.remove('recording');
           if (res === 'error' || !res || session.quit) { session.quit = session.quit || res === 'error'; break; }
           if (!res.speech) {
@@ -178,8 +207,9 @@
     const total = list.reduce((s, u) => { const [a, b] = rangeOf(u); return s + (b - a); }, 0);
     list.forEach(u => UI().unitEl(u).classList.add('recording'));
     UI().unitEl(list[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const res = await recordOnce(`● 連續錄音中（${list.length} 項，範本約 ${Math.round(total)} 秒），唸完按「完成」`,
-      { maxSec: total * 2 + 20, autoStop: false });
+    const rate = UI().rate();
+    const res = await recordOnce(`● 連續錄音中（${list.length} 項），跟著字幕唸，跑完自動結束`,
+      { maxSec: total / rate * 2 + 20, autoStop: false, karaoke: { list, rate, gap: 0.35, tail: 0.8 } });
     list.forEach(u => UI().unitEl(u).classList.remove('recording'));
     if (!res || res === 'error' || session.quit) return;
     if (!res.speech) { UI().toast('沒有聽到聲音，請再錄一次'); return; }

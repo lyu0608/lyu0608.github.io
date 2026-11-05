@@ -46,7 +46,7 @@
 
   /**
    * 錄一段音
-   * @param {{maxSec:number, autoStop?:boolean, silenceSec?:number, noSpeechSec?:number, onLevel?:Function}} opt
+   * @param {{maxSec:number, autoStop?:boolean, silenceSec?:number, noSpeechSec?:number, onLevel?:Function, before?:Function}} opt
    * @returns {{stop:Function, cancel:Function, done:Promise<{blob:Blob,mime:string,dur:number,speech:boolean}|null>}}
    */
   async function record(opt) {
@@ -64,6 +64,12 @@
     const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
     const chunks = [];
     mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+
+    // 麥克風先開好，倒數（嗶三聲）結束才真正開始錄，避免漏掉開頭的字
+    if (opt.before) {
+      const go = await opt.before();
+      if (go === false) { try { src.disconnect(); } catch (_) { /* ignore */ } stream.getTracks().forEach(t => t.stop()); return null; }
+    }
 
     let resolveDone;
     const done = new Promise(r => { resolveDone = r; });
