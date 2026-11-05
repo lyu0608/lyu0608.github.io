@@ -369,6 +369,29 @@
       stop() { clearInterval(timer); clearPlayUI(); finish(false); },
     };
   }
+  // ---------- 倒數提示：第一個字上色，跟著每一聲嗶跳一下 ----------
+  let cueTk = null;
+  function cueStart(u) {
+    cueStop();
+    const el = unitEl(u);
+    cueTk = [...el.querySelectorAll('.tokens .tk')].find(t => !t.classList.contains('pu')) || null;
+    if (!cueTk) return;
+    if (karaColor() === 'rainbow') { cueTk.style.setProperty('--kc', 'hsl(0, var(--kbs), var(--kbl))'); cueTk.style.setProperty('--kt', 'hsl(0, 70%, var(--ktl))'); }
+    cueTk.classList.add('k-cue');
+    cueTk.classList.toggle('k-cue-hl', karaColor() === 'rainbow');
+    const box = el.getBoundingClientRect();
+    if (box.top < 110 || box.bottom > innerHeight - 160) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function cueBeat() {
+    if (!cueTk) return;
+    cueTk.classList.remove('k-beat'); void cueTk.offsetWidth; cueTk.classList.add('k-beat');
+  }
+  function cueStop() {
+    if (!cueTk) return;
+    cueTk.classList.remove('k-cue', 'k-cue-hl', 'k-beat');
+    cueTk.style.removeProperty('--kc'); cueTk.style.removeProperty('--kt');
+    cueTk = null;
+  }
   const rate = () => parseFloat($('#speed').value) || 1;
   const reps = () => parseInt($('#repeat').value, 10) || 1;
   const mode = () => document.querySelector('.seg button.on').dataset.mode;
@@ -475,7 +498,7 @@
 
   window.HakkaUI = {
     needSelection,
-    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, karaokeRun, rate, reps, mode, setDurText, clockText,
+    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, karaokeRun, cueStart, cueBeat, cueStop, rate, reps, mode, setDurText, clockText,
     selectedList: () => [...selected].sort((a, b) => a - b),
   };
   refresh();

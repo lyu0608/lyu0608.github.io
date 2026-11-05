@@ -516,3 +516,11 @@ body.rec-session .del-rec { pointer-events: none; opacity: .35; }
 /* 播放時跑秒數 */
 .dur.running { color: var(--indigo); font-weight: 700; min-width: 64px; text-align: center; }
 .sent.recording .dur.running, .sent.mine-playing .dur.running { color: var(--red); }
+
+/* 倒數提示：第一個字上色並跟著嗶聲跳動 */
+.tk.k-cue .c { color: var(--kara); }
+.tk.k-cue .z, .tk.k-cue .p { color: var(--kc, var(--kara)); font-weight: 700; }
+.tk.k-cue-hl .c { color: var(--ink); background: var(--kc); border-radius: 5px; }
+.tk.k-cue-hl .z, .tk.k-cue-hl .p { color: var(--kt); }
+.tk.k-beat { animation: kbeat .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes kbeat { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-9px) scale(1.22); } 100% { transform: translateY(0) scale(1); } }

@@ -97,15 +97,18 @@
   }
 
   // ---------- 倒數：嗶三聲（最後一聲較高），第三聲後開始錄 ----------
-  async function countdown(text) {
+  async function countdown(text, firstU) {
     bar.dataset.state = 'count';
+    if (firstU != null) UI().cueStart(firstU);
     for (let n = 3; n >= 1; n--) {
-      if (!session || session.quit) return false;
+      if (!session || session.quit) { UI().cueStop(); return false; }
       stateEl.textContent = `${n}… 準備（嗶三聲後開始錄音）`;
       bar.dataset.count = n;
       R.beep(n === 1 ? 1046 : 784, 0.15);
+      UI().cueBeat();
       await new Promise(res => setTimeout(res, 800));
     }
+    UI().cueStop();
     if (!session || session.quit) return false;
     bar.dataset.state = 'rec'; delete bar.dataset.count;
     stateEl.textContent = text;
@@ -120,7 +123,7 @@
     try {
       r = await R.record(Object.assign({
         onLevel: (v, t) => { lvl.style.width = Math.round(v * 100) + '%'; timeEl.textContent = fmt(t); },
-        before: () => countdown(text),
+        before: () => countdown(text, opt.karaoke ? opt.karaoke.list[0] : null),
       }, opt));
       if (!r) return null;
       stateEl.textContent = text;
