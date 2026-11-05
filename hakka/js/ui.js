@@ -123,7 +123,8 @@
       ? `已選 <b>${ids.length}</b> 項 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
       : '尚未選取<span class="hint-long"> — 勾選句子或段落開始練習</span>';
     $('#btnClear').hidden = !ids.length;
-    document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length && !b.classList.contains('on'); });
+    // 「播放範本」一律可按（沒勾選時會提醒）；其他按鈕沒勾選時停用
+    document.querySelectorAll('.dock .act:not(.play)').forEach(b => { b.disabled = !ids.length && !b.classList.contains('on'); });
   }
   function rangeText(ids) {
     const head = [];
@@ -298,7 +299,12 @@
   function playSelected() {
     if (P.active && playing === 'sel') { P.stop(); return; }
     const list = [...selected].sort((a, b) => a - b);
-    if (!list.length) return;
+    if (!list.length) {
+      toast('請先勾選要播放的句子（可勾單句、整段或「全文」）');
+      const bar = document.querySelector('.select-bar');
+      bar.classList.remove('nudge'); void bar.offsetWidth; bar.classList.add('nudge');
+      return;
+    }
     clearPlayUI();
     playing = 'sel';
     playBtn.classList.add('on'); playBtn.querySelector('svg').innerHTML = ICON_STOP;

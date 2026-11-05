@@ -495,3 +495,6 @@ body.rec-session #btnCalib { pointer-events: none; opacity: .35; }
 .rec-btns button.rec-go::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
 .sent.ready { box-shadow: inset 0 0 0 2px var(--red); }
 body.rec-session { padding-bottom: 290px; }
+/* 沒勾選就按播放：選取列閃一下提醒 */
+.select-bar.nudge { animation: nudge .9s ease-out; }
+@keyframes nudge { 0%, 40% { background: var(--sel); box-shadow: 0 0 0 2px var(--sel-line); } 100% { box-shadow: 0 0 0 0 transparent; } }
