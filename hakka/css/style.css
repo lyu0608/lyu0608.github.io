@@ -314,3 +314,68 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .edge-row input.flash { animation: flash 0.9s ease-out; }
 @keyframes flash { 0% { background: var(--sel-line); color: #000; } 100% { background: var(--paper); } }
 dialog .toast { position: fixed; bottom: 140px; }
+
+/* 標題、作者也可勾選練習 */
+.article-head .head-row { display: grid; text-align: left; margin: 0 -10px; border-radius: 12px; border-bottom: 0; }
+.article-head .head-row .tokens { justify-content: center; align-items: flex-start; }
+.article-head .title.head-row { margin-top: 8px; font-weight: 400; }
+.article-head .author.head-row { margin-top: 2px; }
+.article-head .head-row .sent-check { padding-top: 10px; }
+.article-head .head-row.on { background: var(--sel); }
+.article-head .head-row.on::before { border-radius: 12px 0 0 12px; }
+@media (max-width: 640px) {
+  .article-head { padding: 14px 10px 12px; }
+  .article-head .head-row { margin: 0; }
+  .article-head .head-row .sent-side { justify-content: center; }
+}
+
+/* 播放中 */
+.sent.playing { background: var(--indigo-soft); }
+.sent.playing::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--indigo); }
+.mini-play.on { background: var(--indigo); color: var(--paper); border-color: var(--indigo); }
+.mini-play.on svg { fill: currentColor; }
+.act.play.on { background: var(--good); border-color: var(--good); }
+@media (max-width: 640px) {
+  .title.head-row .tk { --c-size: calc(25px * var(--scale)); --tk-w: calc(33px * var(--scale)); }
+  .title.head-row .br { font-size: calc(25px * var(--scale)); }
+}
+
+/* ---------- 手機橫屏：上下列壓縮、文字放大 ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --c-size: calc(36px * var(--scale)); --tk-w: calc(48px * var(--scale));
+    --z-size: calc(13.5px * var(--scale)); --p-size: calc(13px * var(--scale));
+  }
+  body { padding-bottom: 76px; }
+  .appbar-inner { padding: 5px 16px; }
+  .brand-mark { width: 30px; height: 30px; font-size: 17px; border-radius: 8px; }
+  .brand-sub { display: none; }
+  .brand-title { font-size: 15px; }
+  .chip-btn { padding: 4px 10px; }
+  .select-bar { top: 40px; margin: 10px 0 8px; padding: 4px; }
+  .page { padding-top: 10px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .sent { grid-template-columns: 46px 1fr 56px; }
+  .sent-side { grid-column: auto; flex-direction: column; justify-content: flex-start; }
+  .title.head-row .tk { --c-size: calc(40px * var(--scale)); --tk-w: calc(54px * var(--scale)); }
+  .title.head-row .br { font-size: calc(40px * var(--scale)); }
+  .author.head-row .tk { --c-size: calc(24px * var(--scale)); --tk-w: calc(40px * var(--scale)); }
+  /* 練習列合成一排 */
+  .dock-inner { grid-template-columns: auto 1fr; align-items: center; padding: 6px max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left)); gap: 10px; }
+  .dock-row { flex-wrap: nowrap; gap: 6px; }
+  .speed { font-size: 0; gap: 0; }
+  .speed select { font-size: 13px; padding: 4px 2px; }
+  .seg button { padding: 5px 8px; font-size: 12.5px; }
+  .actions { gap: 6px; }
+  .act { flex-direction: row; padding: 9px 6px; font-size: 13.5px; gap: 5px; }
+  .toast { bottom: 80px; }
+  /* 校正視窗全螢幕 */
+  .sheet.calib { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; border-radius: 0; margin: 0; }
+  .cal-text { --c-size: calc(26px * var(--scale)); --tk-w: calc(36px * var(--scale)); --z-size: calc(11px * var(--scale)); --p-size: calc(11px * var(--scale)); }
+  #calWave { height: 120px; }
+  .cal-edges { grid-template-columns: 1fr 1fr; }
+  .cal-play { flex-wrap: nowrap; }
+  .cal-play .act { flex: 0 0 auto; }
+  .cal-play .ghost { flex: 1; }
+  .sheet-head { padding: 8px 16px; }
+  .cal-foot { padding: 6px 16px; }
+}

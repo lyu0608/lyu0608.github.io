@@ -34,9 +34,10 @@
   const textOf = it => it.tokens.map(t => t.c).join('');
 
   // ---------- 開啟／關閉 ----------
-  function open(sentIdx) {
+  /** u：練習單位編號（0 標題、1 作者、n+2 第 n+1 句） */
+  function open(u) {
     tm = T.get();
-    cur = Number.isFinite(sentIdx) ? sentIdx + 2 : 2;
+    cur = Number.isFinite(u) ? u : 0;
     $('#calItem').innerHTML = items.map((it, i) => {
       const t = textOf(it);
       return `<option value="${i}">${it.label}　${t.length > 16 ? t.slice(0, 16) + '…' : t}</option>`;

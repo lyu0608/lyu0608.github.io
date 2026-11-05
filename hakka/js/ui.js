@@ -1,9 +1,10 @@
-/* 客語朗讀練習 — 介面（目前：外觀、選取、校正切句；播放／錄音／分析尚未接上） */
+/* 客語朗讀練習 — 介面（目前：外觀、選取、播放範本、校正切句；錄音／分析尚未接上） */
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
   const art = (window.HAKKA_ARTICLES || [])[0];
-  const sentences = [];   // {pi, si, idx, el, tokens}
+  // 練習單位：u=0 標題、u=1 作者、u=n+2 第 n+1 句（與校正切句的順序一致）
+  const units = [];       // {u, kind, pi, el, dur, label}
   const NUMS = '一二三四五六七八九十';
 
   // ---------- 版本 ----------
@@ -25,8 +26,21 @@
   };
 
   $('#contest').textContent = art.contest;
-  $('#title').innerHTML = `<span class="br">【</span>${art.titleTokens.map(tokHTML).join('')}<span class="br">】</span>`;
-  $('#author').innerHTML = art.authorTokens.map(tokHTML).join('');
+  const sideHTML = label => `<div class="sent-side">
+          <button class="mini-play" aria-label="播放${label}"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
+          <span class="dur"></span>
+          <span class="best" title="最佳分數">—</span>
+        </div>`;
+  const checkHTML = (u, num) => `<label class="check sent-check"><input type="checkbox" data-unit="${u}"><span class="box"></span><span class="num">${num}</span></label>`;
+  // 標題、作者也是可勾選的練習單位
+  [['title', 0, '題', '標題', `<span class="br">【</span>${art.titleTokens.map(tokHTML).join('')}<span class="br">】</span>`],
+   ['author', 1, '作', '作者', art.authorTokens.map(tokHTML).join('')]].forEach(([kind, u, num, label, inner]) => {
+    const el = $('#' + kind);
+    el.classList.add('sent', 'head-row');
+    el.dataset.u = u;
+    el.innerHTML = `${checkHTML(u, num)}<div class="tokens head-tokens">${inner}</div>${sideHTML(label)}`;
+    units.push({ u, kind, pi: -1, el, dur: 0, label });
+  });
 
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
   $('#refDur').textContent = fmt(window.HakkaTiming.get().duration);
@@ -40,30 +54,25 @@
         <label class="check"><input type="checkbox" data-para="${pi}"><span class="box"></span><span>第${NUMS[pi] || pi + 1}段</span></label>
         <span class="para-meta">${para.length} 句</span></header>`;
     para.forEach((s, si) => {
-      const n = idx++;
+      const n = idx++, u = n + 2;
       const el = document.createElement('div');
       el.className = 'sent';
       el.dataset.idx = n;
-      el.innerHTML = `<label class="check sent-check"><input type="checkbox" data-sent="${n}"><span class="box"></span><span class="num">${n + 1}</span></label>
-        <div class="tokens">${s.t.map(tokHTML).join('')}</div>
-        <div class="sent-side">
-          <button class="mini-play" aria-label="播放第 ${n + 1} 句"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
-          <span class="dur"></span>
-          <span class="best" title="最佳分數">—</span>
-        </div>`;
+      el.dataset.u = u;
+      el.innerHTML = `${checkHTML(u, n + 1)}<div class="tokens">${s.t.map(tokHTML).join('')}</div>${sideHTML(`第 ${n + 1} 句`)}`;
       sec.appendChild(el);
-      sentences.push({ pi, si, idx: n, el, dur: 0 });
+      units.push({ u, kind: 'sent', pi, el, dur: 0, label: `第 ${n + 1} 句` });
     });
     frag.appendChild(sec);
   });
   $('#article').appendChild(frag);
-  $('#sentCount').textContent = sentences.length;
+  $('#sentCount').textContent = idx;
 
   // 每句秒數（校正後會即時更新）
   function applyTiming() {
     const t = window.HakkaTiming.get();
-    sentences.forEach(s => {
-      const r = t.sentences[s.idx];
+    units.forEach(s => {
+      const r = s.kind === 'sent' ? t.sentences[s.u - 2] : t[s.kind];
       s.dur = r[1] - r[0];
       s.el.querySelector('.dur').textContent = s.dur.toFixed(1) + 's';
     });
@@ -73,56 +82,64 @@
   window.HakkaTiming.onChange(() => { applyTiming(); refresh(); });
 
   // 示範：前三句顯示歷史分數
-  [84, 69, 80].forEach((v, i) => { const b = sentences[i].el.querySelector('.best'); b.textContent = v; b.className = 'best ' + (v >= 80 ? 'good' : 'mid'); });
+  [84, 69, 80].forEach((v, i) => { const b = units[i + 2].el.querySelector('.best'); b.textContent = v; b.className = 'best ' + (v >= 80 ? 'good' : 'mid'); });
 
   // ---------- 選取 ----------
   const selected = new Set();
   function refresh() {
-    sentences.forEach(s => {
-      const on = selected.has(s.idx);
+    units.forEach(s => {
+      const on = selected.has(s.u);
       s.el.classList.toggle('on', on);
       s.el.querySelector('input').checked = on;
     });
     document.querySelectorAll('[data-para]').forEach(cb => {
       const pi = +cb.dataset.para;
-      const list = sentences.filter(s => s.pi === pi);
-      const k = list.filter(s => selected.has(s.idx)).length;
+      const list = units.filter(s => s.pi === pi);
+      const k = list.filter(s => selected.has(s.u)).length;
       cb.checked = k === list.length; cb.indeterminate = k > 0 && k < list.length;
     });
     const all = $('#chkAll');
-    all.checked = selected.size === sentences.length;
-    all.indeterminate = selected.size > 0 && selected.size < sentences.length;
-    const secs = sentences.filter(s => selected.has(s.idx)).reduce((a, s) => a + s.dur, 0);
+    all.checked = selected.size === units.length;
+    all.indeterminate = selected.size > 0 && selected.size < units.length;
+    const secs = units.filter(s => selected.has(s.u)).reduce((a, s) => a + s.dur, 0);
     const ids = [...selected].sort((a, b) => a - b);
     $('#selInfo').innerHTML = ids.length
-      ? `已選 <b>${ids.length}</b> 句 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
+      ? `已選 <b>${ids.length}</b> 項 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
       : '尚未選取 — 勾選句子或段落開始練習';
     $('#btnClear').hidden = !ids.length;
     document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length; });
   }
   function rangeText(ids) {
-    const parts = []; let a = ids[0], p = ids[0];
-    for (const i of ids.slice(1).concat([null])) {
-      if (i === p + 1) { p = i; continue; }
-      parts.push(a === p ? `${a + 1}` : `${a + 1}–${p + 1}`); a = p = i;
+    const head = [];
+    if (ids.includes(0)) head.push('標題');
+    if (ids.includes(1)) head.push('作者');
+    const sn = ids.filter(u => u >= 2).map(u => u - 2);
+    const parts = [];
+    if (sn.length) {
+      let a = sn[0], p = sn[0];
+      for (const i of sn.slice(1).concat([null])) {
+        if (i === p + 1) { p = i; continue; }
+        parts.push(a === p ? `${a + 1}` : `${a + 1}–${p + 1}`); a = p = i;
+      }
     }
-    return '（第 ' + parts.join('、') + ' 句）';
+    return '（' + head.concat(parts.length ? ['第 ' + parts.join('、') + ' 句'] : []).join('、') + '）';
   }
   document.addEventListener('change', e => {
     const t = e.target;
-    if (t.dataset.sent !== undefined) { t.checked ? selected.add(+t.dataset.sent) : selected.delete(+t.dataset.sent); }
+    if (t.dataset.unit !== undefined) { t.checked ? selected.add(+t.dataset.unit) : selected.delete(+t.dataset.unit); }
     else if (t.dataset.para !== undefined) {
-      sentences.filter(s => s.pi === +t.dataset.para).forEach(s => t.checked ? selected.add(s.idx) : selected.delete(s.idx));
-    } else if (t.id === 'chkAll') { sentences.forEach(s => t.checked ? selected.add(s.idx) : selected.delete(s.idx)); }
+      units.filter(s => s.pi === +t.dataset.para).forEach(s => t.checked ? selected.add(s.u) : selected.delete(s.u));
+    } else if (t.id === 'chkAll') { units.forEach(s => t.checked ? selected.add(s.u) : selected.delete(s.u)); }
     else return;
     refresh();
   });
   // 點句子文字也可勾選
-  $('#article').addEventListener('click', e => {
-    if (e.target.closest('.mini-play')) { toast('播放功能開發中'); return; }
-    const tk = e.target.closest('.tokens');
+  document.querySelector('.page').addEventListener('click', e => {
+    const mp = e.target.closest('.mini-play');
+    if (mp) { playOne(+mp.closest('.sent').dataset.u); return; }
+    const tk = e.target.closest('.sent > .tokens');
     if (!tk) return;
-    const n = +tk.parentElement.dataset.idx;
+    const n = +tk.parentElement.dataset.u;
     selected.has(n) ? selected.delete(n) : selected.add(n);
     refresh();
   });
@@ -157,11 +174,58 @@
     document.querySelectorAll('.seg button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); });
   });
   document.querySelectorAll('.dock .act').forEach(b => b.onclick = () => {
+    if (b.dataset.act === 'play') { playSelected(); return; }
     if (b.dataset.act === 'ana') { const a = $('#analysis'); a.hidden = false; a.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-    toast({ play: '播放', rec: '錄音', mine: '播放我的錄音' }[b.dataset.act] + '功能開發中');
+    toast({ rec: '錄音', mine: '播放我的錄音' }[b.dataset.act] + '功能開發中');
   });
   $('#btnCloseAna').onclick = () => { $('#analysis').hidden = true; };
-  $('#btnCalib').onclick = () => window.HakkaCalib.open(Math.min(...selected, Infinity));
+  $('#btnCalib').onclick = () => { P.stop(); window.HakkaCalib.open(selected.size ? Math.min(...selected) : 0); };
+
+  // ---------- 播放範本 ----------
+  const P = window.HakkaPlayer;
+  const playBtn = document.querySelector('.dock .act.play');
+  const playLbl = playBtn.querySelector('span');
+  const ICON_PLAY = '<path d="M8 5l11 7-11 7z"/>', ICON_STOP = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
+  let single = null;   // 正在用 ▶ 播單一項時的編號
+  function clearPlayUI() {
+    document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
+    document.querySelectorAll('.mini-play.on').forEach(b => { b.classList.remove('on'); b.querySelector('svg').innerHTML = ICON_PLAY; });
+    playBtn.classList.remove('on'); playBtn.querySelector('svg').innerHTML = ICON_PLAY; playLbl.textContent = '播放範本';
+    single = null;
+  }
+  const unitEl = u => units.find(x => x.u === u).el;
+  function markUnit(u, r, of, total, k) {
+    document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
+    const el = unitEl(u);
+    el.classList.add('playing');
+    const box = el.getBoundingClientRect();
+    if (box.top < 110 || box.bottom > innerHeight - 150) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (total != null) playLbl.textContent = `停止 ${k}/${total}` + (of > 1 ? `（第 ${r} 遍）` : '');
+  }
+  const rate = () => parseFloat($('#speed').value) || 1;
+  const reps = () => parseInt($('#repeat').value, 10) || 1;
+  const mode = () => document.querySelector('.seg button.on').dataset.mode;
+  function playSelected() {
+    if (P.active && single == null) { P.stop(); return; }
+    const list = [...selected].sort((a, b) => a - b);
+    if (!list.length) return;
+    clearPlayUI();
+    playBtn.classList.add('on'); playBtn.querySelector('svg').innerHTML = ICON_STOP;
+    let k = 0, lastU = null;
+    P.play(list, {
+      rate: rate(), repeat: reps(), gap: mode() === 'follow' ? 1.2 : 0.35,
+      onUnit: (u, r, of) => { if (u !== lastU || r === 1) { k++; lastU = u; } markUnit(u, r, of, list.length, Math.min(k, list.length)); },
+      onDone: clearPlayUI,
+    });
+  }
+  function playOne(u) {
+    if (P.active && single === u) { P.stop(); return; }
+    clearPlayUI();
+    single = u;
+    const b = unitEl(u).querySelector('.mini-play');
+    b.classList.add('on'); b.querySelector('svg').innerHTML = ICON_STOP;
+    P.play([u], { rate: rate(), repeat: 1, onUnit: (x) => markUnit(x), onDone: clearPlayUI });
+  }
 
   // ---------- 版本紀錄 ----------
   const dlg = $('#dlgHistory');
