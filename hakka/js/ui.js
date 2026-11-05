@@ -1,9 +1,8 @@
-/* 客語朗讀練習 — 介面（v0.1.0：只有外觀與選取，播放／錄音／分析尚未接上） */
+/* 客語朗讀練習 — 介面（目前：外觀、選取、校正切句；播放／錄音／分析尚未接上） */
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
   const art = (window.HAKKA_ARTICLES || [])[0];
-  const timing = art.timing || null;
   const sentences = [];   // {pi, si, idx, el, tokens}
   const NUMS = '一二三四五六七八九十';
 
@@ -30,7 +29,7 @@
   $('#author').innerHTML = art.authorTokens.map(tokHTML).join('');
 
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-  if (timing) $('#refDur').textContent = fmt(timing.duration);
+  $('#refDur').textContent = fmt(window.HakkaTiming.get().duration);
 
   let idx = 0;
   const frag = document.createDocumentFragment();
@@ -45,21 +44,33 @@
       const el = document.createElement('div');
       el.className = 'sent';
       el.dataset.idx = n;
-      const t = timing && timing.sentences[n];
       el.innerHTML = `<label class="check sent-check"><input type="checkbox" data-sent="${n}"><span class="box"></span><span class="num">${n + 1}</span></label>
         <div class="tokens">${s.t.map(tokHTML).join('')}</div>
         <div class="sent-side">
           <button class="mini-play" aria-label="播放第 ${n + 1} 句"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg></button>
-          ${t ? `<span class="dur">${(t[1] - t[0]).toFixed(1)}s</span>` : ''}
+          <span class="dur"></span>
           <span class="best" title="最佳分數">—</span>
         </div>`;
       sec.appendChild(el);
-      sentences.push({ pi, si, idx: n, el, dur: t ? t[1] - t[0] : 0 });
+      sentences.push({ pi, si, idx: n, el, dur: 0 });
     });
     frag.appendChild(sec);
   });
   $('#article').appendChild(frag);
   $('#sentCount').textContent = sentences.length;
+
+  // 每句秒數（校正後會即時更新）
+  function applyTiming() {
+    const t = window.HakkaTiming.get();
+    sentences.forEach(s => {
+      const r = t.sentences[s.idx];
+      s.dur = r[1] - r[0];
+      s.el.querySelector('.dur').textContent = s.dur.toFixed(1) + 's';
+    });
+    $('#calibState').hidden = !window.HakkaTiming.isCustom();
+  }
+  applyTiming();
+  window.HakkaTiming.onChange(() => { applyTiming(); refresh(); });
 
   // 示範：前三句顯示歷史分數
   [84, 69, 80].forEach((v, i) => { const b = sentences[i].el.querySelector('.best'); b.textContent = v; b.className = 'best ' + (v >= 80 ? 'good' : 'mid'); });
@@ -150,7 +161,7 @@
     toast({ play: '播放', rec: '錄音', mine: '播放我的錄音' }[b.dataset.act] + '功能開發中');
   });
   $('#btnCloseAna').onclick = () => { $('#analysis').hidden = true; };
-  $('#btnCalib').onclick = () => toast('校正切句功能開發中');
+  $('#btnCalib').onclick = () => window.HakkaCalib.open(Math.min(...selected, Infinity));
 
   // ---------- 版本紀錄 ----------
   const dlg = $('#dlgHistory');
@@ -162,5 +173,6 @@
     const t = $('#toast'); t.textContent = msg; t.classList.add('show');
     clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800);
   }
+  window.HakkaUI = { tokHTML, toast };
   refresh();
 })();

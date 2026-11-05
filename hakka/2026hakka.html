@@ -53,6 +53,7 @@
     <div class="ref-audio">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
       <span>範本錄音 <b id="refDur">5:55</b> · 已自動切成 <b id="sentCount">25</b> 句</span>
+      <span class="calib-state" id="calibState" hidden>已使用你的校正</span>
       <button class="link-btn" id="btnCalib">校正切句</button>
     </div>
   </section>
@@ -150,10 +151,71 @@
   <ol class="history" id="historyList"></ol>
 </dialog>
 
+<dialog class="sheet calib" id="dlgCalib" aria-labelledby="calTitle">
+  <div class="sheet-head">
+    <h2 id="calTitle">校正切句</h2>
+    <button class="icon-btn" id="calClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="cal-body">
+    <div class="cal-nav">
+      <button class="nav-btn" id="calPrev" aria-label="上一句"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <select id="calItem" aria-label="選擇要校正的句子"></select>
+      <button class="nav-btn" id="calNext" aria-label="下一句"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="cal-text tokens" id="calText"></div>
+    <div class="cal-wave-wrap">
+      <canvas id="calWave" aria-label="波形：拖拉紅色的「起」「迄」調整範圍，點波形從該處播放"></canvas>
+      <div class="cal-zoom">
+        <button id="calZoomOut" aria-label="顯示更多">－</button>
+        <button id="calZoomIn" aria-label="放大">＋</button>
+      </div>
+    </div>
+    <p class="cal-hint">拖拉紅色「起」「迄」調整範圍，放開後會自動試聽；點波形其他地方會從那裡開始播放。</p>
+    <div class="cal-play">
+      <button class="act play" id="calPlay"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg><span>播放本句</span></button>
+      <button class="ghost" id="calHead">聽開頭</button>
+      <button class="ghost" id="calTail">聽結尾</button>
+      <button class="ghost" id="calCtx">連前後一起聽</button>
+    </div>
+    <div class="cal-edges">
+      <div class="edge">
+        <div class="edge-lbl">起點 <small>秒</small></div>
+        <div class="edge-row">
+          <button data-nudge="0:-0.1">−0.1</button><button data-nudge="0:-0.02">−.02</button>
+          <input id="calStart" type="number" step="0.01" inputmode="decimal" aria-label="起點秒數">
+          <button data-nudge="0:0.02">+.02</button><button data-nudge="0:0.1">+0.1</button>
+        </div>
+        <button class="here" data-here="0">設為目前播放位置</button>
+      </div>
+      <div class="edge">
+        <div class="edge-lbl">迄點 <small>秒</small></div>
+        <div class="edge-row">
+          <button data-nudge="1:-0.1">−0.1</button><button data-nudge="1:-0.02">−.02</button>
+          <input id="calEnd" type="number" step="0.01" inputmode="decimal" aria-label="迄點秒數">
+          <button data-nudge="1:0.02">+.02</button><button data-nudge="1:0.1">+0.1</button>
+        </div>
+        <button class="here" data-here="1">設為目前播放位置</button>
+      </div>
+    </div>
+    <div class="cal-len">長度 <b id="calLen"></b></div>
+  </div>
+  <div class="cal-foot">
+    <div class="cal-status" id="calStatus"></div>
+    <div class="cal-foot-btns">
+      <button class="ghost" id="calRevertOne">還原此句</button>
+      <button class="ghost" id="calResetAll">全部還原</button>
+      <button class="ghost" id="calCopy">複製</button>
+      <button class="ghost strong" id="calExport">下載 JSON</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="js/version.js"></script>
 <script src="data/03.js"></script>
+<script src="js/timing.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/calib.js"></script>
 </body>
 </html>
