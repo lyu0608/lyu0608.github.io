@@ -95,7 +95,7 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .link-btn { background: none; border: 0; color: var(--indigo-2); padding: 2px 4px; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; }
 
 /* 選取列 */
-.select-bar { position: sticky; top: 56px; z-index: 10; margin: 14px 0 10px; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(6px);
+.select-bar { position: sticky; top: 56px; z-index: 10; margin: 14px 0 10px; background: var(--bg); background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   display: flex; align-items: center; gap: 12px; padding: 8px 4px; border-bottom: 1px solid var(--line); }
 .sel-info { font-size: 14px; color: var(--ink-2); flex: 1; min-width: 0; }
 .sel-info b { color: var(--ink); }
@@ -412,3 +412,14 @@ dialog .toast { position: fixed; bottom: 140px; }
   .grp-play { padding: 4px 10px 4px 8px; font-size: 12.5px; }
 }
 @media (max-width: 640px) { .hint-long { display: none; } }
+
+/* ---------- 手機瀏覽器相容（iPhone Safari、Android Chrome） ---------- */
+button, select, label, .tokens, canvas { -webkit-tap-highlight-color: transparent; }
+button, select, .check, .tokens { touch-action: manipulation; }   /* 取消連點放大的延遲 */
+.appbar-inner { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.dock-inner { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+/* iPhone：輸入框、下拉選單字小於 16px 時，點下去會自動放大畫面，觸控裝置一律 16px */
+@media (hover: none) and (pointer: coarse) {
+  .speed select, .cal-nav select, .edge-row input { font-size: 16px; }
+}
+.old-browser { background: #fff3cd; color: #6b4e00; padding: 10px 16px; font-size: 14px; text-align: center; }

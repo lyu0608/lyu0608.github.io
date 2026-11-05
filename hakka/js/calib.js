@@ -8,10 +8,9 @@
   const dlg = $('#dlgCalib');
   const cv = $('#calWave');
   const ctx = cv.getContext('2d');
-  const audio = new Audio();
+  const audio = window.HakkaPrepAudio(new Audio());
   audio.preload = 'auto';
   audio.src = art.audio;
-  if ('preservesPitch' in audio) audio.preservesPitch = true;
 
   // 項目：標題、作者、各句
   const sents = art.paragraphs.flat();

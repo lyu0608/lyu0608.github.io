@@ -7,6 +7,15 @@
   const units = [];       // {u, kind, pi, el, dur, label}
   const NUMS = '一二三四五六七八九十';
 
+  // ---------- 瀏覽器支援檢查（iPhone 需 iOS 15.4 以上，Android Chrome 需近兩年內版本） ----------
+  const OLD = typeof HTMLDialogElement !== 'function' || !window.Promise || !window.requestAnimationFrame;
+  if (OLD) {
+    const bar = document.createElement('div');
+    bar.className = 'old-browser';
+    bar.textContent = '你的瀏覽器版本較舊，部分功能（校正切句、版本紀錄）可能無法使用。iPhone 請更新到 iOS 15.4 以上，Android 請更新 Chrome。';
+    document.body.prepend(bar);
+  }
+
   // ---------- 版本 ----------
   $('#verLabel').textContent = window.APP_VERSION;
   $('#historyList').innerHTML = window.APP_HISTORY.map(h => `

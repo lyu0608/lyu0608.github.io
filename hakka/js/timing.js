@@ -46,28 +46,41 @@
 })();
 
 /* 播放器共用：確定音檔已載入、真的跳到 t 秒之後才開始播放。
- * 第一次播放時音檔還沒載入，直接設定 currentTime 會被忽略而從頭播，所以要等 loadedmetadata 與 seeked。
- * iOS 必須在按鈕事件當下呼叫 play() 才會開始載入，因此先靜音播放再跳轉。 */
+ * - 第一次播放時音檔還沒載入，直接設定 currentTime 會被忽略而從頭播，所以要等 loadedmetadata 與 seeked。
+ * - iPhone Safari：play() 必須在按鈕事件當下（同步）呼叫，否則會被擋；所以每個 audio 第一次一律先靜音 play() 解鎖，
+ *   之後同一個 audio 元素就能在程式中自由播放。iPhone 上 volume 不能改，但 muted 可以。
+ * - 放慢不變調：Safari 舊版用 webkitPreservesPitch。 */
+window.HakkaPrepAudio = function (audio) {
+  if ('preservesPitch' in audio) audio.preservesPitch = true;
+  if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = true;
+  if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = true;
+  audio.setAttribute('playsinline', '');
+  return audio;
+};
 window.HakkaStartAt = async function (audio, t) {
-  if (audio.readyState < 1) {
+  if (!audio.__unlocked || audio.readyState < 1) {
     audio.muted = true;
-    const p = audio.play();
+    const p = audio.play();   // 同步呼叫，保留使用者手勢（iPhone 在此時解除播放限制）
     if (p && p.catch) p.catch(() => {});
+    audio.__unlocked = true;
     if (audio.readyState < 1) {
       await new Promise(res => {
         const done = () => { clearTimeout(to); audio.removeEventListener('loadedmetadata', done); res(); };
-        const to = setTimeout(done, 8000);
+        const to = setTimeout(done, 10000);
         audio.addEventListener('loadedmetadata', done);
       });
     }
   }
-  await new Promise(res => {
-    let to = 0;
-    const done = () => { clearTimeout(to); audio.removeEventListener('seeked', done); res(); };
-    to = setTimeout(done, 2000);
-    audio.addEventListener('seeked', done);
-    audio.currentTime = t;
-  });
+  if (Math.abs(audio.currentTime - t) > 0.02) {
+    await new Promise(res => {
+      let to = 0;
+      const done = () => { clearTimeout(to); audio.removeEventListener('seeked', done); res(); };
+      to = setTimeout(done, 3000);
+      audio.addEventListener('seeked', done);
+      audio.currentTime = t;
+    });
+  }
   audio.muted = false;
-  return audio.play();
+  const p = audio.play();
+  if (p && p.then) await p;
 };

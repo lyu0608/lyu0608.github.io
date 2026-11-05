@@ -3,10 +3,9 @@
   'use strict';
   const art = (window.HAKKA_ARTICLES || [])[0];
   const T = window.HakkaTiming;
-  const audio = new Audio();
+  const audio = window.HakkaPrepAudio(new Audio());
   audio.preload = 'auto';
   audio.src = art.audio;
-  if ('preservesPitch' in audio) audio.preservesPitch = true;
 
   let queue = [], qi = 0, endAt = 0, raf = 0, gapTimer = 0, token = 0;
   let onUnit = () => {}, onDone = () => {};
@@ -40,18 +39,30 @@
       const [a, b] = rangeOf(item.u);
       onUnit(item.u, item.r, item.of);
       endAt = b;
+      let over = false;
+      const end = () => {           // 這一項播完（只會執行一次）
+        if (over) return;
+        over = true;
+        audio.removeEventListener('timeupdate', tu);
+        cancelAnimationFrame(raf);
+        audio.pause();
+        qi++;
+        gapTimer = setTimeout(next, qi < queue.length ? gap * 1000 / audio.playbackRate : 0);
+      };
+      const reached = () => audio.currentTime >= endAt || audio.ended;
       const watch = () => {
-        if (my !== token) return;
-        if (audio.currentTime >= endAt || audio.ended) {
-          audio.pause();
-          qi++;
-          gapTimer = setTimeout(next, qi < queue.length ? gap * 1000 / audio.playbackRate : 0);
-          return;
-        }
+        if (my !== token || over) return;
+        if (reached()) { end(); return; }
         raf = requestAnimationFrame(watch);
+      };
+      // 備援：切到背景或鎖屏時 requestAnimationFrame 會暫停，改用 timeupdate 檢查是否該停
+      const tu = () => {
+        if (my !== token) { audio.removeEventListener('timeupdate', tu); return; }
+        if (!over && !audio.paused && reached()) end();
       };
       window.HakkaStartAt(audio, a).then(() => {
         if (my !== token) { audio.pause(); return; }
+        audio.addEventListener('timeupdate', tu);
         raf = requestAnimationFrame(watch);
       }).catch(() => { if (my === token) finish(); });
     };
