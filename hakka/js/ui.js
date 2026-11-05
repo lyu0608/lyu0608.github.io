@@ -81,6 +81,15 @@
   $('#sentCount').textContent = idx;
 
   // 每句秒數（校正後會即時更新）
+  /** 把某句右側的秒數暫時改成跑動的「已播 / 總長」；text 為 null 時還原 */
+  function setDurText(u, text) {
+    const s = units.find(x => x.u === u);
+    if (!s) return;
+    const el = s.el.querySelector('.dur');
+    el.classList.toggle('running', text != null);
+    el.textContent = text != null ? text : s.dur.toFixed(1) + 's';
+  }
+  const clockText = (t, total) => `${Math.min(Math.max(0, t), total).toFixed(1)} / ${total.toFixed(1)}s`;
   function applyTiming() {
     const t = window.HakkaTiming.get();
     units.forEach(s => {
@@ -285,8 +294,28 @@
     karaU = null; karaToks = []; karaSyl = null;
   }
 
+  let clockU = null, clockRaf = 0;
+  function clockStart(u, getTime) {
+    clockStop();
+    const T = window.HakkaTiming.get();
+    const [a, b] = u === 0 ? T.title : u === 1 ? T.author : T.sentences[u - 2];
+    clockU = u;
+    let last = '';
+    const loop = () => {
+      const txt = clockText(getTime() - a, b - a);
+      if (txt !== last) { setDurText(u, txt); last = txt; }
+      clockRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+  function clockStop() {
+    cancelAnimationFrame(clockRaf);
+    if (clockU != null) setDurText(clockU, null);
+    clockU = null;
+  }
   function clearPlayUI() {
     karaStop();
+    clockStop();
     document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
     document.querySelectorAll('.mini-play.on').forEach(b => { b.classList.remove('on'); b.querySelector('svg').innerHTML = ICON_PLAY; });
     document.querySelectorAll('.grp-play.on').forEach(b => {
@@ -302,6 +331,7 @@
     const el = unitEl(u);
     el.classList.add('playing');
     karaStart(u, getTime);
+    clockStart(u, getTime || (() => P.time));
     const box = el.getBoundingClientRect();
     if (box.top < 110 || box.bottom > innerHeight - 150) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (total != null) playLbl.textContent = `停止 ${k}/${total}` + (of > 1 ? `（第 ${r} 遍）` : '');
@@ -445,7 +475,7 @@
 
   window.HakkaUI = {
     needSelection,
-    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, karaokeRun, rate, reps, mode,
+    tokHTML, toast, units, unitEl, markUnit, clearPlayUI, karaokeRun, rate, reps, mode, setDurText, clockText,
     selectedList: () => [...selected].sort((a, b) => a - b),
   };
   refresh();

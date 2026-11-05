@@ -512,3 +512,7 @@ body.rec-session .del-rec { pointer-events: none; opacity: .35; }
 /* 倒數 */
 .rec-bar[data-state="count"] .rec-dot { background: var(--mid); animation: recpulse .8s infinite; }
 .rec-bar[data-state="count"] .rec-state { font-size: 16px; }
+
+/* 播放時跑秒數 */
+.dur.running { color: var(--indigo); font-weight: 700; min-width: 64px; text-align: center; }
+.sent.recording .dur.running, .sent.mine-playing .dur.running { color: var(--red); }

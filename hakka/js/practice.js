@@ -261,7 +261,19 @@
     const p = player.play();
     if (p && p.catch) p.catch(() => UI().toast('無法播放錄音'));
   }
+  let mineClock = 0, mineClockU = null;
+  function mineClockStart(u, total, offset = 0) {
+    mineClockStop();
+    mineClockU = u;
+    mineClock = setInterval(() => UI().setDurText(u, UI().clockText(player.currentTime - offset, total)), 100);
+  }
+  function mineClockStop() {
+    clearInterval(mineClock);
+    if (mineClockU != null) UI().setDurText(mineClockU, null);
+    mineClockU = null;
+  }
   function stopMine(keepQueue) {
+    mineClockStop();
     player.pause();
     if (playerUrl) { URL.revokeObjectURL(playerUrl); playerUrl = null; }
     document.querySelectorAll('.my-play.on').forEach(b => b.classList.remove('on'));
@@ -286,6 +298,7 @@
     showUnit(u);
     if (btn) btn.classList.add('on');
     playBlob(rec.blob, onEnd);
+    mineClockStart(u, rec.dur);
   }
   let wholeTimer = 0;
   /** 底部「我的錄音」：重播最近一次錄音，不需勾選；播到哪一句就捲到哪一句 */
@@ -309,6 +322,11 @@
         const frac = Math.min(0.999, player.currentTime / Math.max(0.1, whole.dur));
         let acc = 0, k = 0;
         while (k < lens.length - 1 && (acc + lens[k]) / total <= frac) { acc += lens[k]; k++; }
+        if (mineClockU !== list[k]) {
+          // 估算這一句在錄音中的開始與長度（依範本長度比例）
+          const scale = whole.dur / total;
+          mineClockStart(list[k], lens[k] * scale, acc * scale);
+        }
         showUnit(list[k]);
         mineLbl.textContent = `停止 ${k + 1}/${list.length}`;
       }, 200);
