@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.5.2">
+<link rel="stylesheet" href="css/style.css?v=0.6.0">
 </head>
 <body>
 <header class="appbar">
@@ -171,7 +171,8 @@
         <button id="calZoomIn" aria-label="放大">＋</button>
       </div>
     </div>
-    <p class="cal-hint">拖拉紅色「起」「迄」調整範圍，放開後會自動試聽；點波形其他地方會從那裡開始播放。</p>
+    <p class="cal-hint">拖拉紅色「起」「迄」調整整句範圍；拖拉藍色虛線調整每個字的開始時間（卡拉 OK 用），放開後自動試聽；點波形其他地方會從那裡開始播放。</p>
+    <div class="cal-syl" id="calSyl"></div>
     <div class="cal-play">
       <button class="act play" id="calPlay"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg><span>播放本句</span></button>
       <button class="ghost" id="calHead">聽開頭</button>
@@ -213,11 +214,11 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/version.js?v=0.5.2"></script>
-<script src="data/03.js?v=0.5.2"></script>
-<script src="js/timing.js?v=0.5.2"></script>
-<script src="js/player.js?v=0.5.2"></script>
-<script src="js/ui.js?v=0.5.2"></script>
-<script src="js/calib.js?v=0.5.2"></script>
+<script src="js/version.js?v=0.6.0"></script>
+<script src="data/03.js?v=0.6.0"></script>
+<script src="js/timing.js?v=0.6.0"></script>
+<script src="js/player.js?v=0.6.0"></script>
+<script src="js/ui.js?v=0.6.0"></script>
+<script src="js/calib.js?v=0.6.0"></script>
 </body>
 </html>

@@ -203,8 +203,8 @@
   const ICON_PLAY = '<path d="M8 5l11 7-11 7z"/>', ICON_STOP = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
   let playing = null;  // 目前在播什麼：'sel'（勾選範圍）、'u3'（單句）、'all'、'p0'（段落）
   // ---------- 卡拉 OK 逐字變色 ----------
-  const SYL = art.syl || {};
-  const sylOf = u => (u === 0 ? SYL.title : u === 1 ? SYL.author : (SYL.sentences || [])[u - 2]) || null;
+  // 逐字時間：預設來自 data/03-syl.json，使用者在校正切句微調過的優先
+  const sylOf = u => { const S = window.HakkaTiming.get().syl || {}; return (u === 0 ? S.title : u === 1 ? S.author : (S.sentences || [])[u - 2]) || null; };
   let karaU = null, karaToks = [], karaSyl = null, karaRaf = 0;
   function karaStart(u) {
     karaStop();

@@ -29,6 +29,9 @@
   const REACT = 0.15;   // 聽到後按下按鈕的反應時間，自動往前扣
 
   const range = i => { const it = items[i]; return typeof it.key === 'number' ? tm.sentences[it.key] : tm[it.key]; };
+  /** 第 i 項的逐字時間 [[起,訖],...]（與有讀音的字一一對應） */
+  const sylOf = (i, t = tm) => { const it = items[i], S = t.syl || {}; return (typeof it.key === 'number' ? (S.sentences || [])[it.key] : S[it.key]) || null; };
+  let selK = null;      // 目前選取的字（第幾個有讀音的字）
   const r2 = v => Math.round(v * 100) / 100;
   const textOf = it => it.tokens.map(t => t.c).join('');
 
@@ -84,11 +87,17 @@
     lastPos = null;
     $('#calItem').value = String(cur);
     $('#calText').innerHTML = items[cur].tokens.map(UI().tokHTML).join('');
+    // 有讀音的字標上編號，點了可以選取、試聽
+    let k = 0;
+    $('#calText').querySelectorAll('.tk').forEach(tk => { if (!tk.classList.contains('pu')) tk.dataset.k = k++; });
+    selK = null;
+    sylPanel();
     $('#calPrev').disabled = cur === 0;
     $('#calNext').disabled = cur === items.length - 1;
     const base = T.base(), it = items[cur];
     const b = typeof it.key === 'number' ? base.sentences[it.key] : base[it.key];
-    $('#calRevertOne').disabled = r2(b[0]) === r2(range(cur)[0]) && r2(b[1]) === r2(range(cur)[1]);
+    $('#calRevertOne').disabled = r2(b[0]) === r2(range(cur)[0]) && r2(b[1]) === r2(range(cur)[1])
+      && JSON.stringify(sylOf(cur, base)) === JSON.stringify(sylOf(cur));
     fitView();
     fields();
     draw();
@@ -112,10 +121,65 @@
     if (which === 0) r[0] = Math.min(v, r[1] - 0.2); else r[1] = Math.max(v, r[0] + 0.2);
     r[0] = r2(r[0]); r[1] = r2(r[1]);
     fields(); draw();
+    changed();
+  }
+  function changed() {
     $('#calRevertOne').disabled = false;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { T.save(tm); tm = T.get(); status(); }, 250);
   }
+
+  // ---------- 逐字時間（卡拉 OK） ----------
+  /** 把第 k 個字的開始時間設為 v（同時調整前一個字的結束） */
+  function setSylStart(k, v) {
+    const S = sylOf(cur);
+    if (!S || !S[k]) return;
+    const [a] = range(cur);
+    const lo = k > 0 ? S[k - 1][0] + 0.05 : Math.max(0, a - 0.5);
+    const hi = S[k][1] - 0.05;
+    v = r2(Math.max(lo, Math.min(hi, v)));
+    const old = S[k][0];
+    S[k][0] = v;
+    if (k > 0 && (S[k - 1][1] >= old - 0.005 || S[k - 1][1] > v)) S[k - 1][1] = v;   // 原本相連或重疊就一起移
+    draw(); sylPanel(); changed();
+  }
+  function sylPanel() {
+    const el = $('#calSyl'), S = sylOf(cur);
+    $('#calText').querySelectorAll('.tk[data-k]').forEach(tk => tk.classList.toggle('sel', +tk.dataset.k === selK));
+    if (!S) { el.innerHTML = '<span class="muted">這一項沒有逐字時間</span>'; return; }
+    if (selK == null) { el.innerHTML = '<span class="muted">逐字微調（卡拉 OK）：點上面的字選取並試聽，或在波形上拖拉字與字之間的細線</span>'; return; }
+    const tk = $('#calText').querySelector(`.tk[data-k="${selK}"] .c`);
+    el.innerHTML = `<b class="syl-ch">${tk ? tk.textContent : ''}</b>
+      <span class="syl-t">開始 <b>${S[selK][0].toFixed(2)}</b> 秒</span>
+      <span class="syl-btns">
+        <button data-snudge="-0.05">−.05</button><button data-snudge="-0.02">−.02</button>
+        <button data-snudge="0.02">+.02</button><button data-snudge="0.05">+.05</button>
+      </span>
+      <span class="syl-btns">
+        <button data-sylplay="one">聽這個字</button><button data-sylplay="two">連前一字聽</button>
+        <button data-sylstep="-1" aria-label="上一個字">‹</button><button data-sylstep="1" aria-label="下一個字">›</button>
+      </span>`;
+  }
+  function playSyl(k, withPrev) {
+    const S = sylOf(cur);
+    if (!S || !S[k]) return;
+    play(withPrev && k > 0 ? S[k - 1][0] : S[k][0], S[k][1]);
+  }
+  $('#calText').addEventListener('click', e => {
+    const tk = e.target.closest('.tk[data-k]');
+    if (!tk) return;
+    selK = +tk.dataset.k; sylPanel(); draw(); playSyl(selK);
+  });
+  $('#calSyl').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || selK == null) return;
+    if (b.dataset.snudge) { setSylStart(selK, sylOf(cur)[selK][0] + parseFloat(b.dataset.snudge)); playSyl(selK, true); }
+    else if (b.dataset.sylplay) playSyl(selK, b.dataset.sylplay === 'two');
+    else if (b.dataset.sylstep) {
+      const S = sylOf(cur); selK = Math.max(0, Math.min(S.length - 1, selK + +b.dataset.sylstep));
+      sylPanel(); draw(); playSyl(selK);
+    }
+  });
   function status() {
     const el = $('#calStatus');
     if (T.isCustom()) {
@@ -146,6 +210,7 @@
     if (!audio.paused) audio.pause();
     stopAt = null; cancelAnimationFrame(raf);
     $('#calPlay').classList.remove('on');
+    karaText(null);
     draw();
   }
   function tick() {
@@ -154,10 +219,20 @@
     // 播放超出視窗就跟著捲動
     const t = audio.currentTime;
     if (t > view[1]) { const w = view[1] - view[0]; view = [t - w * 0.2, t + w * 0.8]; }
+    karaText(t);
     draw();
     raf = requestAnimationFrame(tick);
   }
   const isPlaying = () => stopAt != null && !audio.paused;
+  /** 校正視窗上方文字跟著變色，方便檢查逐字時間 */
+  function karaText(t) {
+    const S = sylOf(cur);
+    $('#calText').querySelectorAll('.tk[data-k]').forEach(tk => {
+      const k = +tk.dataset.k, r = S && S[k];
+      tk.classList.toggle('k-done', t != null && !!r && t >= r[1]);
+      tk.classList.toggle('k-now', t != null && !!r && t >= r[0] && t < r[1]);
+    });
+  }
 
   // ---------- 繪圖 ----------
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -206,6 +281,23 @@
       ctx.textAlign = 'start';
     }
 
+    // 逐字分界（細線）與字名
+    const S = sylOf(cur);
+    if (S) {
+      const chars = [...$('#calText').querySelectorAll('.tk[data-k] .c')].map(c => c.textContent);
+      ctx.font = '12px "LXGW WenKai TC", system-ui, sans-serif'; ctx.textAlign = 'center';
+      S.forEach(([s0, s1], k) => {
+        if (s1 < v0 || s0 > v1) return;
+        if (k === selK) { ctx.fillStyle = css('--indigo-soft'); ctx.globalAlpha = 0.9; ctx.fillRect(X(s0), top, X(s1) - X(s0), h - top - axisH); ctx.globalAlpha = 1; }
+        const x = X(s0);
+        ctx.fillStyle = css('--indigo-2');
+        for (let y = top; y < h - axisH; y += 4) ctx.fillRect(x - 0.5, y, 1, 2);
+        ctx.fillStyle = k === selK ? colRed : colInk;
+        ctx.fillText(chars[k] || '', (X(s0) + X(s1)) / 2, h - axisH - 4);
+      });
+      ctx.textAlign = 'start';
+    }
+
     // 時間軸
     ctx.fillStyle = colMuted; ctx.strokeStyle = colLine; ctx.font = '10.5px system-ui, sans-serif';
     const span = v1 - v0, step = span > 12 ? 2 : span > 5 ? 1 : 0.5;
@@ -247,8 +339,17 @@
     const [a, b] = range(cur);
     const da = Math.abs(x - xOf(a)), db = Math.abs(x - xOf(b));
     const near = e.pointerType === 'touch' ? 22 : 12;
-    if (Math.min(da, db) <= near) {
+    const S = sylOf(cur);
+    let sk = -1, sd = 1e9;
+    if (S) S.forEach(([s0], k) => { const d = Math.abs(x - xOf(s0)); if (d < sd) { sd = d; sk = k; } });
+    if (Math.min(da, db) <= near && Math.min(da, db) <= sd + 2) {
       drag = { which: da <= db ? 0 : 1, moved: false };
+      cv.setPointerCapture(e.pointerId);
+      stop();
+      e.preventDefault();
+    } else if (sk >= 0 && sd <= near * 0.8) {
+      drag = { syl: sk, moved: false };
+      selK = sk; sylPanel();
       cv.setPointerCapture(e.pointerId);
       stop();
       e.preventDefault();
@@ -257,15 +358,18 @@
     }
   });
   cv.addEventListener('pointermove', e => {
-    if (drag) { drag.moved = true; setEdge(drag.which, tAt(e)); return; }
+    if (drag) { drag.moved = true; if (drag.syl != null) setSylStart(drag.syl, tAt(e)); else setEdge(drag.which, tAt(e)); return; }
     const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
     const [a, b] = range(cur);
-    cv.style.cursor = Math.min(Math.abs(x - xOf(a)), Math.abs(x - xOf(b))) <= 12 ? 'ew-resize' : 'pointer';
+    const S = sylOf(cur);
+    const nearSyl = S && S.some(([s0]) => Math.abs(x - xOf(s0)) <= 9);
+    cv.style.cursor = (Math.min(Math.abs(x - xOf(a)), Math.abs(x - xOf(b))) <= 12 || nearSyl) ? 'ew-resize' : 'pointer';
   });
   const endDrag = () => {
     if (!drag) return;
     const d = drag; drag = null;
-    if (!d.moved) return;
+    if (!d.moved) { if (d.syl != null) playSyl(d.syl); return; }
+    if (d.syl != null) { playSyl(d.syl, true); return; }
     const [a, b] = range(cur);
     // 放開後自動試聽該處
     if (d.which === 0) play(a, Math.min(b, a + 1.8)); else play(Math.max(a, b - 1.8), b);
@@ -308,6 +412,9 @@
     const base = T.base(), it = items[cur];
     const b = typeof it.key === 'number' ? base.sentences[it.key] : base[it.key];
     setEdge(0, b[0]); setEdge(1, b[1]); setEdge(0, b[0]);
+    const bs = sylOf(cur, base), S = sylOf(cur);
+    if (bs && S) { S.splice(0, S.length, ...bs.map(r => r.slice())); changed(); }
+    draw(); sylPanel();
     $('#calRevertOne').disabled = true;
   };
   let armed = false;
@@ -315,12 +422,12 @@
     if (!armed) { armed = true; e.target.textContent = '確定全部還原？'; setTimeout(() => { armed = false; e.target.textContent = '全部還原'; }, 3000); return; }
     armed = false; e.target.textContent = '全部還原';
     T.reset(); tm = T.get(); select(cur); status();
-    UI().toast('已還原成預設切句');
+    UI().toast('已還原成預設切句與逐字時間');
   };
   $('#calExport').onclick = () => {
     const blob = new Blob([T.exportJSON()], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = `${art.id}-timing.json`;
+    a.href = URL.createObjectURL(blob); a.download = `${art.id}-calib.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   };

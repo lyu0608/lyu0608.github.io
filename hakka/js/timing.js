@@ -5,12 +5,16 @@
   const KEY = 'hakka.timing.' + art.id;
   const clone = o => JSON.parse(JSON.stringify(o));
   const base = clone(art.timing);
+  base.syl = clone(art.syl || { title: null, author: null, sentences: [] });   // 逐字時間（卡拉 OK）
   const listeners = [];
 
   function read() {
     try {
       const v = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (v && Array.isArray(v.sentences) && v.sentences.length === base.sentences.length) return v;
+      if (v && Array.isArray(v.sentences) && v.sentences.length === base.sentences.length) {
+        if (!v.syl) v.syl = clone(base.syl);   // 舊版只存切句，補上預設逐字時間
+        return v;
+      }
     } catch (_) { /* 無痕模式或資料壞掉時用預設值 */ }
     return null;
   }
@@ -32,14 +36,15 @@
       listeners.forEach(f => f());
     },
     onChange: f => listeners.push(f),
-    /** 匯出成與 data/03-timing.json 相同格式 */
+    /** 匯出：切句（同 data/03-timing.json）＋逐字時間 syl（同 data/03-syl.json） */
     exportJSON() {
       const t = T.get();
       return JSON.stringify({
         audio: base.audio, duration: base.duration, auto: false,
         note: '使用者於網頁「校正切句」調整' + (t.savedAt ? '（' + t.savedAt.slice(0, 10) + '）' : ''),
         title: t.title, author: t.author, sentences: t.sentences,
-      }, null, 1);
+        syl: t.syl,
+      });
     },
   };
   window.HakkaTiming = T;
