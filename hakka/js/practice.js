@@ -114,7 +114,8 @@
 
   // ---------- 錄一段 ----------
   async function recordOnce(text, opt) {
-    showBar('rec', text, [['完成', () => session.cur && session.cur.stop(), 'primary'], ['結束', quit]]);
+    // 字幕跑完會自動結束錄音；「結束」只給中途放棄用（這次錄音不保留）
+    showBar('rec', text, [['結束', quit]]);
     let r;
     try {
       r = await R.record(Object.assign({
@@ -191,10 +192,11 @@
           markHave(u, true); refreshMine();
           step = 'saved';
         }
-        // 4. 錄好了：聽我的、重錄，或按「下一句」
+        // 4. 錄好了：最後一句直接結束這一輪；還有下一句時停下來讓使用者選
+        if (last) { session.summary = `${name}：錄好了（${fmt(res.dur)}）`; break; }
         showBar('saved', `${name}：錄好了（${fmt(res.dur)}）`, [
           ['聽我的', () => playBlob(res.blob)], ['重錄', choose('redo')],
-          [last ? '完成' : '下一句', choose('next'), 'primary'], ['結束', quit],
+          ['下一句', choose('next'), 'primary'], ['結束', quit],
         ]);
         const c = await waitChoice();
         stopMine();
@@ -221,8 +223,7 @@
     }
     await saveRec('whole', { units: list, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() });
     have.add('whole'); refreshMine();
-    showBar('saved', `連續朗讀錄好了（${fmt(res.dur)}）`, [['聽我的', () => playBlob(res.blob)], ['關閉', choose('next'), 'primary']]);
-    await waitChoice();
+    session.summary = `連續朗讀錄好了（${fmt(res.dur)}）`;
   }
 
   // ---------- 開始／結束 ----------
@@ -242,12 +243,14 @@
       else await whole(list);
     } finally {
       const n = list.filter(u => have.has(u)).length;
+      const summary = session && !session.quit ? session.summary : null;
       session = null;
       P.stop(); UI().clearPlayUI(); hideBar();
       document.querySelectorAll('.sent.recording').forEach(el => el.classList.remove('recording'));
       recBtn.classList.remove('on'); recLbl.textContent = '錄音';
       document.body.classList.remove('rec-session');
-      if (n) UI().toast('按「我的錄音」可以回放');
+      if (summary) UI().toast(`${summary}，按「我的錄音」可以回放`);
+      else if (n) UI().toast('按「我的錄音」可以回放');
     }
   }
   function quit() {
