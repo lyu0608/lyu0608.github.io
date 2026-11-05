@@ -177,6 +177,10 @@
     root.classList.toggle(cls, !cb.checked);
     cb.onchange = () => { root.classList.toggle(cls, !cb.checked); store.set(id, cb.checked); };
   });
+  const karaSel = $('#optKara');
+  karaSel.value = store.get('karaColor', 'rainbow');
+  karaSel.onchange = () => store.set('karaColor', karaSel.value);
+  var karaColor = () => karaSel.value;
   let size = store.get('size', 0);
   const applySize = () => root.style.setProperty('--scale', String(1 + size * 0.12));
   applySize();
@@ -225,6 +229,16 @@
       karaToks.push({ tk, kf, pu: [], last: -1 });
     });
     if (karaToks.length !== karaSyl.length) { karaStop(); return; }
+    // 彩虹螢光筆：每個字依序分配一個淺色底（紅→紫），字維持深色，好閱讀
+    el.classList.toggle('kara-hl', karaColor() === 'rainbow');
+    if (karaColor() === 'rainbow') {
+      const n = Math.max(1, karaToks.length - 1);
+      karaToks.forEach((k, i) => {
+        const h = Math.round(i / n * 285);
+        k.tk.style.setProperty("--kc", `hsl(${h}, var(--kbs), var(--kbl))`);
+        k.tk.style.setProperty('--kt', `hsl(${h}, 70%, var(--ktl))`);
+      });
+    }
     const loop = () => {
       const t = P.time;
       karaToks.forEach((k, i) => {
@@ -245,8 +259,8 @@
     cancelAnimationFrame(karaRaf);
     if (karaU != null) {
       const el = unitEl(karaU);
-      el.classList.remove('kara');
-      el.querySelectorAll('.tk').forEach(tk => tk.classList.remove('k-now', 'k-done'));
+      el.classList.remove('kara', 'kara-hl');
+      el.querySelectorAll('.tk').forEach(tk => { tk.classList.remove('k-now', 'k-done'); tk.style.removeProperty('--kc'); tk.style.removeProperty('--kt'); });
       el.querySelectorAll('.kf').forEach(kf => kf.remove());
     }
     karaU = null; karaToks = []; karaSyl = null;

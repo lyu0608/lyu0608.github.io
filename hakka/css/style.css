@@ -381,16 +381,16 @@ dialog .toast { position: fixed; bottom: 140px; }
 }
 
 /* ---------- 卡拉 OK 逐字變色 ---------- */
-:root { --kara: #d23a2f; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --kara: #ff8a7a; } }
-:root[data-theme="dark"] { --kara: #ff8a7a; }
+:root { --kara: #d23a2f; --kbs: 95%; --kbl: 84%; --ktl: 36%; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --kara: #ff8a7a; --kbs: 45%; --kbl: 26%; --ktl: 78%; } }
+:root[data-theme="dark"] { --kara: #ff8a7a; --kbs: 45%; --kbl: 26%; --ktl: 78%; }
 .sent.kara .tk .c { position: relative; }
 /* 紅色覆蓋層：寬度由 JS 直接設定（不用 background-clip:text，iPhone Safari 才會正常重畫） */
-.tk .c .kf { position: absolute; left: 0; top: 0; height: 100%; width: 0; overflow: hidden; white-space: nowrap; color: var(--kara); pointer-events: none; }
-.sent.kara .tk.pu.k-done .c { color: var(--kara); }
+.tk .c .kf { position: absolute; left: 0; top: 0; height: 100%; width: 0; overflow: hidden; white-space: nowrap; color: var(--kc, var(--kara)); pointer-events: none; }
+.sent.kara .tk.pu.k-done .c { color: var(--kc, var(--kara)); }
 .sent.kara .tk.k-now { transform: translateY(-2px); transition: transform .08s; }
 .sent.kara .tk.k-now .z, .sent.kara .tk.k-now .p,
-.sent.kara .tk.k-done .z, .sent.kara .tk.k-done .p { color: var(--kara); }
+.sent.kara .tk.k-done .z, .sent.kara .tk.k-done .p { color: var(--kc, var(--kara)); }
 .sent.kara .tk.k-now .z, .sent.kara .tk.k-now .p { font-weight: 700; }
 /* 播放卡拉 OK 時暫時收起校正音的紅色，避免和已唱過的紅色混淆 */
 .sent.kara .tk.fix:not(.k-now):not(.k-done) .z { color: var(--ink-2); font-weight: 400; }
@@ -436,3 +436,13 @@ button, select, .check, .tokens { touch-action: manipulation; }   /* 取消連�
 .cal-syl .syl-t b { font-variant-numeric: tabular-nums; }
 .cal-syl .syl-btns { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .cal-syl button { border: 1px solid var(--line); background: var(--line-2); border-radius: 8px; padding: 6px 9px; font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* 顯示設定：卡拉 OK 顏色 */
+.toggle.sel-opt select { font: inherit; font-size: 14px; color: #1d2433; background: #fff; border: 0; border-radius: 8px; padding: 2px 6px; }
+@media (hover: none) and (pointer: coarse) { .toggle.sel-opt select { font-size: 16px; } }
+
+/* 彩虹螢光筆模式：淺色底、深色字 */
+.sent.kara-hl .tk .c .kf { background: var(--kc); color: var(--ink); border-radius: 5px; }
+.sent.kara-hl .tk.pu.k-done .c { color: var(--ink-3); }
+.sent.kara-hl .tk.k-done .z, .sent.kara-hl .tk.k-done .p,
+.sent.kara-hl .tk.k-now .z, .sent.kara-hl .tk.k-now .p { color: var(--kt); }
