@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>逐字試聽表</title>
+<meta name="description" content="〈得人惱个木棉樹〉朗誦稿 v6 與 v10 讀音不同之處，逐字試聽範本錄音後選擇採用哪一版。">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=0.8.11">
+<style>
+  body { padding-bottom: 120px; }
+  .rv-head { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+  .rv-head h1 { margin: 0 0 6px; font-size: 20px; color: var(--indigo); }
+  .rv-head p { margin: 4px 0; color: var(--ink-2); font-size: 14px; }
+  .rv-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .rv-tools .ghost { font-size: 13.5px; }
+  .rv-sec { margin-top: 18px; }
+  .rv-sec > h2 { font-size: 16px; color: var(--indigo); margin: 0 0 4px; display: flex; gap: 8px; align-items: baseline; }
+  .rv-sec > h2 small { font-weight: 400; color: var(--ink-3); font-size: 13px; }
+  .rv-sec > .desc { font-size: 13px; color: var(--ink-3); margin: 0 0 8px; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .card.done { border-color: var(--good); }
+  .card.unsure { border-color: var(--mid); }
+  .card-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .card-top .u { font-size: 12.5px; color: var(--ink-3); }
+  .card-top .ch { font: 400 28px/1 var(--han); color: var(--red); }
+  .ctx { font: 400 17px/1.7 var(--han); color: var(--ink-2); margin: 6px 0 8px; word-break: break-all; }
+  .ctx b { color: var(--red); background: var(--sel); border-radius: 4px; padding: 0 2px; font-weight: 400; }
+  .ctx .pu { color: var(--ink-3); }
+  .plays { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .plays button { border: 1px solid var(--indigo); color: var(--indigo); background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; font-weight: 700; }
+  .plays button.on { background: var(--indigo); color: #fff; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; }
+  .opt { border: 2px solid var(--line); background: var(--paper); border-radius: 12px; padding: 8px 10px; text-align: left; color: var(--ink); }
+  .opt .tag { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+  .opt .z { font-size: 18px; font-weight: 700; letter-spacing: .02em; }
+  .opt .p { font: italic 14px "Times New Roman", Georgia, serif; color: var(--indigo-2); }
+  .opt .c2 { font: 400 18px var(--han); }
+  .opt.sel { border-color: var(--good); background: var(--good-soft); }
+  .opt.sel .tag::after { content: " ✓ 採用"; color: var(--good); }
+  .opt.q { text-align: center; align-self: stretch; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .opt.q.sel { border-color: var(--mid); background: var(--mid-soft); }
+  .opt.q.sel .tag::after { content: ""; }
+  .hint { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+  .hint b { color: var(--ink-2); font-weight: 500; }
+  .notation-list { font-size: 13px; color: var(--ink-2); max-height: 220px; overflow: auto; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; margin-top: 8px; }
+  .notation-list span { display: inline-block; margin: 2px 10px 2px 0; white-space: nowrap; }
+  .rv-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -4px 20px rgba(0,0,0,.08); padding: 10px max(16px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)); }
+  .rv-bar-in { max-width: 1040px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .rv-prog { flex: 1; min-width: 160px; font-size: 14px; }
+  .rv-prog .barline { height: 6px; background: var(--line-2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .rv-prog .barline i { display: block; height: 100%; background: var(--good); width: 0; transition: width .2s; }
+  .hide-done .card.done { display: none; }
+  @media (max-width: 640px) {
+    .plays { flex-wrap: nowrap; gap: 4px; }
+    .plays button { padding: 6px 8px; font-size: 12.5px; flex: 1; white-space: nowrap; }
+    .opts { grid-template-columns: 1fr 1fr; }
+    .opt.q { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">客</span>
+      <div><div class="brand-title">逐字試聽表</div><div class="brand-sub">朗誦稿 v6 與 v10 讀音比較</div></div>
+    </div>
+    <div class="appbar-actions"><a class="chip-btn" href="2026hakka.html" style="text-decoration:none">回練習頁</a></div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="rv-head">
+    <h1>〈得人惱个木棉樹〉v6 / v10 哪一版比較接近錄音？</h1>
+    <p>下面列出兩版<b>讀音不同</b>的地方。每一題先按 ▶ 聽範本錄音，再選你認為比較接近的那一版；聽不出來就選「不確定」。選擇會自動存在這台裝置。</p>
+    <p>「錄音傾向」是程式依音高自動判斷的參考，準確度有限（驗證時約六成），請以耳朵為準。</p>
+    <div class="rv-tools">
+      <label class="toggle" style="color:var(--ink-2)"><input type="checkbox" id="hideDone"><span>只看還沒選的</span></label>
+      <button class="ghost" id="allV6">未選的全部先選 v6</button>
+      <button class="ghost" id="allV10">未選的全部先選 v10</button>
+      <button class="ghost" id="resetAll">清除全部選擇</button>
+    </div>
+  </section>
+  <div id="list"></div>
+</main>
+
+<div class="rv-bar">
+  <div class="rv-bar-in">
+    <div class="rv-prog"><span id="progTxt"></span><div class="barline"><i id="progBar"></i></div></div>
+    <button class="ghost" id="copyBtn">複製</button>
+    <button class="ghost strong" id="dlBtn">下載結果 JSON</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data/03.js?v=0.8.11"></script>
+<script src="js/timing.js?v=0.8.11"></script>
+<script src="data/review-v10.js?v=0.8.11"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const D = window.REVIEW;
+  const KEY = 'hakka.review.v10';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) { return {}; } };
+  let choice = load();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch (_) { /* ignore */ } };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let tt;
+  const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800); };
+
+  // ---------- 播放 ----------
+  const audio = window.HakkaPrepAudio(new Audio());
+  audio.preload = 'auto'; audio.src = D.audio;
+  let endAt = 0, raf = 0, curBtn = null, tok = 0;
+  function stop() {
+    tok++; cancelAnimationFrame(raf); if (!audio.paused) audio.pause();
+    if (curBtn) curBtn.classList.remove('on'); curBtn = null;
+  }
+  function play(a, b, rate, btn) {
+    if (curBtn === btn) { stop(); return; }
+    stop();
+    const my = tok; curBtn = btn; btn.classList.add('on');
+    audio.playbackRate = rate; endAt = b;
+    window.HakkaStartAt(audio, Math.max(0, a)).then(() => {
+      const watch = () => { if (my !== tok) return; if (audio.currentTime >= endAt || audio.ended) { stop(); return; } raf = requestAnimationFrame(watch); };
+      watch();
+    }).catch(() => { stop(); toast('無法播放'); });
+  }
+
+  // ---------- 畫面 ----------
+  const SECS = [
+    ['tone', '聲調不同', '注音的聲調符號不同（ˊ 陰平 24 上升、ˇ 陽平 11 低平、ˋ 上聲 31 下降、無符號＝去聲 55 高平）。'],
+    ['seg', '聲母／韻母不同', '注音本身不同，例如 ㄋㄠ／ㄋㄛ；「在」是主讀音和括號裡的讀音互換。'],
+    ['word', '字數不同', '其中一版多或少了字，請聽整段決定。'],
+    ['glyph', '只改字形（讀音相同）', '讀音一樣，只是用字不同，依你習慣的寫法選擇。'],
+  ];
+  const ctxHTML = it => it.text.map(t => t.pu ? `<span class="pu">${esc(t.c)}</span>` : t.hit ? `<b>${esc(t.c)}</b>` : esc(t.c)).join('');
+  const optHTML = (it, v) => {
+    const six = v === 'v6';
+    const ch = it.type === 'word' || it.type === 'glyph' ? `<div class="c2">${esc(six ? it.c : it.c10)}</div>` : '';
+    return `<button class="opt${choice[it.id] === v ? ' sel' : ''}" data-id="${it.id}" data-v="${v}">
+      <div class="tag">${six ? 'v6' : 'v10'}</div>${ch}
+      <div class="z">${esc(six ? it.z6 : it.z10)}</div><div class="p">${esc(six ? it.p6 : it.p10)}</div></button>`;
+  };
+  let html = '';
+  SECS.forEach(([type, title, desc]) => {
+    const list = D.items.filter(it => it.type === type);
+    if (!list.length) return;
+    html += `<section class="rv-sec"><h2>${title}<small>${list.length} 題</small></h2><p class="desc">${desc}</p>`;
+    list.forEach(it => {
+      html += `<article class="card" id="${it.id}">
+        <div class="card-top"><span class="ch">${esc(it.type === 'word' || it.type === 'glyph' ? it.c : it.c)}</span><span class="u">${esc(it.unit)}</span></div>
+        <div class="ctx">${ctxHTML(it)}</div>
+        <div class="plays">
+          <button data-play="one" data-id="${it.id}">▶ 這個字</button>
+          <button data-play="ctx" data-id="${it.id}">▶ 連前後字</button>
+          <button data-play="slow" data-id="${it.id}">▶ 慢速</button>
+          <button data-play="sent" data-id="${it.id}">▶ 整句</button>
+        </div>
+        <div class="opts">${optHTML(it, 'v6')}${optHTML(it, 'v10')}
+          <button class="opt q${choice[it.id] === '?' ? ' sel' : ''}" data-id="${it.id}" data-v="?"><div class="tag">不確定</div></button></div>
+        ${it.hint ? `<div class="hint">錄音傾向（參考）：<b>${esc(it.hint)}</b></div>` : ''}
+      </article>`;
+    });
+    html += `</section>`;
+  });
+  // 拼音寫法：一次決定
+  html += `<section class="rv-sec"><h2>拼音寫法<small>${D.notation.length} 處</small></h2>
+    <p class="desc">這些字的注音兩版相同，只有拼音的寫法不同（聲調符號、大寫、拼法統一），不影響念法。v10 的拼音和注音比較一致。</p>
+    <article class="card" id="notation"><div class="opts">
+      <button class="opt${choice.notation === 'v6' ? ' sel' : ''}" data-id="notation" data-v="v6"><div class="tag">v6</div><div class="p">例：花 fâ、三 sam、樹 sù</div></button>
+      <button class="opt${choice.notation === 'v10' ? ' sel' : ''}" data-id="notation" data-v="v10"><div class="tag">v10</div><div class="p">例：花 fâ、三 sâm、樹 su</div></button>
+      <button class="opt q${choice.notation === '?' ? ' sel' : ''}" data-id="notation" data-v="?"><div class="tag">不確定</div></button></div>
+      <details><summary class="hint" style="cursor:pointer">看全部 ${D.notation.length} 處</summary>
+      <div class="notation-list">${D.notation.map(n => `<span>${esc(n.unit)} ${esc(n.c)}：${esc(n.p6)} → ${esc(n.p10)}</span>`).join('')}</div></details>
+    </article></section>`;
+  $('#list').innerHTML = html;
+
+  const byId = Object.fromEntries(D.items.map(it => [it.id, it]));
+  const T = window.HakkaTiming.get();
+  const sentRange = it => it.unit === '標題' ? T.title : it.unit === '作者' ? T.author : T.sentences[+it.unit.replace(/\D/g, '') - 1];
+  document.addEventListener('click', e => {
+    const pb = e.target.closest('[data-play]');
+    if (pb) {
+      const it = byId[pb.dataset.id], m = pb.dataset.play;
+      if (m === 'one') play(it.a - 0.05, it.b + 0.05, 1, pb);
+      else if (m === 'ctx') play(it.ca - 0.05, it.cb + 0.05, 1, pb);
+      else if (m === 'slow') play(it.ca - 0.05, it.cb + 0.05, 0.6, pb);
+      else { const [a, b] = sentRange(it); play(a, b, 1, pb); }
+      return;
+    }
+    const ob = e.target.closest('.opt');
+    if (ob) {
+      const id = ob.dataset.id, v = ob.dataset.v;
+      choice[id] = choice[id] === v ? undefined : v;
+      if (choice[id] === undefined) delete choice[id];
+      save(); refresh();
+    }
+  });
+  function refresh() {
+    document.querySelectorAll('.opt').forEach(b => b.classList.toggle('sel', choice[b.dataset.id] === b.dataset.v));
+    document.querySelectorAll('.card').forEach(c => {
+      const v = choice[c.id];
+      c.classList.toggle('done', v === 'v6' || v === 'v10');
+      c.classList.toggle('unsure', v === '?');
+    });
+    const ids = D.items.map(it => it.id).concat(['notation']);
+    const n = ids.filter(id => choice[id]).length;
+    $('#progTxt').textContent = `已選 ${n} / ${ids.length} 題` + (n === ids.length ? '，可以下載結果了' : '');
+    $('#progBar').style.width = (n / ids.length * 100) + '%';
+  }
+  refresh();
+  $('#hideDone').onchange = e => document.body.classList.toggle('hide-done', e.target.checked);
+  const fill = v => { D.items.forEach(it => { if (!choice[it.id]) choice[it.id] = v; }); if (!choice.notation) choice.notation = v; save(); refresh(); };
+  $('#allV6').onclick = () => fill('v6');
+  $('#allV10').onclick = () => fill('v10');
+  let armed = false;
+  $('#resetAll').onclick = e => {
+    if (!armed) { armed = true; e.target.textContent = '確定清除？'; setTimeout(() => { armed = false; e.target.textContent = '清除全部選擇'; }, 3000); return; }
+    armed = false; e.target.textContent = '清除全部選擇'; choice = {}; save(); refresh();
+  };
+  const result = () => JSON.stringify({
+    review: 'v6-v10', savedAt: new Date().toISOString(), notation: choice.notation || null,
+    items: D.items.map(it => ({ id: it.id, type: it.type, unit: it.unit, c: it.c, c10: it.c10, z6: it.z6, z10: it.z10, choice: choice[it.id] || null })),
+  }, null, 1);
+  $('#dlBtn').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([result()], { type: 'application/json' }));
+    a.download = '03-review-v10.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  $('#copyBtn').onclick = async () => {
+    try { await navigator.clipboard.writeText(result()); toast('已複製'); } catch (_) { toast('無法複製，請改用下載'); }
+  };
+})();
+</script>
+</body>
+</html>
