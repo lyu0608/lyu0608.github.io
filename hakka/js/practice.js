@@ -1,7 +1,9 @@
 /* 錄音練習流程
- * 逐句跟讀：播範本 → 嗶 → 錄音（講完自動停）→ 可聽、重錄，2.5 秒後自動下一句
+ * 逐句跟讀：播範本 → 按「開始錄音」→ 嗶 → 錄音 → 按「完成」→ 聽我的／重錄／下一句
  * 連續朗讀：嗶 → 一口氣唸完勾選範圍 → 按「完成」
- * 錄音存在這台裝置（IndexedDB）：每句保留最新一次（key "u3"），連續朗讀保留最新一次（key "whole"）
+ * 錄音只保留「最近一次」：每次按「錄音」開始新的一輪，就先刪掉這台裝置上所有舊錄音。
+ * 同一輪逐句跟讀錄的多句會一起保留（key "u3"…），連續朗讀存在 key "whole"。
+ * 開頁時把錄音讀進記憶體（cache），按下回放能同步播放（iPhone 要求在按鈕事件當下 play）。
  */
 (function () {
   'use strict';
@@ -16,6 +18,7 @@
 
   let session = null;            // { quit:boolean, cur:{cancel,stop}|null, wait:Function|null }
   const have = new Set();        // 有錄音的單位
+  const cache = new Map();       // key → { blob, dur, units? }
   const player = new Audio();
   player.setAttribute('playsinline', '');
   let playerUrl = null, mineQueue = null;
@@ -49,9 +52,28 @@
     if (el) el.el.classList.toggle('has-rec', on);
   }
   async function loadKeys() {
-    try { (await R.store.keys()).forEach(k => { if (/^u\d+$/.test(k)) markHave(+k.slice(1), true); else if (k === 'whole') have.add('whole'); }); }
-    catch (_) { /* 無痕模式可能不能用 IndexedDB */ }
+    try {
+      for (const k of await R.store.keys()) {
+        const rec = await R.store.get(k);
+        if (!rec) continue;
+        cache.set(k, rec);
+        if (/^u\d+$/.test(k)) markHave(+k.slice(1), true); else if (k === 'whole') have.add('whole');
+      }
+    } catch (_) { /* 無痕模式可能不能用 IndexedDB */ }
     refreshMine();
+  }
+  function saveRec(key, rec) {
+    cache.set(key, rec);
+    return R.store.put(key, rec).catch(() => {});
+  }
+  /** 開始新的一輪錄音前，刪掉所有舊錄音（不等待資料庫，避免打斷 iPhone 的按鈕事件） */
+  function wipeAll() {
+    const had = cache.size > 0;
+    cache.clear();
+    R.store.clear().catch(() => {});
+    [...have].forEach(u => typeof u === 'number' && markHave(u, false));
+    have.clear(); refreshMine();
+    return had;
   }
   function refreshMine() {
     mineBtn.dataset.has = have.size ? '1' : '';
@@ -134,7 +156,7 @@
             if (await waitChoice() === 'redo') { step = 'ready'; continue; }
             break;
           }
-          await R.store.put('u' + u, { u, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() }).catch(() => {});
+          await saveRec('u' + u, { u, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() });
           markHave(u, true); refreshMine();
           step = 'saved';
         }
@@ -161,7 +183,7 @@
     list.forEach(u => UI().unitEl(u).classList.remove('recording'));
     if (!res || res === 'error' || session.quit) return;
     if (!res.speech) { UI().toast('沒有聽到聲音，請再錄一次'); return; }
-    await R.store.put('whole', { units: list, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() }).catch(() => {});
+    await saveRec('whole', { units: list, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() });
     have.add('whole'); refreshMine();
     showBar('saved', `連續朗讀錄好了（${fmt(res.dur)}）`, [['聽我的', () => playBlob(res.blob)], ['關閉', choose('next'), 'primary']]);
     await waitChoice();
@@ -175,6 +197,7 @@
     if (!preflight()) return;
     R.unlock();                       // 在按鈕事件當下解鎖 AudioContext（iPhone）
     stopMine();
+    if (wipeAll()) UI().toast('已刪除上一次的錄音，開始新的錄音');
     session = { quit: false, cur: null, wait: null };
     recBtn.classList.add('on'); recLbl.textContent = '結束錄音';
     document.body.classList.add('rec-session');
@@ -213,43 +236,62 @@
     if (playerUrl) { URL.revokeObjectURL(playerUrl); playerUrl = null; }
     document.querySelectorAll('.my-play.on').forEach(b => b.classList.remove('on'));
     if (!keepQueue) {
-      mineQueue = null;
+      mineQueue = null; clearInterval(wholeTimer);
       mineBtn.classList.remove('on'); mineLbl.textContent = '我的錄音';
       document.querySelectorAll('.sent.mine-playing').forEach(el => el.classList.remove('mine-playing'));
     }
   }
-  async function playOneMine(u, btn, onEnd) {
-    const rec = await R.store.get('u' + u).catch(() => null);
+  /** 標示並捲到正在回放的句子 */
+  function showUnit(u) {
+    document.querySelectorAll('.sent.mine-playing').forEach(el => { if (+el.dataset.u !== u) el.classList.remove('mine-playing'); });
+    const el = UI().unitEl(u);
+    if (el.classList.contains('mine-playing')) return;
+    el.classList.add('mine-playing');
+    const box = el.getBoundingClientRect();
+    if (box.top < 110 || box.bottom > innerHeight - 160) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function playOneMine(u, btn, onEnd) {
+    const rec = cache.get('u' + u);
     if (!rec) { UI().toast(`${labelOf(u)}還沒有錄音`); if (onEnd) onEnd(); return; }
-    document.querySelectorAll('.sent.mine-playing').forEach(el => el.classList.remove('mine-playing'));
-    UI().unitEl(u).classList.add('mine-playing');
+    showUnit(u);
     if (btn) btn.classList.add('on');
     playBlob(rec.blob, onEnd);
   }
-  /** 底部「我的錄音」：逐句模式依序播勾選句子的錄音；連續模式播最新一次連續錄音 */
-  async function playMine() {
+  let wholeTimer = 0;
+  /** 底部「我的錄音」：重播最近一次錄音，不需勾選；播到哪一句就捲到哪一句 */
+  function playMine() {
     if (mineQueue) { stopMine(); return; }
     if (session) return;
     P.stop(); UI().clearPlayUI();
-    if (UI().mode() === 'whole') {
-      const rec = await R.store.get('whole').catch(() => null);
-      if (!rec) { UI().toast('還沒有連續朗讀的錄音'); return; }
+    const whole = cache.get('whole');
+    if (whole) {
+      // 連續朗讀：依範本各句長度比例估算目前唸到哪一句（之後分析功能會改成精確對齊）
+      const list = whole.units;
+      const lens = list.map(u => { const [a, b] = rangeOf(u); return b - a; });
+      const total = lens.reduce((x, y) => x + y, 0);
       mineQueue = [];
       mineBtn.classList.add('on'); mineLbl.textContent = '停止';
-      playBlob(rec.blob, () => stopMine());
+      showUnit(list[0]);
+      playBlob(whole.blob, () => stopMine());
+      clearInterval(wholeTimer);
+      wholeTimer = setInterval(() => {
+        if (!mineQueue) { clearInterval(wholeTimer); return; }
+        const frac = Math.min(0.999, player.currentTime / Math.max(0.1, whole.dur));
+        let acc = 0, k = 0;
+        while (k < lens.length - 1 && (acc + lens[k]) / total <= frac) { acc += lens[k]; k++; }
+        showUnit(list[k]);
+        mineLbl.textContent = `停止 ${k + 1}/${list.length}`;
+      }, 200);
       return;
     }
-    if (UI().needSelection('回放錄音')) return;
-    const list = UI().selectedList().filter(u => have.has(u));
-    if (!list.length) { UI().toast('勾選的句子還沒有錄音'); return; }
+    const list = [...cache.keys()].filter(k => /^u\d+$/.test(k)).map(k => +k.slice(1)).sort((a, b) => a - b);
+    if (!list.length) { UI().toast('還沒有錄音，先勾選句子按「錄音」'); return; }
     mineQueue = list.slice();
     mineBtn.classList.add('on');
     const next = () => {
       if (!mineQueue || !mineQueue.length) { stopMine(); return; }
       const u = mineQueue.shift();
       mineLbl.textContent = `停止 ${list.length - mineQueue.length}/${list.length}`;
-      const el = UI().unitEl(u), box = el.getBoundingClientRect();
-      if (box.top < 110 || box.bottom > innerHeight - 160) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       playOneMine(u, null, () => setTimeout(next, 400));
     };
     next();
@@ -262,6 +304,7 @@
   /** 刪除單句的錄音 */
   async function deleteOne(u) {
     stopMine();
+    cache.delete('u' + u);
     await R.store.del('u' + u).catch(() => {});
     markHave(u, false); refreshMine();
     UI().toast(`已刪除${labelOf(u)}的錄音`);
@@ -269,11 +312,13 @@
   /** 刪除連續朗讀的錄音 */
   async function deleteWhole() {
     stopMine();
+    cache.delete('whole');
     await R.store.del('whole').catch(() => {});
     have.delete('whole'); refreshMine();
     UI().toast('已刪除連續朗讀的錄音');
   }
   async function clearAll() {
+    cache.clear();
     await R.store.clear().catch(() => {});
     [...have].forEach(u => typeof u === 'number' && markHave(u, false));
     have.clear(); refreshMine();
