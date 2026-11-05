@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.4.1">
+<link rel="stylesheet" href="css/style.css?v=0.5.0">
 </head>
 <body>
 <header class="appbar">
@@ -60,8 +60,9 @@
 
   <section class="select-bar" aria-label="選取範圍">
     <label class="check whole"><input type="checkbox" id="chkAll"><span class="box"></span><span>全文</span></label>
-    <div class="sel-info" id="selInfo">尚未選取 — 勾選句子或段落開始練習</div>
+    <div class="sel-info" id="selInfo">尚未選取<span class="hint-long"> — 勾選句子或段落開始練習</span></div>
     <button class="link-btn" id="btnClear" hidden>清除</button>
+    <button class="grp-play all" id="btnPlayAll" title="從標題、作者到最後一句連續播放"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg><span>全文播放</span><small id="allDur"></small></button>
   </section>
 
   <article class="article" id="article"></article>
@@ -212,11 +213,11 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/version.js?v=0.4.1"></script>
-<script src="data/03.js?v=0.4.1"></script>
-<script src="js/timing.js?v=0.4.1"></script>
-<script src="js/player.js?v=0.4.1"></script>
-<script src="js/ui.js?v=0.4.1"></script>
-<script src="js/calib.js?v=0.4.1"></script>
+<script src="js/version.js?v=0.5.0"></script>
+<script src="data/03.js?v=0.5.0"></script>
+<script src="js/timing.js?v=0.5.0"></script>
+<script src="js/player.js?v=0.5.0"></script>
+<script src="js/ui.js?v=0.5.0"></script>
+<script src="js/calib.js?v=0.5.0"></script>
 </body>
 </html>

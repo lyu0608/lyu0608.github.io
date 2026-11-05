@@ -52,7 +52,8 @@
     sec.className = 'para';
     sec.innerHTML = `<header class="para-head">
         <label class="check"><input type="checkbox" data-para="${pi}"><span class="box"></span><span>第${NUMS[pi] || pi + 1}段</span></label>
-        <span class="para-meta">${para.length} 句</span></header>`;
+        <span class="para-meta"><span class="para-dur" data-para-dur="${pi}"></span>
+          <button class="grp-play" data-play-para="${pi}"><svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg><span>播放本段</span></button></span></header>`;
     para.forEach((s, si) => {
       const n = idx++, u = n + 2;
       const el = document.createElement('div');
@@ -77,6 +78,11 @@
       s.el.querySelector('.dur').textContent = s.dur.toFixed(1) + 's';
     });
     $('#calibState').hidden = !window.HakkaTiming.isCustom();
+    document.querySelectorAll('[data-para-dur]').forEach(el => {
+      const list = units.filter(x => x.pi === +el.dataset.paraDur);
+      el.textContent = `${list.length} 句 · ${Math.round(list.reduce((a, x) => a + x.dur, 0))} 秒`;
+    });
+    $('#allDur').textContent = fmt(units.reduce((a, x) => a + x.dur, 0));
   }
   applyTiming();
   window.HakkaTiming.onChange(() => { applyTiming(); refresh(); });
@@ -105,7 +111,7 @@
     const ids = [...selected].sort((a, b) => a - b);
     $('#selInfo').innerHTML = ids.length
       ? `已選 <b>${ids.length}</b> 項 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
-      : '尚未選取 — 勾選句子或段落開始練習';
+      : '尚未選取<span class="hint-long"> — 勾選句子或段落開始練習</span>';
     $('#btnClear').hidden = !ids.length;
     document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length; });
   }
@@ -186,7 +192,7 @@
   const playBtn = document.querySelector('.dock .act.play');
   const playLbl = playBtn.querySelector('span');
   const ICON_PLAY = '<path d="M8 5l11 7-11 7z"/>', ICON_STOP = '<rect x="6" y="6" width="12" height="12" rx="2"/>';
-  let single = null;   // 正在用 ▶ 播單一項時的編號
+  let playing = null;  // 目前在播什麼：'sel'（勾選範圍）、'u3'（單句）、'all'、'p0'（段落）
   // ---------- 卡拉 OK 逐字變色 ----------
   const SYL = art.syl || {};
   const sylOf = u => (u === 0 ? SYL.title : u === 1 ? SYL.author : (SYL.sentences || [])[u - 2]) || null;
@@ -233,8 +239,12 @@
     karaStop();
     document.querySelectorAll('.sent.playing').forEach(el => el.classList.remove('playing'));
     document.querySelectorAll('.mini-play.on').forEach(b => { b.classList.remove('on'); b.querySelector('svg').innerHTML = ICON_PLAY; });
+    document.querySelectorAll('.grp-play.on').forEach(b => {
+      b.classList.remove('on'); b.querySelector('svg').innerHTML = ICON_PLAY;
+      b.querySelector('span').textContent = b.dataset.label;
+    });
     playBtn.classList.remove('on'); playBtn.querySelector('svg').innerHTML = ICON_PLAY; playLbl.textContent = '播放範本';
-    single = null;
+    playing = null;
   }
   const unitEl = u => units.find(x => x.u === u).el;
   function markUnit(u, r, of, total, k) {
@@ -250,10 +260,11 @@
   const reps = () => parseInt($('#repeat').value, 10) || 1;
   const mode = () => document.querySelector('.seg button.on').dataset.mode;
   function playSelected() {
-    if (P.active && single == null) { P.stop(); return; }
+    if (P.active && playing === 'sel') { P.stop(); return; }
     const list = [...selected].sort((a, b) => a - b);
     if (!list.length) return;
     clearPlayUI();
+    playing = 'sel';
     playBtn.classList.add('on'); playBtn.querySelector('svg').innerHTML = ICON_STOP;
     let k = 0, lastU = null;
     P.play(list, {
@@ -263,13 +274,33 @@
     });
   }
   function playOne(u) {
-    if (P.active && single === u) { P.stop(); return; }
+    if (P.active && playing === 'u' + u) { P.stop(); return; }
     clearPlayUI();
-    single = u;
+    playing = 'u' + u;
     const b = unitEl(u).querySelector('.mini-play');
     b.classList.add('on'); b.querySelector('svg').innerHTML = ICON_STOP;
     P.play([u], { rate: rate(), repeat: 1, onUnit: (x) => markUnit(x), onDone: clearPlayUI });
   }
+  /** 全文／整段連續播放（不看勾選；全文包含標題、作者） */
+  function playGroup(key, list, btn) {
+    if (P.active && playing === key) { P.stop(); return; }
+    clearPlayUI();
+    playing = key;
+    btn.classList.add('on'); btn.querySelector('svg').innerHTML = ICON_STOP;
+    const lbl = btn.querySelector('span');
+    let k = 0;
+    P.play(list, {
+      rate: rate(), repeat: 1, gap: 0.35,
+      onUnit: u => { k++; markUnit(u); lbl.textContent = `停止 ${k}/${list.length}`; },
+      onDone: clearPlayUI,
+    });
+  }
+  document.querySelectorAll('.grp-play').forEach(b => { b.dataset.label = b.querySelector('span').textContent; });
+  $('#btnPlayAll').onclick = e => playGroup('all', units.map(x => x.u), e.currentTarget);
+  document.querySelectorAll('[data-play-para]').forEach(b => b.onclick = () => {
+    const pi = +b.dataset.playPara;
+    playGroup('p' + pi, units.filter(x => x.pi === pi).map(x => x.u), b);
+  });
 
   // ---------- 版本紀錄 ----------
   const dlg = $('#dlgHistory');
