@@ -168,7 +168,7 @@
   async function start() {
     if (session) { quit(); return; }
     const list = UI().selectedList();
-    if (!list.length) return;
+    if (UI().needSelection('錄音')) return;
     if (!preflight()) return;
     R.unlock();                       // 在按鈕事件當下解鎖 AudioContext（iPhone）
     stopMine();
@@ -236,6 +236,7 @@
       playBlob(rec.blob, () => stopMine());
       return;
     }
+    if (UI().needSelection('回放錄音')) return;
     const list = UI().selectedList().filter(u => have.has(u));
     if (!list.length) { UI().toast('勾選的句子還沒有錄音'); return; }
     mineQueue = list.slice();

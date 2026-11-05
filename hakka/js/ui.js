@@ -123,8 +123,6 @@
       ? `已選 <b>${ids.length}</b> 項 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
       : '尚未選取<span class="hint-long"> — 勾選句子或段落開始練習</span>';
     $('#btnClear').hidden = !ids.length;
-    // 「播放範本」一律可按（沒勾選時會提醒）；其他按鈕沒勾選時停用
-    document.querySelectorAll('.dock .act:not(.play)').forEach(b => { b.disabled = !ids.length && !b.classList.contains('on'); });
   }
   function rangeText(ids) {
     const head = [];
@@ -200,7 +198,7 @@
     if (b.dataset.act === 'play') { playSelected(); return; }
     if (b.dataset.act === 'rec') { window.HakkaPractice.start(); return; }
     if (b.dataset.act === 'mine') { window.HakkaPractice.playMine(); return; }
-    if (b.dataset.act === 'ana') { const a = $('#analysis'); a.hidden = false; a.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (b.dataset.act === 'ana') { if (needSelection('分析')) return; const a = $('#analysis'); a.hidden = false; a.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
 
   });
   $('#btnCloseAna').onclick = () => { $('#analysis').hidden = true; };
@@ -299,12 +297,7 @@
   function playSelected() {
     if (P.active && playing === 'sel') { P.stop(); return; }
     const list = [...selected].sort((a, b) => a - b);
-    if (!list.length) {
-      toast('請先勾選要播放的句子（可勾單句、整段或「全文」）');
-      const bar = document.querySelector('.select-bar');
-      bar.classList.remove('nudge'); void bar.offsetWidth; bar.classList.add('nudge');
-      return;
-    }
+    if (needSelection('播放')) return;
     clearPlayUI();
     playing = 'sel';
     playBtn.classList.add('on'); playBtn.querySelector('svg').innerHTML = ICON_STOP;
@@ -366,7 +359,17 @@
     window.HakkaPractice.clearAll();
   };
 
+  /** 底部按鈕一律可按；沒勾選句子時提醒，並讓選取列閃一下。回傳 true 表示沒勾選 */
+  function needSelection(what) {
+    if (selected.size) return false;
+    toast(`請先勾選要${what}的句子（可勾單句、整段或「全文」）`);
+    const bar = document.querySelector('.select-bar');
+    bar.classList.remove('nudge'); void bar.offsetWidth; bar.classList.add('nudge');
+    return true;
+  }
+
   window.HakkaUI = {
+    needSelection,
     tokHTML, toast, units, unitEl, markUnit, clearPlayUI, rate, reps, mode,
     selectedList: () => [...selected].sort((a, b) => a - b),
   };
