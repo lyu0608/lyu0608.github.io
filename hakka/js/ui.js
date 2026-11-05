@@ -98,7 +98,7 @@
       ? `已選 <b>${ids.length}</b> 句 <span class="range">${rangeText(ids)}</span> · 範本約 <b>${Math.round(secs)}</b> 秒`
       : '尚未選取 — 勾選句子或段落開始練習';
     $('#btnClear').hidden = !ids.length;
-    document.querySelectorAll('.act').forEach(b => { b.disabled = !ids.length; });
+    document.querySelectorAll('.dock .act').forEach(b => { b.disabled = !ids.length; });
   }
   function rangeText(ids) {
     const parts = []; let a = ids[0], p = ids[0];
@@ -156,7 +156,7 @@
   document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
     document.querySelectorAll('.seg button').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); });
   });
-  document.querySelectorAll('.act').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.dock .act').forEach(b => b.onclick = () => {
     if (b.dataset.act === 'ana') { const a = $('#analysis'); a.hidden = false; a.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     toast({ play: '播放', rec: '錄音', mine: '播放我的錄音' }[b.dataset.act] + '功能開發中');
   });
@@ -170,7 +170,11 @@
 
   let tt;
   function toast(msg) {
-    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    const t = $('#toast');
+    // 有對話框開著時，提示要放進對話框裡，否則會被蓋住看不到
+    const host = document.querySelector('dialog[open]') || document.body;
+    if (t.parentNode !== host) host.appendChild(t);
+    t.textContent = msg; t.classList.add('show');
     clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800);
   }
   window.HakkaUI = { tokHTML, toast };

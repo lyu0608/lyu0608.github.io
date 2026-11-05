@@ -26,6 +26,8 @@
   let view = [0, 1];
   let peaks = null, pps = 100, peakState = 'idle';
   let stopAt = null, raf = 0, drag = null;
+  let lastPos = null;   // 最近一次播放停在哪裡（播完後仍可「設為目前播放位置」）
+  const REACT = 0.15;   // 聽到後按下按鈕的反應時間，自動往前扣
 
   const range = i => { const it = items[i]; return typeof it.key === 'number' ? tm.sentences[it.key] : tm[it.key]; };
   const r2 = v => Math.round(v * 100) / 100;
@@ -79,6 +81,7 @@
   // ---------- 選項目 ----------
   function select(i) {
     cur = Math.max(0, Math.min(items.length - 1, i));
+    lastPos = null;
     $('#calItem').value = String(cur);
     $('#calText').innerHTML = items[cur].tokens.map(UI().tokHTML).join('');
     $('#calPrev').disabled = cur === 0;
@@ -136,6 +139,7 @@
     tick();
   }
   function stop() {
+    if (stopAt != null) lastPos = audio.currentTime;
     if (!audio.paused) audio.pause();
     stopAt = null; cancelAnimationFrame(raf);
     $('#calPlay').classList.remove('on');
@@ -222,10 +226,13 @@
       ctx.fillText(lbl, bx + 5, 15);
     });
 
-    // 播放位置
-    if (stopAt != null) {
-      const x = X(audio.currentTime);
-      ctx.fillStyle = css('--good'); ctx.fillRect(x - 1, top, 2, h - top - axisH);
+    // 播放位置（播放中：綠色實線；停止後：綠色虛線，表示「設為目前播放位置」會用這裡）
+    const pos = stopAt != null ? audio.currentTime : lastPos;
+    if (pos != null) {
+      const x = X(pos);
+      ctx.fillStyle = css('--good');
+      if (stopAt != null) ctx.fillRect(x - 1, top, 2, h - top - axisH);
+      else for (let y = top; y < h - axisH; y += 6) ctx.fillRect(x - 1, y, 2, 3);
     }
   }
 
@@ -277,9 +284,18 @@
     setEdge(+which, range(cur)[+which] + parseFloat(d));
   });
   document.querySelectorAll('[data-here]').forEach(btn => btn.onclick = () => {
-    if (stopAt == null) { UI().toast('先播放，在聽到的位置按這個鈕'); return; }
-    setEdge(+btn.dataset.here, audio.currentTime - (+btn.dataset.here === 0 ? 0.05 : -0.05));
+    const which = +btn.dataset.here;
+    const playing = stopAt != null;
+    const t = playing ? audio.currentTime - REACT : lastPos;
+    if (t == null) { UI().toast('先按「播放」，聽到要切的位置時再按這個鈕'); return; }
+    const before = range(cur)[which];
+    setEdge(which, t);
+    const after = range(cur)[which];
+    flash(which === 0 ? '#calStart' : '#calEnd');
+    if (Math.abs(after - t) > 0.05) UI().toast(`${which ? '迄點' : '起點'}不能${which ? '早於起點' : '晚於迄點'}，已設為 ${after.toFixed(2)} 秒`);
+    else UI().toast(`${which ? '迄點' : '起點'}：${before.toFixed(2)} → ${after.toFixed(2)} 秒`);
   });
+  function flash(id) { const el = $(id); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
   [['#calStart', 0], ['#calEnd', 1]].forEach(([id, which]) => {
     $(id).onchange = e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) setEdge(which, v); else fields(); };
   });
