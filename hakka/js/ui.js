@@ -388,6 +388,27 @@
     return true;
   }
 
+  // ---------- 底部按鈕永遠看得到 ----------
+  // iPhone Safari 下拉或捲動時，底部網址列／工具列展開會蓋住 position:fixed 的按鈕列；
+  // 用 visualViewport 算出實際可見範圍的底部，把按鈕列往上推到可見區域內。
+  const dockEl = document.querySelector('.dock');
+  const vv = window.visualViewport;
+  if (vv) {
+    let pending = 0;
+    const place = () => {
+      pending = 0;
+      const hidden = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+      // 鍵盤打開時（可見高度大幅縮小）不跟著移動，避免按鈕列跑到畫面中間
+      const keyboard = vv.height < window.innerHeight * 0.6;
+      dockEl.style.transform = hidden > 1 && !keyboard ? `translateY(${-hidden}px)` : '';
+    };
+    const req = () => { if (!pending) pending = requestAnimationFrame(place); };
+    vv.addEventListener('resize', req);
+    vv.addEventListener('scroll', req);
+    window.addEventListener('scroll', req, { passive: true });
+    place();
+  }
+
   window.HakkaUI = {
     needSelection,
     tokHTML, toast, units, unitEl, markUnit, clearPlayUI, rate, reps, mode,
