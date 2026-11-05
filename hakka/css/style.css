@@ -524,3 +524,4 @@ body.rec-session .del-rec { pointer-events: none; opacity: .35; }
 .tk.k-cue-hl .z, .tk.k-cue-hl .p { color: var(--kt); }
 .tk.k-beat { animation: kbeat .45s cubic-bezier(.3, 1.6, .5, 1); }
 @keyframes kbeat { 0% { transform: translateY(0) scale(1); } 35% { transform: translateY(-9px) scale(1.22); } 100% { transform: translateY(0) scale(1); } }
+.best[hidden] { display: none; }

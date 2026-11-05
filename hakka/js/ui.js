@@ -40,7 +40,7 @@
           <button class="my-play" aria-label="播放我錄的${label}" title="我的錄音"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <button class="del-rec" aria-label="刪除我錄的${label}" title="刪除這句錄音"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span>確定？</span></button>
           <span class="dur"></span>
-          <span class="best" title="最佳分數">—</span>
+          <span class="best" title="最佳分數" hidden></span>
         </div>`;
   const checkHTML = (u, num) => `<label class="check sent-check"><input type="checkbox" data-unit="${u}"><span class="box"></span><span class="num">${num}</span></label>`;
   // 標題、作者也是可勾選的練習單位
@@ -107,8 +107,6 @@
   applyTiming();
   window.HakkaTiming.onChange(() => { applyTiming(); refresh(); });
 
-  // 示範：前三句顯示歷史分數
-  [84, 69, 80].forEach((v, i) => { const b = units[i + 2].el.querySelector('.best'); b.textContent = v; b.className = 'best ' + (v >= 80 ? 'good' : 'mid'); });
 
   // ---------- 選取 ----------
   const selected = new Set();
