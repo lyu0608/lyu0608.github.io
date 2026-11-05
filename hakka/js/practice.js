@@ -181,9 +181,11 @@
           UI().unitEl(u).classList.remove('recording');
           if (res === 'error' || !res || session.quit) { session.quit = session.quit || res === 'error'; break; }
           if (!res.speech) {
-            showBar('warn', `${name}：沒有聽到聲音`, [['重錄', choose('redo'), 'primary'], ['跳過', choose('next')], ['結束', quit]]);
-            if (await waitChoice() === 'redo') { step = 'ready'; continue; }
-            break;
+            showBar('warn', `${name}：好像沒有錄到聲音`, [['重錄', choose('redo'), 'primary'], ['聽聽看', () => playBlob(res.blob)], ['保留這次錄音', choose('keep')], ['跳過', choose('next')], ['結束', quit]]);
+            const c = await waitChoice();
+            stopMine();
+            if (c === 'redo') { step = 'ready'; continue; }
+            if (c !== 'keep') break;
           }
           await saveRec('u' + u, { u, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() });
           markHave(u, true); refreshMine();
@@ -212,7 +214,11 @@
       { maxSec: total / rate * 2 + 20, autoStop: false, karaoke: { list, rate, gap: 0.35, tail: 0.8 } });
     list.forEach(u => UI().unitEl(u).classList.remove('recording'));
     if (!res || res === 'error' || session.quit) return;
-    if (!res.speech) { UI().toast('沒有聽到聲音，請再錄一次'); return; }
+    if (!res.speech) {
+      showBar('warn', '好像沒有錄到聲音', [['聽聽看', () => playBlob(res.blob)], ['保留這次錄音', choose('keep'), 'primary'], ['不要了', choose('drop')]]);
+      const c = await waitChoice(); stopMine();
+      if (c !== 'keep') return;
+    }
     await saveRec('whole', { units: list, blob: res.blob, mime: res.mime, dur: res.dur, at: Date.now() });
     have.add('whole'); refreshMine();
     showBar('saved', `連續朗讀錄好了（${fmt(res.dur)}）`, [['聽我的', () => playBlob(res.blob)], ['關閉', choose('next'), 'primary']]);
