@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.8.20">
+<link rel="stylesheet" href="css/style.css?v=0.8.21">
 <style>
   body { padding-bottom: 120px; }
   .rv-head { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
@@ -201,9 +201,9 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="data/03.js?v=0.8.20"></script>
-<script src="js/timing.js?v=0.8.20"></script>
-<script src="data/review-full.js?v=0.8.20"></script>
+<script src="data/03.js?v=0.8.21"></script>
+<script src="js/timing.js?v=0.8.21"></script>
+<script src="data/review-full.js?v=0.8.21"></script>
 <script>
 (function () {
   'use strict';
@@ -218,8 +218,17 @@
 
   // ---------- 選擇：choice[id] = { i: 選項序號 } 或 { z, p, custom: true } ----------
   let choice = (() => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { return null; } })();
+  // 資料更新過（讀音已套用）：之前確認過的字，現在的「目前」就是當時選的讀音，一律轉成「目前」
+  if (choice && choice._ver !== D.ver) {
+    const n = Object.keys(choice).filter(k => k !== '_ver').length;
+    const fresh = { _ver: D.ver };
+    Object.keys(choice).forEach(k => { if (k !== '_ver' && D.items.some(it => it.id === k)) fresh[k] = { i: 0 }; });
+    choice = fresh;
+    try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch (_) { /* ignore */ }
+    if (n) setTimeout(() => toast(`讀音已更新，之前確認的 ${n} 字保留為已確認`), 400);
+  }
   if (!choice) {
-    choice = {};
+    choice = { _ver: D.ver };
     // 接續「讀音確認表」（review-2）已選好的結果
     let r2 = null;
     try { r2 = JSON.parse(localStorage.getItem('hakka.review.2') || 'null'); } catch (_) { /* ignore */ }
@@ -502,7 +511,7 @@
   let armed = false;
   $('#resetAll').onclick = e => {
     if (!armed) { armed = true; e.target.textContent = '確定清除？'; setTimeout(() => { armed = false; e.target.textContent = '清除全部選擇'; }, 3000); return; }
-    armed = false; e.target.textContent = '清除全部選擇'; choice = {}; save(); closeEd(); refreshAll();
+    armed = false; e.target.textContent = '清除全部選擇'; choice = { _ver: D.ver }; save(); closeEd(); refreshAll();
   };
   const result = () => JSON.stringify({
     review: 'review-full', savedAt: new Date().toISOString(),
@@ -526,6 +535,6 @@
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(result()); toast('已複製'); } catch (_) { toast('無法複製，請改用下載'); } };
 })();
 </script>
-<script src="js/calib.js?v=0.8.20"></script>
+<script src="js/calib.js?v=0.8.21"></script>
 </body>
 </html>
