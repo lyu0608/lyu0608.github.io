@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.8.19">
+<link rel="stylesheet" href="css/style.css?v=0.8.20">
 <style>
   body { padding-bottom: 120px; }
   .rv-head { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
@@ -201,9 +201,9 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="data/03.js?v=0.8.19"></script>
-<script src="js/timing.js?v=0.8.19"></script>
-<script src="data/review-full.js?v=0.8.19"></script>
+<script src="data/03.js?v=0.8.20"></script>
+<script src="js/timing.js?v=0.8.20"></script>
+<script src="data/review-full.js?v=0.8.20"></script>
 <script>
 (function () {
   'use strict';
@@ -261,7 +261,7 @@
 
   // ---------- 注音 → 拼音（同 tools/pinyin_zhuyin.py from_zhuyin，聲調用上標數字） ----------
   const Z2P_INIT = { 'ㄅ': 'b', 'ㄆ': 'ph', 'ㄇ': 'm', 'ㄈ': 'f', 'ㄉ': 'd', 'ㄊ': 'th', 'ㄋ': 'n', 'ㄌ': 'l', 'ㄍ': 'g', 'ㄎ': 'kh', 'ㄏ': 'h', 'ㄐ': 'j', 'ㄑ': 'chh', 'ㄒ': 's', 'ㄗ': 'z', 'ㄘ': 'chh', 'ㄙ': 's', 'ㄪ': 'v', 'ㄫ': 'ng' };
-  const Z2P_FIN = { '': 'ṳ', 'ㄚ': 'a', 'ㄛ': 'o', 'ㄝ': 'e', 'ㄜ': 'e', 'ㄧ': 'i', 'ㄨ': 'u', 'ㄞ': 'ai', 'ㄠ': 'au', 'ㄛㄧ': 'oi', 'ㄨㄧ': 'ui', 'ㄧㄨ': 'iu', 'ㄝㄨ': 'eu', 'ㄜㄨ': 'eu', 'ㄧㄚ': 'ia', 'ㄧㄝ': 'ie', 'ㄧㄛ': 'io', 'ㄨㄚ': 'ua', 'ㄨㄝ': 'ue', 'ㄧㄠ': 'iau', 'ㄧㄝㄨ': 'ieu', 'ㄧㄞ': 'iai', 'ㄧㄛㄧ': 'ioi', 'ㄨㄞ': 'uai', 'ㄢ': 'an', 'ㄝㄣ': 'en', 'ㄣ': 'en', 'ㄧㄣ': 'in', 'ㄨㄣ': 'un', 'ㄛㄣ': 'on', 'ㄧㄢ': 'ien', 'ㄧㄨㄣ': 'iun', 'ㄧㄛㄣ': 'ion', 'ㄨㄢ': 'uan', 'ㄨㄝㄣ': 'uen', 'ㄤ': 'ang', 'ㄛㄥ': 'ong', 'ㄨㄥ': 'ung', 'ㄧㄤ': 'iang', 'ㄧㄛㄥ': 'iong', 'ㄧㄨㄥ': 'iung', 'ㄨㄤ': 'uang', 'ㄚㄇ': 'am', 'ㄝㄇ': 'em', 'ㄧㄇ': 'im', 'ㄧㄚㄇ': 'iam', 'ㄇ': 'm', 'ㄫ': 'ng' };
+  const Z2P_FIN = { '': 'ṳ', 'ㄚ': 'a', 'ㄛ': 'o', 'ㄝ': 'e', 'ㄜ': 'e', 'ㄧ': 'i', 'ㄨ': 'u', 'ㄞ': 'ai', 'ㄠ': 'au', 'ㄛㄧ': 'oi', 'ㄨㄧ': 'ui', 'ㄧㄨ': 'iu', 'ㄝㄨ': 'eu', 'ㄜㄨ': 'eu', 'ㄧㄚ': 'ia', 'ㄧㄝ': 'ie', 'ㄧㄛ': 'io', 'ㄨㄚ': 'ua', 'ㄨㄝ': 'ue', 'ㄧㄠ': 'iau', 'ㄧㄝㄨ': 'ieu', 'ㄧㄞ': 'iai', 'ㄧㄛㄧ': 'ioi', 'ㄨㄞ': 'uai', 'ㄢ': 'an', 'ㄝㄣ': 'en', 'ㄣ': 'en', 'ㄧㄣ': 'in', 'ㄨㄣ': 'un', 'ㄛㄣ': 'on', 'ㄧㄢ': 'ien', 'ㄧㄨㄣ': 'iun', 'ㄧㄛㄣ': 'ion', 'ㄨㄢ': 'uan', 'ㄨㄝㄣ': 'uen', 'ㄤ': 'ang', 'ㄛㄥ': 'ong', 'ㄨㄥ': 'ung', 'ㄧㄤ': 'iang', 'ㄧㄛㄥ': 'iong', 'ㄧㄨㄥ': 'iung', 'ㄨㄤ': 'uang', 'ㄚㄇ': 'am', 'ㄝㄇ': 'em', 'ㄧㄇ': 'im', 'ㄧㄚㄇ': 'iam', 'ㄇ': 'm', 'ㄫ': 'ng', 'ㄧㄡ': 'iu', 'ㄡ': 'eu' };
   const TONE_NUM = { 'ˊ': '²⁴', 'ˇ': '¹¹', 'ˋ': '³¹', '': '⁵⁵' };
   function fromZhuyin(z) {
     z = String(z).replace(/\(.*?\)/g, '').replace(/\s/g, '');
@@ -526,6 +526,6 @@
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(result()); toast('已複製'); } catch (_) { toast('無法複製，請改用下載'); } };
 })();
 </script>
-<script src="js/calib.js?v=0.8.19"></script>
+<script src="js/calib.js?v=0.8.20"></script>
 </body>
 </html>
