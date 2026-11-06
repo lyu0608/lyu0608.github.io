@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=0.8.17">
+<link rel="stylesheet" href="css/style.css?v=0.8.18">
 <style>
   body { padding-bottom: 120px; }
   .rv-head { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
@@ -28,6 +28,8 @@
   .card-top button { border: 1px solid var(--indigo); color: var(--indigo); background: var(--paper); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
   .card-top button.on { background: var(--indigo); color: #fff; }
   .card-top button.okall { border-color: var(--good); color: var(--good); }
+  .card-top button.cut { border-color: var(--mid); color: var(--mid); }
+  .cal-mark { font-size: 12px; background: var(--good-soft); color: var(--good); border-radius: 999px; padding: 2px 10px; font-weight: 700; }
   .row { display: flex; flex-wrap: wrap; gap: 4px; }
   .cell { position: relative; min-width: 50px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 10px; padding: 4px 4px 3px; text-align: center; color: var(--ink); line-height: 1.15; }
   .cell .c { font: 400 22px/1.2 var(--han); }
@@ -111,6 +113,7 @@
   <section class="rv-head">
     <h1>〈得人惱个木棉樹〉全文逐字核對</h1>
     <p>一句一張卡片。先按「▶ 整句」聽一次（播放時會框出正在念的字），<b>點任何一個字</b>就會打開選項：可以從目前讀音、照拼音、文中其他讀法、教育部辭典讀音中選一個，或在最下面的 <b>✎ 自訂</b> 自己填注音和拼音。</p>
+    <p>若字幕框跟聲音對不上，按該句的「✂ 校正切句」：看波形拖拉整句起訖點和每個字的開始時間，改完自動套用到這一頁的播放（也會套用到練習頁）。</p>
     <p>整句聽起來都沒問題，就按「✓ 本句其餘都用目前」一次確認。選擇會自動存在這台裝置；全部核對完按「下載結果 JSON」傳給我，我會照你的選擇更新全文的注音與拼音。</p>
     <div class="legend">
       <span><i class="dot f-bad" style="position:static;display:inline-block;width:9px;height:9px;border-radius:50%"></i>注音拼音不符</span>
@@ -123,6 +126,7 @@
       <label class="toggle" style="color:var(--ink-2)"><input type="checkbox" id="hideDone"><span>只看還沒核對完的句子</span></label>
       <button class="ghost" id="nextTodo">跳到下一個未確認的字</button>
       <button class="ghost" id="resetAll">清除全部選擇</button>
+      <span class="cal-mark" id="calMark" hidden>已使用你的切句校正</span>
     </div>
   </section>
   <div id="list"></div>
@@ -135,11 +139,71 @@
     <button class="ghost strong" id="dlBtn">下載結果 JSON</button>
   </div>
 </div>
+<dialog class="sheet calib" id="dlgCalib" aria-labelledby="calTitle">
+  <div class="sheet-head">
+    <h2 id="calTitle">校正切句</h2>
+    <button class="icon-btn" id="calClose" aria-label="關閉"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="cal-body">
+    <div class="cal-nav">
+      <button class="nav-btn" id="calPrev" aria-label="上一句"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <select id="calItem" aria-label="選擇要校正的句子"></select>
+      <button class="nav-btn" id="calNext" aria-label="下一句"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="cal-text tokens" id="calText"></div>
+    <div class="cal-wave-wrap">
+      <canvas id="calWave" aria-label="波形：拖拉紅色的「起」「迄」調整範圍，點波形從該處播放"></canvas>
+      <div class="cal-zoom">
+        <button id="calZoomOut" aria-label="顯示更多">－</button>
+        <button id="calZoomIn" aria-label="放大">＋</button>
+      </div>
+    </div>
+    <p class="cal-hint">拖拉紅色「起」「迄」調整整句範圍；拖拉藍色虛線調整每個字的開始時間（卡拉 OK 用），放開後自動試聽；點波形其他地方會從那裡開始播放。</p>
+    <div class="cal-syl" id="calSyl"></div>
+    <div class="cal-play">
+      <button class="act play" id="calPlay"><svg viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></svg><span>播放本句</span></button>
+      <button class="ghost" id="calHead">聽開頭</button>
+      <button class="ghost" id="calTail">聽結尾</button>
+      <button class="ghost" id="calCtx">連前後一起聽</button>
+    </div>
+    <div class="cal-edges">
+      <div class="edge">
+        <div class="edge-lbl">起點 <small>秒</small></div>
+        <div class="edge-row">
+          <button data-nudge="0:-0.1">−0.1</button><button data-nudge="0:-0.02">−.02</button>
+          <input id="calStart" type="number" step="0.01" inputmode="decimal" aria-label="起點秒數">
+          <button data-nudge="0:0.02">+.02</button><button data-nudge="0:0.1">+0.1</button>
+        </div>
+        <button class="here" data-here="0">設為目前播放位置</button>
+      </div>
+      <div class="edge">
+        <div class="edge-lbl">迄點 <small>秒</small></div>
+        <div class="edge-row">
+          <button data-nudge="1:-0.1">−0.1</button><button data-nudge="1:-0.02">−.02</button>
+          <input id="calEnd" type="number" step="0.01" inputmode="decimal" aria-label="迄點秒數">
+          <button data-nudge="1:0.02">+.02</button><button data-nudge="1:0.1">+0.1</button>
+        </div>
+        <button class="here" data-here="1">設為目前播放位置</button>
+      </div>
+    </div>
+    <div class="cal-len">長度 <b id="calLen"></b></div>
+  </div>
+  <div class="cal-foot">
+    <div class="cal-status" id="calStatus"></div>
+    <div class="cal-foot-btns">
+      <button class="ghost" id="calRevertOne">還原此句</button>
+      <button class="ghost" id="calResetAll">全部還原</button>
+      <button class="ghost" id="calCopy">複製</button>
+      <button class="ghost strong" id="calExport">下載 JSON</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="data/03.js?v=0.8.17"></script>
-<script src="js/timing.js?v=0.8.17"></script>
-<script src="data/review-full.js?v=0.8.17"></script>
+<script src="data/03.js?v=0.8.18"></script>
+<script src="js/timing.js?v=0.8.18"></script>
+<script src="data/review-full.js?v=0.8.18"></script>
 <script>
 (function () {
   'use strict';
@@ -171,6 +235,27 @@
     });
     if (n) setTimeout(() => toast(`已帶入讀音確認表選好的 ${n} 個字`), 400);
   }
+  // ---------- 切句時間：用「校正切句」存的（沒有就用預設） ----------
+  const TM = window.HakkaTiming;
+  function applyTiming() {
+    const t = TM.get(), S = t.syl || {};
+    D.units.forEach((u, ui) => {
+      const rng = ui === 0 ? t.title : ui === 1 ? t.author : t.sentences[ui - 2];
+      const sy = (ui === 0 ? S.title : ui === 1 ? S.author : (S.sentences || [])[ui - 2]) || null;
+      if (rng) { u.a = rng[0]; u.b = rng[1]; }
+      const ids = u.cells.filter(c => c.i != null).map(c => c.i);
+      if (!sy || sy.length !== ids.length) return;
+      ids.forEach((i, k) => {
+        const it = D.items[i];
+        it.a = sy[k][0]; it.b = sy[k][1];
+        it.ca = sy[Math.max(0, k - 1)][0]; it.cb = sy[Math.min(sy.length - 1, k + 1)][1];
+      });
+    });
+    const m = document.getElementById('calMark'); if (m) m.hidden = !TM.isCustom();
+  }
+  applyTiming();
+  TM.onChange(applyTiming);
+
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch (_) { /* ignore */ } };
   const picked = it => { const c = choice[it.id]; if (!c) return null; return c.custom ? c : it.opts[c.i]; };
 
@@ -232,7 +317,7 @@
     if (p !== lastPara) { html += `<div class="para-h">${p < 0 ? '標題・作者' : PARA[p] || ('第' + (p + 1) + '段')}</div>`; lastPara = p; }
     html += `<article class="card" id="u${ui}" data-u="${ui}">
       <div class="card-top"><span class="u">${esc(u.name)}</span><span class="cnt" id="cnt${ui}"></span>
-        <button data-sent="${ui}">▶ 整句</button><button class="okall" data-okall="${ui}">✓ 本句其餘都用目前</button></div>
+        <button data-sent="${ui}">▶ 整句</button><button class="cut" data-cal="${ui}">✂ 校正切句</button><button class="okall" data-okall="${ui}">✓ 本句其餘都用目前</button></div>
       <div class="row">${u.cells.map(c => {
         if (c.pu) return `<span class="cell pu"><div class="c">${esc(c.c)}</div></span>`;
         unitOf[c.i] = ui;
@@ -346,6 +431,8 @@
     if (cell) { const i = +cell.dataset.i; if (i === openI) closeEd(); else openEd(i, false); return; }
     const sb = e.target.closest('[data-sent]');
     if (sb) { const ui = +sb.dataset.sent, u = D.units[ui]; play(u.a - 0.05, u.b + 0.1, 1, sb, ui); return; }
+    const cb = e.target.closest('[data-cal]');
+    if (cb) { stop(); window.HakkaCalib.open(+cb.dataset.cal); return; }
     const ok = e.target.closest('[data-okall]');
     if (ok) {
       const ui = +ok.dataset.okall; let n = 0;
@@ -386,6 +473,24 @@
   });
 
   refreshAll();
+  applyTiming();
+
+  // ---------- 給校正切句（js/calib.js）用：字幕顯示核對表選好的讀音 ----------
+  const art = window.HAKKA_ARTICLES[0];
+  const tokItem = new Map();
+  [art.titleTokens, art.authorTokens, ...art.paragraphs.flat().map(x => x.t)].forEach((ts, ui) => {
+    const ids = D.units[ui].cells.filter(c => c.i != null).map(c => c.i);
+    let k = 0; ts.forEach(t => { if (t.z) tokItem.set(t, ids[k++]); });
+  });
+  window.HakkaUI = {
+    toast,
+    tokHTML: t => {
+      if (!t.z) return `<span class="tk pu"><span class="c">${esc(t.c)}</span><span class="z"></span><span class="p"></span></span>`;
+      const it = D.items[tokItem.get(t)], o = it ? (picked(it) || it.opts[0]) : t;
+      return `<span class="tk"><span class="c">${esc(t.c)}</span><span class="z">${esc(o.z || '·')}</span><span class="p">${esc(o === it?.opts[0] && !choice[it.id] ? it.p : o.p || '·')}</span></span>`;
+    },
+  };
+
   $('#hideDone').onchange = e => document.body.classList.toggle('hide-done', e.target.checked);
   $('#nextTodo').onclick = () => {
     const from = openI >= 0 ? openI + 1 : 0;
@@ -401,6 +506,7 @@
   };
   const result = () => JSON.stringify({
     review: 'review-full', savedAt: new Date().toISOString(),
+    timing: TM.isCustom() ? JSON.parse(TM.exportJSON()) : null,
     total: D.items.length, confirmed: D.items.filter(it => choice[it.id]).length,
     items: D.items.map((it, i) => {
       const o = picked(it), c = choice[it.id];
@@ -420,5 +526,6 @@
   $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(result()); toast('已複製'); } catch (_) { toast('無法複製，請改用下載'); } };
 })();
 </script>
+<script src="js/calib.js?v=0.8.18"></script>
 </body>
 </html>
