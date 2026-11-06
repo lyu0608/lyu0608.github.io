@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>全文逐字核對表</title>
+<meta name="description" content="〈得人惱个木棉樹〉全文 678 字逐字試聽，選定或自訂每個字的注音與拼音。">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=0.8.17">
+<style>
+  body { padding-bottom: 120px; }
+  .rv-head { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: var(--shadow); }
+  .rv-head h1 { margin: 0 0 6px; font-size: 20px; color: var(--indigo); }
+  .rv-head p { margin: 4px 0; color: var(--ink-2); font-size: 14px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .rv-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .rv-tools .ghost { font-size: 13.5px; }
+  .para-h { font-size: 14px; color: var(--ink-3); margin: 20px 0 6px; font-weight: 700; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .card.done { border-color: var(--good); }
+  .card-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .card-top .u { font-weight: 700; color: var(--indigo); font-size: 15px; }
+  .card-top .cnt { font-size: 12.5px; color: var(--ink-3); flex: 1; }
+  .card-top button { border: 1px solid var(--indigo); color: var(--indigo); background: var(--paper); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700; }
+  .card-top button.on { background: var(--indigo); color: #fff; }
+  .card-top button.okall { border-color: var(--good); color: var(--good); }
+  .row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .cell { position: relative; min-width: 50px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 10px; padding: 4px 4px 3px; text-align: center; color: var(--ink); line-height: 1.15; }
+  .cell .c { font: 400 22px/1.2 var(--han); }
+  .cell .z { font-size: 12px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .cell .p { font: italic 12px "Times New Roman", Georgia, serif; color: var(--indigo-2); white-space: nowrap; }
+  .cell .was { font-size: 10px; color: var(--ink-3); text-decoration: line-through; white-space: nowrap; }
+  .cell.pu { border-color: transparent; background: none; min-width: 0; padding: 4px 0; color: var(--ink-3); pointer-events: none; }
+  .cell.pu .c { font-size: 18px; }
+  .cell .dot { position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 50%; }
+  .dot.f-bad { background: #d9534f; } .dot.f-multi { background: #e8902a; } .dot.f-dict { background: #4a7fd6; } .dot.f-none { background: #888; }
+  .cell.ok { border-color: var(--good); background: var(--good-soft); }
+  .cell.chg { border-color: #d4a017; background: #fff6d6; }
+  .cell.chg .c { color: var(--red); }
+  .cell.open { outline: 3px solid var(--indigo); outline-offset: 1px; }
+  .cell.kara { box-shadow: 0 0 0 3px #f7c948 inset; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cell.chg { background: #4a3d10; } }
+  :root[data-theme="dark"] .cell.chg { background: #4a3d10; }
+  .ed { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .ed-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .ed-top .ch { font: 400 30px/1 var(--han); color: var(--red); }
+  .ed-top .tag2 { font-size: 11.5px; border-radius: 999px; padding: 1px 8px; background: var(--line-2); color: var(--ink-2); }
+  .ed-top .nav { margin-left: auto; display: flex; gap: 6px; }
+  .ed-top .nav button { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 4px 10px; font-size: 13px; color: var(--ink-2); }
+  .plays { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+  .plays button { border: 1px solid var(--indigo); color: var(--indigo); background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; font-weight: 700; }
+  .plays button.on { background: var(--indigo); color: #fff; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .opt { border: 2px solid var(--line); background: var(--paper); border-radius: 12px; padding: 8px 10px; text-align: left; color: var(--ink); }
+  .opt .tag { font-size: 11.5px; font-weight: 700; color: var(--ink-3); line-height: 1.35; }
+  .opt .z { font-size: 19px; font-weight: 700; letter-spacing: .02em; margin-top: 2px; }
+  .opt .p { font: italic 14px "Times New Roman", Georgia, serif; color: var(--indigo-2); }
+  .opt .o2 { font-size: 11px; color: var(--ink-3); }
+  .opt.dict { border-style: dashed; }
+  .opt.sel { border-color: var(--good); background: var(--good-soft); border-style: solid; }
+  .opt.sel .tag::before { content: "✓ 採用　"; color: var(--good); }
+  .cust { margin-top: 8px; border: 2px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+  .cust.sel { border-color: var(--good); background: var(--good-soft); }
+  .cust .tag { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .cust.sel .tag::before { content: "✓ 採用　"; color: var(--good); }
+  .cust-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+  .cust-row label { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-2); }
+  .cust-row input { width: 9em; font-size: 16px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
+  .keys { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .keys button { min-width: 34px; border: 1px solid var(--line); background: var(--paper-2, var(--paper)); border-radius: 8px; padding: 4px 6px; font-size: 14px; color: var(--ink); }
+  .cust-row .apply { border: 1px solid var(--good); color: #fff; background: var(--good); border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 13.5px; }
+  .cust-row .gen { border: 1px solid var(--indigo); color: var(--indigo); background: var(--paper); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
+  .hint { font-size: 12.5px; color: var(--mid); margin-top: 6px; font-weight: 500; }
+  .note { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
+  .rv-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--paper); border-top: 1px solid var(--line); box-shadow: 0 -4px 20px rgba(0,0,0,.08); padding: 10px max(16px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)); }
+  .rv-bar-in { max-width: 1040px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .rv-prog { flex: 1; min-width: 160px; font-size: 14px; }
+  .rv-prog .barline { height: 6px; background: var(--line-2); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .rv-prog .barline i { display: block; height: 100%; background: var(--good); width: 0; transition: width .2s; }
+  .hide-done .card.done { display: none; }
+  .hide-done .para-h { display: none; }
+  @media (max-width: 640px) {
+    .cell { min-width: 44px; padding: 3px 2px 2px; }
+    .cell .c { font-size: 20px; }
+    .cell .z, .cell .p { font-size: 11px; }
+    .plays { flex-wrap: nowrap; gap: 4px; }
+    .plays button { padding: 6px 8px; font-size: 12.5px; flex: 1; white-space: nowrap; }
+    .opts { grid-template-columns: 1fr 1fr; }
+    .cust-row input { width: 7.5em; }
+    .card-top .cnt { order: 9; flex-basis: 100%; }
+    .card-top .u { flex: 1; }
+  }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">客</span>
+      <div><div class="brand-title">全文逐字核對表</div><div class="brand-sub">678 字逐字試聽，選定或自訂注音拼音</div></div>
+    </div>
+    <div class="appbar-actions"><a class="chip-btn" href="2026hakka.html" style="text-decoration:none">回練習頁</a></div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="rv-head">
+    <h1>〈得人惱个木棉樹〉全文逐字核對</h1>
+    <p>一句一張卡片。先按「▶ 整句」聽一次（播放時會框出正在念的字），<b>點任何一個字</b>就會打開選項：可以從目前讀音、照拼音、文中其他讀法、教育部辭典讀音中選一個，或在最下面的 <b>✎ 自訂</b> 自己填注音和拼音。</p>
+    <p>整句聽起來都沒問題，就按「✓ 本句其餘都用目前」一次確認。選擇會自動存在這台裝置；全部核對完按「下載結果 JSON」傳給我，我會照你的選擇更新全文的注音與拼音。</p>
+    <div class="legend">
+      <span><i class="dot f-bad" style="position:static;display:inline-block;width:9px;height:9px;border-radius:50%"></i>注音拼音不符</span>
+      <span><i class="dot f-multi" style="position:static;display:inline-block;width:9px;height:9px;border-radius:50%"></i>多音字</span>
+      <span><i class="dot f-dict" style="position:static;display:inline-block;width:9px;height:9px;border-radius:50%"></i>與辭典不同</span>
+      <span><i class="dot f-none" style="position:static;display:inline-block;width:9px;height:9px;border-radius:50%"></i>沒有拼音</span>
+      <span>綠框＝已確認　黃底＝已改讀音</span>
+    </div>
+    <div class="rv-tools">
+      <label class="toggle" style="color:var(--ink-2)"><input type="checkbox" id="hideDone"><span>只看還沒核對完的句子</span></label>
+      <button class="ghost" id="nextTodo">跳到下一個未確認的字</button>
+      <button class="ghost" id="resetAll">清除全部選擇</button>
+    </div>
+  </section>
+  <div id="list"></div>
+</main>
+
+<div class="rv-bar">
+  <div class="rv-bar-in">
+    <div class="rv-prog"><span id="progTxt"></span><div class="barline"><i id="progBar"></i></div></div>
+    <button class="ghost" id="copyBtn">複製</button>
+    <button class="ghost strong" id="dlBtn">下載結果 JSON</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data/03.js?v=0.8.17"></script>
+<script src="js/timing.js?v=0.8.17"></script>
+<script src="data/review-full.js?v=0.8.17"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const D = window.REVIEWFULL;
+  const KEY = 'hakka.review.full';
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const PARA = ['第一段', '第二段', '第三段', '第四段', '第五段', '第六段'];
+  const FLAG = { '注音拼音不符': 'f-bad', '多音字': 'f-multi', '與辭典不同': 'f-dict', '沒有拼音': 'f-none' };
+  let tt;
+  const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('show'), 1800); };
+
+  // ---------- 選擇：choice[id] = { i: 選項序號 } 或 { z, p, custom: true } ----------
+  let choice = (() => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (_) { return null; } })();
+  if (!choice) {
+    choice = {};
+    // 接續「讀音確認表」（review-2）已選好的結果
+    let r2 = null;
+    try { r2 = JSON.parse(localStorage.getItem('hakka.review.2') || 'null'); } catch (_) { /* ignore */ }
+    let n = 0;
+    if (r2) D.items.forEach(it => {
+      if (!it.r2 || !(it.r2.id in r2)) return;
+      const o = it.r2.opts[r2[it.r2.id]];
+      if (!o) return;
+      let j = it.opts.findIndex(x => x.z === o[0] && x.p === o[1]);
+      if (j < 0) j = it.opts.findIndex(x => x.z === o[0]);
+      choice[it.id] = j >= 0 ? { i: j } : { z: o[0], p: o[1], custom: true };
+      n++;
+    });
+    if (n) setTimeout(() => toast(`已帶入讀音確認表選好的 ${n} 個字`), 400);
+  }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(choice)); } catch (_) { /* ignore */ } };
+  const picked = it => { const c = choice[it.id]; if (!c) return null; return c.custom ? c : it.opts[c.i]; };
+
+  // ---------- 注音 → 拼音（同 tools/pinyin_zhuyin.py from_zhuyin，聲調用上標數字） ----------
+  const Z2P_INIT = { 'ㄅ': 'b', 'ㄆ': 'ph', 'ㄇ': 'm', 'ㄈ': 'f', 'ㄉ': 'd', 'ㄊ': 'th', 'ㄋ': 'n', 'ㄌ': 'l', 'ㄍ': 'g', 'ㄎ': 'kh', 'ㄏ': 'h', 'ㄐ': 'j', 'ㄑ': 'chh', 'ㄒ': 's', 'ㄗ': 'z', 'ㄘ': 'chh', 'ㄙ': 's', 'ㄪ': 'v', 'ㄫ': 'ng' };
+  const Z2P_FIN = { '': 'ṳ', 'ㄚ': 'a', 'ㄛ': 'o', 'ㄝ': 'e', 'ㄜ': 'e', 'ㄧ': 'i', 'ㄨ': 'u', 'ㄞ': 'ai', 'ㄠ': 'au', 'ㄛㄧ': 'oi', 'ㄨㄧ': 'ui', 'ㄧㄨ': 'iu', 'ㄝㄨ': 'eu', 'ㄜㄨ': 'eu', 'ㄧㄚ': 'ia', 'ㄧㄝ': 'ie', 'ㄧㄛ': 'io', 'ㄨㄚ': 'ua', 'ㄨㄝ': 'ue', 'ㄧㄠ': 'iau', 'ㄧㄝㄨ': 'ieu', 'ㄧㄞ': 'iai', 'ㄧㄛㄧ': 'ioi', 'ㄨㄞ': 'uai', 'ㄢ': 'an', 'ㄝㄣ': 'en', 'ㄣ': 'en', 'ㄧㄣ': 'in', 'ㄨㄣ': 'un', 'ㄛㄣ': 'on', 'ㄧㄢ': 'ien', 'ㄧㄨㄣ': 'iun', 'ㄧㄛㄣ': 'ion', 'ㄨㄢ': 'uan', 'ㄨㄝㄣ': 'uen', 'ㄤ': 'ang', 'ㄛㄥ': 'ong', 'ㄨㄥ': 'ung', 'ㄧㄤ': 'iang', 'ㄧㄛㄥ': 'iong', 'ㄧㄨㄥ': 'iung', 'ㄨㄤ': 'uang', 'ㄚㄇ': 'am', 'ㄝㄇ': 'em', 'ㄧㄇ': 'im', 'ㄧㄚㄇ': 'iam', 'ㄇ': 'm', 'ㄫ': 'ng' };
+  const TONE_NUM = { 'ˊ': '²⁴', 'ˇ': '¹¹', 'ˋ': '³¹', '': '⁵⁵' };
+  function fromZhuyin(z) {
+    z = String(z).replace(/\(.*?\)/g, '').replace(/\s/g, '');
+    if (!z) return null;
+    const m = z.match(/[ˊˇˋ]/); const tone = m ? m[0] : '';
+    z = z.replace(/[ˊˇˋ˙]/g, '');
+    let stop = '';
+    if (/[tkp]$/i.test(z)) { stop = z.slice(-1).toLowerCase(); z = z.slice(0, -1); }
+    let ini = '';
+    if (Z2P_INIT[z[0]]) { ini = Z2P_INIT[z[0]]; z = z.slice(1); }
+    else if (z[0] === 'ㄨ' && z.length > 1 && Z2P_FIN[z] == null) { ini = 'v'; z = z.slice(1); }
+    if (ini === 'n' && z.startsWith('ㄧ')) ini = 'ng';
+    if (['m', 'n', 'ng'].includes(ini) && z === '' && !stop) return ini + TONE_NUM[tone];
+    let fin = Z2P_FIN[z];
+    if (fin == null) return null;
+    if (ini === '' && fin.startsWith('i')) ini = 'y';
+    return stop ? ini + fin + stop : ini + fin + TONE_NUM[tone];
+  }
+
+  // ---------- 播放 ----------
+  const audio = window.HakkaPrepAudio(new Audio());
+  audio.preload = 'auto'; audio.src = D.audio;
+  let endAt = 0, raf = 0, curBtn = null, tok = 0, karaUnit = -1;
+  function clearKara() { document.querySelectorAll('.cell.kara').forEach(c => c.classList.remove('kara')); }
+  function stop() { tok++; cancelAnimationFrame(raf); if (!audio.paused) audio.pause(); if (curBtn) curBtn.classList.remove('on'); curBtn = null; karaUnit = -1; clearKara(); }
+  function play(a, b, rate, btn, unit) {
+    if (curBtn === btn) { stop(); return; }
+    stop();
+    const my = tok; curBtn = btn; btn.classList.add('on'); karaUnit = unit == null ? -1 : unit;
+    audio.playbackRate = rate; endAt = b;
+    window.HakkaStartAt(audio, Math.max(0, a)).then(() => {
+      let last = null;
+      const watch = () => {
+        if (my !== tok) return;
+        const t = audio.currentTime;
+        if (t >= endAt || audio.ended) { stop(); return; }
+        if (karaUnit >= 0) {
+          const cell = D.units[karaUnit].cells.find(c => c.i != null && D.items[c.i].a <= t && t < D.items[c.i].b);
+          const el = cell ? cellEl[cell.i] : null;
+          if (el !== last) { if (last) last.classList.remove('kara'); if (el) el.classList.add('kara'); last = el; }
+        }
+        raf = requestAnimationFrame(watch);
+      };
+      watch();
+    }).catch(() => { stop(); toast('無法播放'); });
+  }
+
+  // ---------- 畫面 ----------
+  const unitOf = [];   // item index → unit index
+  let html = '', lastPara = null;
+  D.units.forEach((u, ui) => {
+    const p = u.para == null ? -1 : u.para;
+    if (p !== lastPara) { html += `<div class="para-h">${p < 0 ? '標題・作者' : PARA[p] || ('第' + (p + 1) + '段')}</div>`; lastPara = p; }
+    html += `<article class="card" id="u${ui}" data-u="${ui}">
+      <div class="card-top"><span class="u">${esc(u.name)}</span><span class="cnt" id="cnt${ui}"></span>
+        <button data-sent="${ui}">▶ 整句</button><button class="okall" data-okall="${ui}">✓ 本句其餘都用目前</button></div>
+      <div class="row">${u.cells.map(c => {
+        if (c.pu) return `<span class="cell pu"><div class="c">${esc(c.c)}</div></span>`;
+        unitOf[c.i] = ui;
+        const it = D.items[c.i];
+        const f = it.flags.find(x => FLAG[x]);
+        return `<button class="cell" data-i="${c.i}">${f ? `<i class="dot ${FLAG[f]}" title="${esc(f)}"></i>` : ''}<div class="c">${esc(it.c)}</div><div class="z"></div><div class="p"></div><div class="was"></div></button>`;
+      }).join('')}</div>
+      <div class="ed-slot"></div>
+    </article>`;
+  });
+  $('#list').innerHTML = html;
+  const cellEl = [];
+  document.querySelectorAll('.cell[data-i]').forEach(b => { cellEl[+b.dataset.i] = b; });
+
+  function paintCell(i) {
+    const it = D.items[i], el = cellEl[i], o = picked(it);
+    const cur = it.opts[0];
+    const show = o || cur;
+    el.querySelector('.z').textContent = show.z || '—';
+    el.querySelector('.p').textContent = o ? (o.p || '') : it.p;
+    const changed = !!o && (o.z !== cur.z || o.p !== cur.p);
+    el.querySelector('.was').textContent = changed ? cur.z : '';
+    el.classList.toggle('ok', !!o && !changed);
+    el.classList.toggle('chg', changed);
+  }
+  function paintUnit(ui) {
+    const u = D.units[ui];
+    const ids = u.cells.filter(c => c.i != null).map(c => c.i);
+    const n = ids.filter(i => choice[D.items[i].id]).length;
+    const ch = ids.filter(i => cellEl[i].classList.contains('chg')).length;
+    $('#cnt' + ui).textContent = `已確認 ${n}/${ids.length}` + (ch ? `，改了 ${ch} 字` : '');
+    document.getElementById('u' + ui).classList.toggle('done', n === ids.length);
+  }
+  function progress() {
+    const n = D.items.filter(it => choice[it.id]).length;
+    const ch = D.items.filter((it, i) => cellEl[i].classList.contains('chg')).length;
+    $('#progTxt').textContent = `已確認 ${n} / ${D.items.length} 字` + (ch ? `（改了 ${ch} 字）` : '') + (n === D.items.length ? '，可以下載結果了' : '');
+    $('#progBar').style.width = (n / D.items.length * 100) + '%';
+  }
+  function refreshAll() { D.items.forEach((_, i) => paintCell(i)); D.units.forEach((_, ui) => paintUnit(ui)); progress(); }
+
+  // ---------- 編輯區（點字打開） ----------
+  let openI = -1;
+  function closeEd() {
+    if (openI >= 0) { cellEl[openI].classList.remove('open'); const s = cellEl[openI].closest('.card').querySelector('.ed-slot'); s.innerHTML = ''; }
+    openI = -1;
+  }
+  function openEd(i, scroll) {
+    closeEd();
+    openI = i;
+    const it = D.items[i], el = cellEl[i];
+    el.classList.add('open');
+    const c = choice[it.id];
+    const cz = c && c.custom ? c.z : '', cp = c && c.custom ? c.p : '';
+    const ctx = D.units[unitOf[i]].cells.map(x => x.pu ? `<span style="color:var(--ink-3)">${esc(x.c)}</span>` : x.i === i ? `<b style="color:var(--red)">${esc(D.items[x.i].c)}</b>` : esc(D.items[x.i].c)).join('');
+    el.closest('.card').querySelector('.ed-slot').innerHTML = `<div class="ed">
+      <div class="ed-top"><span class="ch">${esc(it.c)}</span>
+        ${it.flags.filter(f => f !== '辭典查無').map(f => `<span class="tag2">${esc(f)}</span>`).join('')}
+        <span class="nav"><button data-nav="-1">‹ 上一字</button><button data-nav="1">下一字 ›</button><button data-nav="0">收起</button></span></div>
+      <div class="note" style="font:400 15px/1.6 var(--han);margin-top:6px">${ctx}</div>
+      <div class="plays">
+        <button data-play="one">▶ 這個字</button><button data-play="ctx">▶ 連前後字</button><button data-play="slow">▶ 慢速</button>
+      </div>
+      <div class="opts">${it.opts.map((o, j) => `<button class="opt${o.src === 'dict' ? ' dict' : ''}${c && !c.custom && c.i === j ? ' sel' : ''}" data-opt="${j}">
+          <div class="tag">${esc(o.label)}</div><div class="z">${esc(o.z || '—')}</div><div class="p">${esc(o.p || '')}</div>
+          ${o.orig ? `<div class="o2">原拼音 ${esc(o.orig)}</div>` : ''}</button>`).join('')}</div>
+      <div class="cust${c && c.custom ? ' sel' : ''}">
+        <div class="tag">✎ 自訂（填你要的注音和拼音）</div>
+        <div class="cust-row">
+          <label>注音 <input id="cz" value="${esc(cz)}" placeholder="例：ㄇㄧㄢˇ" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+          <label>拼音 <input id="cp" value="${esc(cp)}" placeholder="例：mien¹¹" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        </div>
+        <div class="keys" aria-label="快速輸入">${['ˊ', 'ˇ', 'ˋ', 't', 'k', 'p', 'ㄫ', 'ㄪ', 'ㄜ'].map(k => `<button data-key="${k}">${k}</button>`).join('')}
+          ${['²⁴', '¹¹', '³¹', '⁵⁵', 'ṳ'].map(k => `<button data-pkey="${k}">${k}</button>`).join('')}</div>
+        <div class="cust-row">
+          <button class="gen" data-gen>依注音產生拼音</button>
+          <button class="apply" data-custom>採用自訂</button>
+        </div>
+      </div>
+      ${it.hint ? `<div class="hint">${esc(it.hint)}</div>` : ''}
+      ${it.dictNote ? `<div class="note">辭典釋義：${esc(it.dictNote)}</div>` : ''}
+    </div>`;
+    let lastInput = 'cz';
+    ['cz', 'cp'].forEach(id => document.getElementById(id).addEventListener('focus', () => { lastInput = id; }));
+    el.closest('.card').querySelector('.keys').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const inp = document.getElementById(b.dataset.pkey ? 'cp' : (b.dataset.key ? 'cz' : lastInput));
+      const s = inp.selectionStart != null ? inp.selectionStart : inp.value.length, e2 = inp.selectionEnd != null ? inp.selectionEnd : s;
+      const v = b.dataset.key || b.dataset.pkey;
+      inp.value = inp.value.slice(0, s) + v + inp.value.slice(e2);
+      try { inp.setSelectionRange(s + v.length, s + v.length); } catch (_) { /* ignore */ }
+    });
+    if (scroll) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function choose(it, c) {
+    const old = choice[it.id];
+    if (old && !c.custom && !old.custom && old.i === c.i) delete choice[it.id];
+    else choice[it.id] = c;
+    save();
+    const i = D.items.indexOf(it);
+    paintCell(i); paintUnit(unitOf[i]); progress();
+  }
+  function step(d) {
+    const n = openI + d;
+    if (n < 0 || n >= D.items.length) { closeEd(); return; }
+    openEd(n, true);
+  }
+
+  document.addEventListener('click', e => {
+    const cell = e.target.closest('.cell[data-i]');
+    if (cell) { const i = +cell.dataset.i; if (i === openI) closeEd(); else openEd(i, false); return; }
+    const sb = e.target.closest('[data-sent]');
+    if (sb) { const ui = +sb.dataset.sent, u = D.units[ui]; play(u.a - 0.05, u.b + 0.1, 1, sb, ui); return; }
+    const ok = e.target.closest('[data-okall]');
+    if (ok) {
+      const ui = +ok.dataset.okall; let n = 0;
+      D.units[ui].cells.forEach(c => { if (c.i != null && !choice[D.items[c.i].id]) { choice[D.items[c.i].id] = { i: 0 }; n++; } });
+      save(); D.units[ui].cells.forEach(c => c.i != null && paintCell(c.i)); paintUnit(ui); progress();
+      if (openI >= 0 && unitOf[openI] === ui) openEd(openI, false);
+      toast(n ? `本句 ${n} 字設為「目前」` : '本句都已確認');
+      return;
+    }
+    if (openI < 0) return;
+    const it = D.items[openI];
+    const nb = e.target.closest('[data-nav]');
+    if (nb) { const d = +nb.dataset.nav; if (d) step(d); else closeEd(); return; }
+    const pb = e.target.closest('[data-play]');
+    if (pb) {
+      const m = pb.dataset.play;
+      if (m === 'one') play(it.a - 0.05, it.b + 0.05, 1, pb);
+      else if (m === 'ctx') play(it.ca - 0.05, it.cb + 0.05, 1, pb);
+      else play(it.ca - 0.05, it.cb + 0.05, 0.6, pb);
+      return;
+    }
+    const ob = e.target.closest('[data-opt]');
+    if (ob) { choose(it, { i: +ob.dataset.opt }); openEd(openI, false); return; }
+    if (e.target.closest('[data-gen]')) {
+      const z = $('#cz').value.trim();
+      if (!z) { toast('請先填注音'); return; }
+      const p = fromZhuyin(z);
+      if (p) $('#cp').value = p; else toast('這個注音無法自動轉換，請直接填拼音');
+      return;
+    }
+    if (e.target.closest('[data-custom]')) {
+      const z = $('#cz').value.trim(), p = $('#cp').value.trim();
+      if (!z && !p) { toast('請填注音或拼音'); return; }
+      choose(it, { z, p: p || fromZhuyin(z) || '', custom: true });
+      openEd(openI, false);
+      toast('已採用自訂讀音');
+    }
+  });
+
+  refreshAll();
+  $('#hideDone').onchange = e => document.body.classList.toggle('hide-done', e.target.checked);
+  $('#nextTodo').onclick = () => {
+    const from = openI >= 0 ? openI + 1 : 0;
+    let j = D.items.findIndex((it, i) => i >= from && !choice[it.id]);
+    if (j < 0) j = D.items.findIndex(it => !choice[it.id]);
+    if (j < 0) { toast('全部都確認完了'); return; }
+    openEd(j, true);
+  };
+  let armed = false;
+  $('#resetAll').onclick = e => {
+    if (!armed) { armed = true; e.target.textContent = '確定清除？'; setTimeout(() => { armed = false; e.target.textContent = '清除全部選擇'; }, 3000); return; }
+    armed = false; e.target.textContent = '清除全部選擇'; choice = {}; save(); closeEd(); refreshAll();
+  };
+  const result = () => JSON.stringify({
+    review: 'review-full', savedAt: new Date().toISOString(),
+    total: D.items.length, confirmed: D.items.filter(it => choice[it.id]).length,
+    items: D.items.map((it, i) => {
+      const o = picked(it), c = choice[it.id];
+      return {
+        id: it.id, unit: D.units[unitOf[i]].name, c: it.c, current: { z: it.z, p: it.p },
+        choice: o ? { z: o.z, p: o.p, src: c.custom ? 'custom' : o.src, label: c.custom ? '自訂' : o.label } : null,
+        changed: !!o && (o.z !== it.z || o.p !== it.p),
+      };
+    }),
+  }, null, 1);
+  $('#dlBtn').onclick = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([result()], { type: 'application/json' }));
+    a.download = '03-review-full.json'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  $('#copyBtn').onclick = async () => { try { await navigator.clipboard.writeText(result()); toast('已複製'); } catch (_) { toast('無法複製，請改用下載'); } };
+})();
+</script>
+</body>
+</html>
